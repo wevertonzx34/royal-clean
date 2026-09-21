@@ -11,6 +11,7 @@ import 'presentation_royal_clean/home/rules_control_page_royal_clean.dart';
 import 'presentation_royal_clean/home/status_invite/invite_status_details_page_royal_clean.dart';
 import 'presentation_royal_clean/home/status_invite/invite_status_page_royal_clean.dart';
 import 'presentation_royal_clean/splash/splash_page_royal_clean.dart';
+import 'presentation_royal_clean/preview/preview_page_royal_clean.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,7 +29,7 @@ class RoyalCleanApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Royal Clean Admin',
+      title: 'Royal Clean',
       debugShowCheckedModeBanner: false,
       theme: AppThemeRoyalClean.theme,
       initialRoute: AppRoutesRoyalClean.splash,
@@ -37,6 +38,7 @@ class RoyalCleanApp extends StatelessWidget {
           firebaseInitialization: firebaseInitialization,
         ),
         AppRoutesRoyalClean.login: (_) => const LoginPageRoyalClean(),
+        AppRoutesRoyalClean.preview: (_) => const PreviewPageRoyalClean(),
         AppRoutesRoyalClean.home: (_) => const HomePageRoyalClean(),
         AppRoutesRoyalClean.accessControl: (_) =>
             const AccessControlPageRoyalClean(),

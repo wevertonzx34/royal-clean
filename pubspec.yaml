@@ -34,6 +34,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/preview/
     - assets/logo/logo-gif.webp
     - assets/logo/logo-laucher.webp
     - assets/logo/logo-splash.webp

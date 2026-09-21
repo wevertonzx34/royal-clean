@@ -1,6 +1,7 @@
 class AppRoutesRoyalClean {
   static const String splash = '/';
   static const String login = '/login';
+  static const String preview = '/preview';
   static const String home = '/home';
 
   static const String accessControl = '/access-control';

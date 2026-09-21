@@ -25,7 +25,7 @@ class _SplashPageRoyalCleanState extends State<SplashPageRoyalClean> {
 
     if (!mounted) return;
 
-    Navigator.pushReplacementNamed(context, AppRoutesRoyalClean.login);
+    Navigator.pushReplacementNamed(context, AppRoutesRoyalClean.preview);
   }
 
   @override
