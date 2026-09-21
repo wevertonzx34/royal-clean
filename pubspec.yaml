@@ -1,0 +1,40 @@
+name: royal_clean
+description: "Painel administrativo Royal Clean."
+publish_to: 'none'
+
+version: 1.0.3+4
+
+environment:
+  sdk: ^3.10.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  firebase_core: ^4.1.1
+  firebase_auth: ^6.0.2
+  cloud_firestore: ^6.0.1
+  url_launcher: ^6.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.13.1
+
+# ESTE BLOCO ABAIXO É O QUE ESTAVA FALTANDO PARA O COMANDO FUNCIONAR
+flutter_launcher_icons:
+  android: "ic_launcher"
+  ios: true
+  image_path: "assets/logo/logo-laucher.webp"
+  adaptive_icon_background: "#000000"
+  adaptive_icon_foreground: "assets/logo/logo-laucher.webp"
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/logo/logo-gif.webp
+    - assets/logo/logo-laucher.webp
+    - assets/logo/logo-splash.webp
+    - assets/thema/theme-auth.webp

@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "234594820973",
+    "firebase_url": "https://minerador-byt-default-rtdb.firebaseio.com",
+    "project_id": "minerador-byt",
+    "storage_bucket": "minerador-byt.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:234594820973:android:57303cb773387f32137064",
+        "android_client_info": {
+          "package_name": "com.example.royal_clean"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "234594820973-qcso2ok7b384anmn4sek8odlm4dpifea.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBEfkJ-Wo_OjkEsLnNoKAkdhXiilQ1kh8s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "234594820973-qcso2ok7b384anmn4sek8odlm4dpifea.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

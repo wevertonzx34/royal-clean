@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/clean_sparkle_vector">
+    <target
+        android:name="clean_mark"
+        android:animation="@animator/clean_pulse" />
+</animated-vector>
