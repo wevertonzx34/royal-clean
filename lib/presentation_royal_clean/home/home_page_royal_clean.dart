@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core_royal_clean/constants/app_routes_royal_clean.dart';
 import '../../core_royal_clean/services/auth_service_royal_clean.dart';
-import '../auth/login_page_royal_clean.dart';
 import 'home_background_royal_clean.dart';
 import 'home_form_royal_clean.dart';
 
@@ -13,10 +12,9 @@ class HomePageRoyalClean extends StatelessWidget {
 
     if (!context.mounted) return;
 
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginPageRoyalClean()),
-      (route) => false,
-    );
+    Navigator.of(
+      context,
+    ).pushNamedAndRemoveUntil(AppRoutesRoyalClean.preview, (route) => false);
   }
 
   @override
@@ -44,12 +42,6 @@ class HomePageRoyalClean extends StatelessWidget {
                       Navigator.pushNamed(
                         context,
                         AppRoutesRoyalClean.accessControl,
-                      );
-                    },
-                    onRulesControlPressed: () {
-                      Navigator.pushNamed(
-                        context,
-                        AppRoutesRoyalClean.rulesControl,
                       );
                     },
                     onLogoutPressed: () => _logout(context),

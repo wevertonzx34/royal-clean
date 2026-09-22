@@ -1,0 +1,223 @@
+rules_version = '2';
+
+// Royal Clean — projeto royal-clean-fire.
+// Cole este arquivo inteiro em Firestore Database > Regras.
+// Administradores são provisionados pelo console ou backend confiável.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function activeAdmin() {
+      let admin = get(/databases/$(database)/documents/admin/$(request.auth.uid)).data;
+      return signedIn()
+        && request.auth.token.email is string
+        && admin.eAdministrador == true
+        && admin.ativo == true
+        && admin.email is string
+        && admin.email.lower() == request.auth.token.email.lower();
+    }
+
+    function text(value, min, max) {
+      return value is string && value.size() >= min && value.size() <= max;
+    }
+
+    function exactFields(data, fields) {
+      return data.keys().hasAll(fields) && data.keys().hasOnly(fields);
+    }
+
+    // A conta pode consultar apenas seu próprio cadastro administrativo.
+    // Isso permite ao login informar conta inativa ou sem permissão.
+    match /admin/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow list, create, update, delete: if false;
+    }
+
+    function validProfile(data) {
+      return data.profile in ['Cliente', 'Colaborador', 'Promotor']
+        && ((data.profile == 'Colaborador'
+              && data.collaboratorFunction in ['VP', 'Speed', 'Base', 'Web'])
+            || (data.profile != 'Colaborador'
+              && data.collaboratorFunction == null));
+    }
+
+    function validCode(data) {
+      return data.inviteCode is string
+        && ((data.profile == 'Cliente' && data.inviteCode.matches('^U[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{7}$'))
+          || (data.profile == 'Colaborador' && data.inviteCode.matches('^C[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{7}$'))
+          || (data.profile == 'Promotor' && data.inviteCode.matches('^P[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{7}$')));
+    }
+
+    function whatsappKey(data) {
+      return data.whatsapp + '_' + data.profile.lower();
+    }
+
+    function codeIndex(data) {
+      return {
+        'inviteId': data.inviteId,
+        'inviteCode': data.inviteCode,
+        'profile': data.profile,
+        'collaboratorFunction': data.collaboratorFunction,
+        'createdAt': data.createdAt,
+        'createdByUid': data.createdByUid
+      };
+    }
+
+    function phoneIndex(data) {
+      return {
+        'inviteId': data.inviteId,
+        'inviteCode': data.inviteCode,
+        'whatsapp': data.whatsapp,
+        'profile': data.profile,
+        'collaboratorFunction': data.collaboratorFunction,
+        'createdAt': data.createdAt,
+        'createdByUid': data.createdByUid
+      };
+    }
+
+    function validInvite(data, id) {
+      return exactFields(data, [
+          'inviteId', 'inviteCode', 'fullName', 'profile',
+          'collaboratorFunction', 'ddd', 'phoneNumber', 'whatsapp',
+          'countryCode', 'status', 'registrationEnabled', 'isUsed',
+          'createdAt', 'usedAt', 'usedByUid', 'createdByUid', 'createdByEmail'
+        ])
+        && id.matches('^[a-zA-Z0-9]{20}$')
+        && data.inviteId == id
+        && text(data.fullName, 3, 160)
+        && validProfile(data)
+        && validCode(data)
+        && data.ddd is string && data.ddd.matches('^[0-9]{2}$')
+        && data.phoneNumber is string && data.phoneNumber.matches('^[0-9]{8,9}$')
+        && data.countryCode == '55'
+        && data.whatsapp == '55' + data.ddd + data.phoneNumber
+        && data.status == 'processing'
+        && data.registrationEnabled == true
+        && data.isUsed == false
+        && data.usedAt == null
+        && data.usedByUid == null
+        && data.createdAt == request.time
+        && data.createdByUid == request.auth.uid
+        && data.createdByEmail == request.auth.token.email;
+    }
+
+    // O convite e seus dois índices devem ser criados atomicamente.
+    // É o mesmo conjunto de documentos gravado pelo aplicativo atual.
+    function inviteHasIndexes(data) {
+      return getAfter(/databases/$(database)/documents/access_invite_code_index/$(data.inviteCode)).data == codeIndex(data)
+        && getAfter(/databases/$(database)/documents/access_invite_whatsapp_profile_index/$(whatsappKey(data))).data == phoneIndex(data);
+    }
+
+    match /access_invites/{id} {
+      allow get, list: if signedIn() && activeAdmin();
+      allow create: if signedIn() && activeAdmin()
+        && validInvite(request.resource.data, id)
+        && inviteHasIndexes(request.resource.data);
+      // O resgate/consumo do convite será implementado no backend.
+      // O aplicativo atual não edita nem exclui convites.
+      allow update, delete: if false;
+    }
+
+    function validNewCodeIndex(data, id) {
+      let invitePath = /databases/$(database)/documents/access_invites/$(data.inviteId);
+      let invite = getAfter(invitePath).data;
+      return !exists(invitePath)
+        && id == invite.inviteCode
+        && data == codeIndex(invite);
+    }
+
+    function validNewPhoneIndex(data, id) {
+      let invitePath = /databases/$(database)/documents/access_invites/$(data.inviteId);
+      let invite = getAfter(invitePath).data;
+      return !exists(invitePath)
+        && id == whatsappKey(invite)
+        && data == phoneIndex(invite);
+    }
+
+    match /access_invite_code_index/{id} {
+      // A transação consulta também IDs ainda inexistentes.
+      allow get: if signedIn() && activeAdmin();
+      allow create: if signedIn() && activeAdmin()
+        && validNewCodeIndex(request.resource.data, id);
+      allow list, update, delete: if false;
+    }
+
+    match /access_invite_whatsapp_profile_index/{id} {
+      allow get: if signedIn() && activeAdmin();
+      allow create: if signedIn() && activeAdmin()
+        && validNewPhoneIndex(request.resource.data, id);
+      allow list, update, delete: if false;
+    }
+
+    // Contrato para a futura vitrine: somente dados públicos nestes documentos.
+    // Estoque interno, custo, faturamento e credenciais não pertencem aqui.
+    function validPublication(data, id) {
+      return id.matches('^[a-zA-Z0-9_-]{1,100}$')
+        && text(data.title, 3, 120)
+        && text(data.category, 1, 60)
+        && text(data.imageUrl, 9, 2048)
+        && data.imageUrl.matches('^https://.+$')
+        && data.published is bool
+        && data.createdAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function newPublication(data) {
+      return data.createdAt == request.time;
+    }
+
+    function editedPublication(data) {
+      return data.createdAt == resource.data.createdAt;
+    }
+
+    function validProduct(data, id) {
+      return exactFields(data, [
+          'title', 'category', 'description', 'imageUrl',
+          'published', 'createdAt', 'updatedAt'
+        ])
+        && validPublication(data, id)
+        && text(data.description, 1, 5000);
+    }
+
+    function validNews(data, id) {
+      return exactFields(data, [
+          'title', 'category', 'summary', 'body', 'imageUrl',
+          'published', 'createdAt', 'updatedAt'
+        ])
+        && validPublication(data, id)
+        && text(data.summary, 1, 320)
+        && text(data.body, 1, 20000);
+    }
+
+    match /products/{id} {
+      allow get, list: if resource.data.published == true
+        || (signedIn() && activeAdmin());
+      allow create: if signedIn() && activeAdmin()
+        && validProduct(request.resource.data, id)
+        && newPublication(request.resource.data);
+      allow update: if signedIn() && activeAdmin()
+        && validProduct(request.resource.data, id)
+        && editedPublication(request.resource.data);
+      allow delete: if signedIn() && activeAdmin();
+    }
+
+    match /news/{id} {
+      allow get, list: if resource.data.published == true
+        || (signedIn() && activeAdmin());
+      allow create: if signedIn() && activeAdmin()
+        && validNews(request.resource.data, id)
+        && newPublication(request.resource.data);
+      allow update: if signedIn() && activeAdmin()
+        && validNews(request.resource.data, id)
+        && editedPublication(request.resource.data);
+      allow delete: if signedIn() && activeAdmin();
+    }
+
+    // Novas coleções e subcoleções permanecem fechadas por padrão.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

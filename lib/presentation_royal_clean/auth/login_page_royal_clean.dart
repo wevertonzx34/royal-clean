@@ -5,7 +5,8 @@ import 'auth_background_royal_clean.dart';
 import 'auth_form_royal_clean.dart';
 
 class LoginPageRoyalClean extends StatefulWidget {
-  const LoginPageRoyalClean({super.key});
+  final Future<void>? firebaseInitialization;
+  const LoginPageRoyalClean({super.key, this.firebaseInitialization});
 
   @override
   State<LoginPageRoyalClean> createState() => _LoginPageRoyalCleanState();
@@ -62,6 +63,22 @@ class _LoginPageRoyalCleanState extends State<LoginPageRoyalClean> {
     FocusScope.of(context).unfocus();
 
     setState(() => _isLoading = true);
+
+    try {
+      await widget.firebaseInitialization?.timeout(const Duration(seconds: 15));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Login indisponível no momento. Reabra o aplicativo e tente novamente.',
+          ),
+        ),
+      );
+      return;
+    }
+    if (!mounted) return;
 
     final result = await AuthServiceRoyalClean.signInAdmin(
       email: _emailController.text,

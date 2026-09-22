@@ -18,10 +18,9 @@ class _SplashPageRoyalCleanState extends State<SplashPageRoyalClean> {
   }
 
   Future<void> _redirect() async {
-    await Future.wait([
-      Future.delayed(const Duration(seconds: 3)),
-      widget.firebaseInitialization,
-    ]);
+    // A vitrine pública não depende de autenticação nem da conexão Firebase.
+    widget.firebaseInitialization.ignore();
+    await Future<void>.delayed(const Duration(seconds: 3));
 
     if (!mounted) return;
 

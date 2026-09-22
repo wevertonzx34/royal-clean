@@ -10,11 +10,11 @@ Versão atual: **1.0.3+4**, declarada em `pubspec.yaml`.
 - Página inicial pública com vitrine, categorias e notícias demonstrativas.
 - Criação e consulta de convites para Cliente, Colaborador e Promotor.
 - Compartilhamento de convites pelo WhatsApp.
-- Interface do controle de regras, ainda pendente de implementação.
+- Rotas administrativas protegidas por autenticação e confirmação de permissão ativa no Firestore.
 
 ## Inicialização no Android
 
-A etapa nativa usa fundo azul escuro e ícone transparente até o primeiro quadro do Flutter. Em seguida, a tela com a logo Royal Clean e a mensagem “Inicializando ambiente...” aguarda a inicialização do Firebase e direciona à página inicial pública. O botão Login abre a página de autenticação existente.
+A etapa nativa usa fundo azul escuro e ícone transparente até o primeiro quadro do Flutter. Em seguida, a tela com a logo Royal Clean e a mensagem “Inicializando ambiente...” direciona à página inicial pública após três segundos. A prévia não depende de login nem do sucesso da inicialização do Firebase. O botão Login abre a página de autenticação existente.
 
 O ícone instalado no dispositivo permanece independente da tela de abertura.
 
@@ -28,4 +28,12 @@ Validação do fluxo, filtros, detalhes e layout: `flutter test test/preview_nav
 
 ## Firebase
 
-Os identificadores técnicos em `firebase.json`, `lib/firebase_options.dart` e `android/app/google-services.json` pertencem ao backend já configurado. Não devem ser renomeados como texto: uma troca de projeto exige configurar os aplicativos Firebase e migrar os dados e a autenticação. Os identificadores de bundle Apple existentes também estão vinculados a essa configuração.
+O aplicativo Android está configurado para o projeto **royal-clean-fire**, com o pacote `com.example.royal_clean`. As opções de `lib/firebase_options.dart` e o arquivo `android/app/google-services.json` usam os identificadores oficiais do arquivo baixado do Firebase. O projeto padrão da CLI também está definido em `.firebaserc`.
+
+As outras plataformas ainda precisam ser cadastradas no novo projeto e configuradas pelo FlutterFire antes de serem executadas. Nenhuma plataforma mantém conexão com o Firebase anterior. Os identificadores de bundle Apple legados devem ser revisados ao preparar essas plataformas.
+
+A troca de configuração não migra usuários ou dados. O login administrativo utiliza a conta do Authentication do novo projeto e o documento `admin/{UID}` com `email`, `eAdministrador: true` e `ativo: true`. As regras do Firestore precisam permitir a leitura autorizada desse documento; a configuração do projeto, sozinha, não libera esse acesso.
+
+As regras estão em `firestore.rules`, com instruções de publicação e contratos dos documentos em `docs/firestore-rules.md`. Testes de segurança locais: `cd security-tests`, `npm ci` e `npm test`. A suíte usa exclusivamente um projeto fictício no emulador e não publica regras no Firebase real.
+
+Home, controle de acesso, criação, consulta e detalhes dos convites usam `AdminRouteGuardRoyalClean`. A interface só é construída após confirmação do documento administrativo pelo servidor, sem aceitar apenas cache local. Mudanças de sessão, revogação no documento e falhas de autorização ocultam o conteúdo protegido. O botão Controle de regras e sua rota foram retirados da navegação; sair da conta retorna à prévia pública. As regras publicadas do Firestore continuam sendo necessárias para proteger os dados no servidor.

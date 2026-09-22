@@ -4,14 +4,12 @@ import 'home_buttons_royal_clean.dart';
 class HomeFormRoyalClean extends StatelessWidget {
   final String adminEmail;
   final VoidCallback onAccessControlPressed;
-  final VoidCallback onRulesControlPressed;
   final VoidCallback onLogoutPressed;
 
   const HomeFormRoyalClean({
     super.key,
     required this.adminEmail,
     required this.onAccessControlPressed,
-    required this.onRulesControlPressed,
     required this.onLogoutPressed,
   });
 
@@ -46,13 +44,6 @@ class HomeFormRoyalClean extends StatelessWidget {
           subtitle: 'Gerencie convites e autenticação de novos usuários.',
           icon: Icons.admin_panel_settings_rounded,
           onPressed: onAccessControlPressed,
-        ),
-        const SizedBox(height: 14),
-        HomePrimaryButtonRoyalClean(
-          title: 'Controle de regras',
-          subtitle: 'Acesse criar regra e status das regras do sistema.',
-          icon: Icons.rule_folder_rounded,
-          onPressed: onRulesControlPressed,
         ),
         const SizedBox(height: 26),
         OutlinedButton.icon(

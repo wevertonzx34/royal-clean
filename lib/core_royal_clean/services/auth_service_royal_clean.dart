@@ -38,7 +38,10 @@ class AuthServiceRoyalClean {
       final uid = user.uid;
       final userEmail = (user.email ?? '').trim().toLowerCase();
 
-      final adminDoc = await _firestore.collection('admin').doc(uid).get();
+      final adminDoc = await _firestore
+          .collection('admin')
+          .doc(uid)
+          .get(const GetOptions(source: Source.server));
 
       if (!adminDoc.exists) {
         await _auth.signOut();
@@ -77,7 +80,7 @@ class AuthServiceRoyalClean {
           success: false,
           message: 'Esta conta administrativa está inativa.',
         );
-      }   
+      }
 
       if (adminEmail != userEmail) {
         await _auth.signOut();
@@ -92,12 +95,22 @@ class AuthServiceRoyalClean {
         message: 'Login administrativo realizado com sucesso.',
       );
     } on FirebaseAuthException catch (e) {
+      await _clearFailedSession();
       return AuthAdminResult(success: false, message: _mapFirebaseAuthError(e));
     } catch (e) {
+      await _clearFailedSession();
       return AuthAdminResult(
         success: false,
         message: 'Erro inesperado ao entrar no painel administrativo: $e',
       );
+    }
+  }
+
+  static Future<void> _clearFailedSession() async {
+    try {
+      await _auth.signOut();
+    } catch (_) {
+      // Route guards continue to deny access if authorization cannot be checked.
     }
   }
 
