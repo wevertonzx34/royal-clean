@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:royal_clean/core_royal_clean/services/account_service_royal_clean.dart';
+import 'package:royal_clean/core_royal_clean/services/invite_service_royal_clean.dart';
 import 'package:royal_clean/core_royal_clean/theme/app_theme_royal_clean.dart';
 import 'package:royal_clean/presentation_royal_clean/auth/account_gate_royal_clean.dart';
 import 'package:royal_clean/presentation_royal_clean/auth/login_page_royal_clean.dart';
@@ -9,6 +10,52 @@ import 'package:royal_clean/presentation_royal_clean/auth/registration_page_roya
 import 'package:royal_clean/presentation_royal_clean/auth/account_ui_royal_clean.dart';
 
 void main() {
+  test(
+    'New invitations target Mestre and require recipient email and phone',
+    () {
+      InvitePreviewResult preview(String email, String phone, String profile) =>
+          InviteServiceRoyalClean.generateInvitePreview(
+            fullName: 'João da Silva',
+            whatsappInput: phone,
+            email: email,
+            profile: profile,
+          );
+      final result = preview(
+        ' JOAO@example.test ',
+        '(11) 99999-8888',
+        'Mestre',
+      );
+      expect(result.success, isTrue);
+      expect(result.preview!.email, 'joao@example.test');
+      expect(result.preview!.internationalWhatsapp, '5511999998888');
+      expect(
+        result.preview!.inviteCode,
+        matches(r'^M[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{7}$'),
+      );
+      expect(preview('', '11999998888', 'Mestre').success, isFalse);
+      expect(
+        preview('joao@example.test', '00999998888', 'Mestre').success,
+        isFalse,
+      );
+      expect(
+        preview('joao@example.test', '11999998888', 'Cliente').success,
+        isFalse,
+      );
+    },
+  );
+  testWidgets('Registration password boundary is eight characters', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: RegistrationPageRoyalClean()),
+    );
+    final password = tester.widget<TextFormField>(
+      find.byType(TextFormField).at(3),
+    );
+    expect(password.validator!('1234567'), isNotNull);
+    expect(password.validator!('Abcd1234'), isNull);
+    expect(password.validator!('a' * 129), isNotNull);
+  });
   test('Names and emails accept real-world formats', () {
     for (final name in ['João', 'Ana-Maria D’Ávila', '李明']) {
       expect(validateNameRoyalClean(name), isNull);

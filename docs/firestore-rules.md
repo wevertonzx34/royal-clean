@@ -34,20 +34,20 @@ Contas autenticadas comuns, contas sem documento administrativo, administradores
 
 ## Convites compatíveis com o aplicativo atual
 
-- Perfis: Cliente, Colaborador e Promotor.
-- Funções de Colaborador: VP, Speed, Base e Web.
-- Código de oito caracteres, com prefixo U, C ou P correspondente ao perfil.
+- Novos convites: perfil Mestre, sem função de colaborador.
+- E-mail do destinatário obrigatório, normalizado em minúsculas.
+- Código de oito caracteres, com prefixo M.
 - Nome de 3 a 160 caracteres; telefone brasileiro com DDD, conforme o formato já usado no app. Isso não comprova existência ou posse do número.
 - Convite criado como `processing`, com cadastro habilitado e ainda não utilizado.
 - Data de criação do servidor; UID e e-mail do criador iguais à conta autenticada.
 - O convite, o índice do código e o índice WhatsApp/perfil devem ser criados na mesma transação ou lote.
 - Os índices precisam reproduzir exatamente os dados do convite.
-- Um mesmo telefone pode ter perfis diferentes, mas não convites duplicados para o mesmo perfil.
+- O índice impede convites duplicados para o mesmo telefone/perfil.
 - Leitura de convites e consulta individual dos índices somente para administradores ativos.
-- Novos convites incluem `expiresAt`, com validade de 30 dias; regras aceitam até 31 dias para acomodar diferenças pequenas de relógio. Convites legados sem esse campo continuam compatíveis.
+- Novos convites exigem `expiresAt`, com validade de 30 dias; regras aceitam até 31 dias para acomodar diferenças pequenas de relógio. Convites legados ficam no histórico e não liberam novos cadastros.
 - Atualização e exclusão de convites/índices bloqueadas no cliente. O backend consome o convite em transação na conclusão do cadastro.
 
-**Resgate do convite:** a função `registerAccount` exige identidade autenticada, e-mail verificado e App Check, valida o estado do convite e consome o código junto com a criação do perfil. O código é apenas referência de origem; não comprova vínculo, não concede perfil e não pode ser incluído depois. O aplicativo não pode consultar índices de convites como usuário comum.
+**Resgate do convite:** `registerAccount` exige identidade autenticada, e-mail verificado e App Check. Em transação, confere validade/uso, perfil Mestre, e-mail do Authentication e telefone normalizado contra o convite. Só então cria o perfil `master` e consome o código. Sem código, cria `consumer`. Não concede administração nem permite incluir convite depois. O telefone é conferido, não verificado por SMS. Índices e convites não são expostos a usuários comuns.
 
 **Perfis e dados pessoais:** `users/{uid}` pode ser lido pelo titular verificado e pelo admin ativo; somente backend grava. `personal_data/{uid}` é privado ao titular autorizado e somente backend grava. Alteração de perfil passa por `setUserRole`; auditoria e contadores de tentativas ficam fechados ao cliente.
 

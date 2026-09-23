@@ -4,7 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core_royal_clean/services/invite_service_royal_clean.dart';
 import 'home_background_royal_clean.dart';
-import '../auth/account_ui_royal_clean.dart';
+import '../../core_royal_clean/services/account_service_royal_clean.dart';
 
 class CreateInvitePageRoyalClean extends StatefulWidget {
   const CreateInvitePageRoyalClean({super.key});
@@ -63,8 +63,8 @@ class _CreateInvitePageRoyalCleanState
       return 'Informe o nome.';
     }
 
-    if (text.length < 3) {
-      return 'Digite um nome mais completo.';
+    if (text.length < 3 || text.length > 160) {
+      return 'Use entre 3 e 160 caracteres no nome.';
     }
 
     return null;

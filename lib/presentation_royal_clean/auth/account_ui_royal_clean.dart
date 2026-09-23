@@ -64,7 +64,7 @@ Contato: $_contact
 
 No cadastro, usamos nome, e-mail e identificador da conta para identificar você e permitir seu acesso. A senha é processada pelo Firebase Authentication; ela não é gravada nos documentos de perfil do aplicativo. Ao entrar com Google ou Apple, recebemos os dados de autenticação disponibilizados pelo provedor. Não solicitamos sua senha desses provedores.
 
-O código de convite é opcional, registrado apenas na criação da conta e serve para identificar a origem do cadastro. Não concede benefícios comerciais nem permissões administrativas.
+O código de convite é opcional e registrado apenas na criação da conta. Para o perfil Mestre, conferimos o e-mail verificado e o telefone informado com os dados do convite criado pelo administrador. Essa conferência não verifica a posse do telefone por SMS. Sem convite, a conta é de consumidor. O convite não concede benefícios comerciais nem permissões administrativas.
 
 CPF ou CNPJ podem ser informados opcionalmente em Meus dados para futuras operações de compra e identificação fiscal. A verificação dos dígitos não comprova titularidade nem situação cadastral.
 

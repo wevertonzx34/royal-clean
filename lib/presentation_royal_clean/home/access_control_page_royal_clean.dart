@@ -63,7 +63,7 @@ class AccessControlPageRoyalClean extends StatelessWidget {
                                 ),
                               ),
                               child: Text(
-                                'Gerencie convites para identificar a origem dos novos cadastros, sem conceder benefícios ou permissões.',
+                                  'Autorize o cadastro de Mestres com convites vinculados ao e-mail e telefone de cada pessoa.',
                                 style: theme.textTheme.bodyMedium,
                               ),
                             ),
@@ -71,7 +71,7 @@ class AccessControlPageRoyalClean extends StatelessWidget {
                             HomePrimaryButtonRoyalClean(
                               title: 'Criar convite',
                               subtitle:
-                                  'Criar código opcional de identificação, válido por 30 dias.',
+                                  'Liberar cadastro como Mestre. Uso único e validade de 30 dias.',
                               icon: Icons.person_add_alt_1_rounded,
                               onPressed: () {
                                 Navigator.pushNamed(

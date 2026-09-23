@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:royal_clean/core_royal_clean/constants/app_routes_royal_clean.dart';
@@ -18,6 +19,36 @@ Widget testApp({bool splash = false}) => MaterialApp(
 );
 
 void main() {
+  testWidgets(
+    'Preview follows session changes and profile routes through account guard',
+    (tester) async {
+      final session = StreamController<bool>();
+      addTearDown(session.close);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: PreviewPageRoyalClean(authenticated: session.stream),
+          routes: {
+            '/account': (_) => const Scaffold(body: Text('Conta protegida')),
+          },
+        ),
+      );
+      session.add(false);
+      await tester.pumpAndSettle();
+      expect(find.text('Login'), findsOneWidget);
+      session.add(true);
+      await tester.pumpAndSettle();
+      expect(find.text('Login'), findsNothing);
+      await tester.tap(find.text('Perfil'));
+      await tester.pumpAndSettle();
+      expect(find.text('Conta protegida'), findsOneWidget);
+      Navigator.of(tester.element(find.text('Conta protegida'))).pop();
+      await tester.pumpAndSettle();
+      session.add(false);
+      await tester.pumpAndSettle();
+      expect(find.text('Perfil'), findsNothing);
+      expect(find.text('Login'), findsOneWidget);
+    },
+  );
   testWidgets('Startup opens preview and login remains opt-in', (tester) async {
     tester.view.physicalSize = const Size(720, 1600);
     tester.view.devicePixelRatio = 2;

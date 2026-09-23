@@ -40,10 +40,10 @@ class InviteServiceRoyalClean {
       collaboratorFunction,
     );
 
-    if (trimmedName.isEmpty) {
+    if (trimmedName.length < 3 || trimmedName.length > 160) {
       return const InvitePreviewResult(
         success: false,
-        message: 'Informe o nome.',
+        message: 'Informe um nome entre 3 e 160 caracteres.',
       );
     }
 
@@ -65,7 +65,7 @@ class InviteServiceRoyalClean {
     final String ddd = normalizedWhatsappInput.substring(0, 2);
     final String phoneNumber = normalizedWhatsappInput.substring(2);
 
-    if (ddd.length != 2) {
+    if (!RegExp(r'^[1-9][0-9]$').hasMatch(ddd)) {
       return const InvitePreviewResult(
         success: false,
         message: 'DDD inválido.',
@@ -268,6 +268,10 @@ class InviteServiceRoyalClean {
     required String profile,
     String? collaboratorFunction,
   }) {
+    if (profile != 'Mestre') {
+      return 'Convite antigo $inviteCode de $fullName ($profile). '
+          'Este código não libera cadastro como Mestre. Solicite um novo convite à administração.';
+    }
     final functionLine =
         profile == 'Colaborador' &&
             collaboratorFunction != null &&
