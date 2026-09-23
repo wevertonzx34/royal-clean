@@ -37,6 +37,7 @@ class InviteStatusFiltersRoyalClean extends StatelessWidget {
           ),
           items: const [
             DropdownMenuItem(value: 'Todos', child: Text('Todos')),
+            DropdownMenuItem(value: 'Mestre', child: Text('Mestre')),
             DropdownMenuItem(value: 'Cliente', child: Text('Cliente')),
             DropdownMenuItem(value: 'Colaborador', child: Text('Colaborador')),
             DropdownMenuItem(value: 'Promotor', child: Text('Promotor')),

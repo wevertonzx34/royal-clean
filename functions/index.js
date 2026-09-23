@@ -2,7 +2,7 @@ import {initializeApp} from 'firebase-admin/app';
 import {getAuth} from 'firebase-admin/auth';
 import {getFirestore, FieldValue, Timestamp} from 'firebase-admin/firestore';
 import {onCall, HttpsError} from 'firebase-functions/v2/https';
-import {LEGAL_VERSION, ROLES, validName, validDocument, normalizeDocument, inviteProblem} from './validation.js';
+import {LEGAL_VERSION, ROLES, validName, validDocument, normalizeDocument, inviteProblem, normalizePhone} from './validation.js';
 
 initializeApp();
 const db = getFirestore();
@@ -46,7 +46,7 @@ export const registerAccount = onCall(options, async request => {
     fail('Leia e aceite a versão atual dos termos para concluir.');
   }
   const code = typeof input.inviteCode === 'string' ? input.inviteCode.trim().toUpperCase() : '';
-  if (code && !/^[UCP][ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{7}$/.test(code)) {
+  if (code && !/^M[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{7}$/.test(code)) {
     fail('Código inválido. Confira ou continue sem código.');
   }
   const ref = db.doc(`users/${user.uid}`);
@@ -67,17 +67,24 @@ export const registerAccount = onCall(options, async request => {
       invite = (await tx.get(inviteRef)).data();
       const problem = inviteProblem(invite, Date.now());
       if (problem) fail(problem);
-      if (invite.inviteCode !== code) fail('Código inválido. Continue sem código.');
+      if (invite.inviteCode !== code || invite.profile !== 'Mestre' || !invite.expiresAt) fail('Convite incompatível. Solicite um novo convite ao administrador.');
+      const phone = normalizePhone(input.phone);
+      if (typeof invite.email !== 'string' || invite.email.trim().toLowerCase() !== user.email.trim().toLowerCase() ||
+          !phone || phone !== invite.whatsapp) {
+        fail('O e-mail e o telefone devem corresponder aos dados do convite. Confira com o administrador ou remova o código.');
+      }
     }
     const timestamp = FieldValue.serverTimestamp();
     tx.create(ref, {
-      name: input.name.trim(), email: user.email, role: 'consumer', active: true,
+      name: input.name.trim(), email: user.email, role: invite ? 'master' : 'consumer', active: true,
       offers: input.offers, offersUpdatedAt: timestamp,
       legalVersion: LEGAL_VERSION, termsAcceptedAt: timestamp, privacyAcknowledgedAt: timestamp,
       createdAt: timestamp, updatedAt: timestamp,
       referral: invite ? {inviteId: inviteRef.id, code, createdByUid: invite.createdByUid,
         profileReference: invite.profile, collaboratorFunction: invite.collaboratorFunction ?? null} : null,
     });
+    if (invite) tx.create(db.doc(`personal_data/${user.uid}`), {name: input.name.trim(),
+      phone: normalizePhone(input.phone), phoneVerified: false, documentKind: '', document: '', offers: input.offers, updatedAt: timestamp});
     if (invite) tx.update(inviteRef, {isUsed: true, registrationEnabled: false,
       status: 'used', usedAt: timestamp, usedByUid: user.uid});
   });
@@ -108,7 +115,7 @@ export const updateMyData = onCall(options, async request => {
     if (profile.exists) tx.update(profileRef, {name: input.name.trim(), offers: input.offers,
       offersUpdatedAt: timestamp, updatedAt: timestamp});
     tx.set(db.doc(`personal_data/${user.uid}`), {name: input.name.trim(), documentKind,
-      document, offers: input.offers, updatedAt: timestamp});
+      document, offers: input.offers, updatedAt: timestamp}, {merge: true});
   });
   return {success: true};
 });
@@ -130,6 +137,7 @@ export const setUserRole = onCall(options, async request => {
     const ref = db.doc(`users/${uid}`);
     const target = await tx.get(ref);
     if (targetAdmin.exists || !target.exists) fail('Usuário indisponível para esta operação.', 'failed-precondition');
+    if (role === 'master' && target.data().role !== 'master') fail('O perfil Mestre exige cadastro com convite válido.', 'failed-precondition');
     const timestamp = FieldValue.serverTimestamp();
     tx.update(ref, {role, active, updatedAt: timestamp});
     tx.create(db.collection('account_audit').doc(), {actorUid: user.uid, targetUid: uid,

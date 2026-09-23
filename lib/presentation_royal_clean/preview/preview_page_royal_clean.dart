@@ -10,7 +10,8 @@ const _muted = Color(0xFF607783);
 const _paper = Color(0xFFF5F8FA);
 
 class PreviewPageRoyalClean extends StatefulWidget {
-  const PreviewPageRoyalClean({super.key});
+  final Stream<bool>? authenticated;
+  const PreviewPageRoyalClean({super.key, this.authenticated});
 
   @override
   State<PreviewPageRoyalClean> createState() => _PreviewPageRoyalCleanState();
@@ -20,6 +21,7 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
   final _productsKey = GlobalKey();
   final _newsKey = GlobalKey();
   String _category = 'Todos';
+  late final _session = widget.authenticated ?? Stream<bool>.value(false);
 
   void _goTo(GlobalKey key) {
     final section = key.currentContext;
@@ -92,7 +94,12 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => StreamBuilder<bool>(
+    stream: _session,
+    builder: (context, snapshot) => _buildPage(context, snapshot.data == true),
+  );
+
+  Widget _buildPage(BuildContext context, bool signedIn) {
     final lightTheme = ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
@@ -163,10 +170,12 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
               Padding(
                 padding: const EdgeInsets.only(right: 16),
                 child: FilledButton.icon(
-                  onPressed: () =>
-                      Navigator.pushNamed(context, AppRoutesRoyalClean.login),
+                  onPressed: () => Navigator.pushNamed(
+                    context,
+                    signedIn ? '/account' : AppRoutesRoyalClean.login,
+                  ),
                   icon: const Icon(Icons.person_outline_rounded, size: 18),
-                  label: const Text('Login'),
+                  label: Text(signedIn ? 'Perfil' : 'Login'),
                   style: FilledButton.styleFrom(
                     backgroundColor: _navy,
                     foregroundColor: Colors.white,
@@ -383,7 +392,9 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
                                 FilledButton.icon(
                                   onPressed: () => Navigator.pushNamed(
                                     context,
-                                    AppRoutesRoyalClean.login,
+                                    signedIn
+                                        ? '/account'
+                                        : AppRoutesRoyalClean.login,
                                   ),
                                   icon: const Icon(
                                     Icons.arrow_forward_rounded,

@@ -4,6 +4,7 @@ class InviteStatusRoyalCleanModel {
   final String inviteId;
   final String inviteCode;
   final String fullName;
+  final String email;
   final String profile;
   final String? collaboratorFunction;
   final String whatsapp;
@@ -21,6 +22,7 @@ class InviteStatusRoyalCleanModel {
     required this.inviteId,
     required this.inviteCode,
     required this.fullName,
+    this.email = '',
     required this.profile,
     required this.collaboratorFunction,
     required this.whatsapp,
@@ -59,6 +61,7 @@ class InviteStatusRoyalCleanModel {
       inviteId: (map['inviteId'] ?? documentId).toString(),
       inviteCode: (map['inviteCode'] ?? '').toString(),
       fullName: (map['fullName'] ?? '').toString(),
+      email: (map['email'] ?? '').toString(),
       profile: (map['profile'] ?? '').toString(),
       collaboratorFunction: (rawFunction == null || rawFunction.isEmpty)
           ? null

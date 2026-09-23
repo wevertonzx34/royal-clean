@@ -54,18 +54,12 @@ service cloud.firestore {
     }
 
     function validProfile(data) {
-      return data.profile in ['Cliente', 'Colaborador', 'Promotor']
-        && ((data.profile == 'Colaborador'
-              && data.collaboratorFunction in ['VP', 'Speed', 'Base', 'Web'])
-            || (data.profile != 'Colaborador'
-              && data.collaboratorFunction == null));
+      return data.profile == 'Mestre' && data.collaboratorFunction == null;
     }
 
     function validCode(data) {
       return data.inviteCode is string
-        && ((data.profile == 'Cliente' && data.inviteCode.matches('^U[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{7}$'))
-          || (data.profile == 'Colaborador' && data.inviteCode.matches('^C[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{7}$'))
-          || (data.profile == 'Promotor' && data.inviteCode.matches('^P[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{7}$')));
+        && data.inviteCode.matches('^M[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{7}$');
     }
 
     function whatsappKey(data) {
@@ -97,25 +91,27 @@ service cloud.firestore {
 
     function validInvite(data, id) {
       return data.keys().hasAll([
-          'inviteId', 'inviteCode', 'fullName', 'profile',
-          'collaboratorFunction', 'ddd', 'phoneNumber', 'whatsapp',
-          'countryCode', 'status', 'registrationEnabled', 'isUsed',
-          'createdAt', 'usedAt', 'usedByUid', 'createdByUid', 'createdByEmail'
-        ])
-        && data.keys().hasOnly([
-          'inviteId', 'inviteCode', 'fullName', 'profile',
+          'inviteId', 'inviteCode', 'fullName', 'email', 'profile',
           'collaboratorFunction', 'ddd', 'phoneNumber', 'whatsapp',
           'countryCode', 'status', 'registrationEnabled', 'isUsed',
           'createdAt', 'usedAt', 'usedByUid', 'createdByUid', 'createdByEmail', 'expiresAt'
         ])
-        && (!('expiresAt' in data) || (data.expiresAt is timestamp
-          && data.expiresAt > request.time && data.expiresAt <= request.time + duration.value(31, 'd')))
+        && data.keys().hasOnly([
+          'inviteId', 'inviteCode', 'fullName', 'email', 'profile',
+          'collaboratorFunction', 'ddd', 'phoneNumber', 'whatsapp',
+          'countryCode', 'status', 'registrationEnabled', 'isUsed',
+          'createdAt', 'usedAt', 'usedByUid', 'createdByUid', 'createdByEmail', 'expiresAt'
+        ])
+        && data.expiresAt is timestamp
+        && data.expiresAt > request.time && data.expiresAt <= request.time + duration.value(31, 'd')
         && id.matches('^[a-zA-Z0-9]{20}$')
         && data.inviteId == id
         && text(data.fullName, 3, 160)
+        && text(data.email, 3, 254) && data.email == data.email.lower()
+        && data.email.matches('^[^ @]+@[^ @]+[.][^ @]+$')
         && validProfile(data)
         && validCode(data)
-        && data.ddd is string && data.ddd.matches('^[0-9]{2}$')
+        && data.ddd is string && data.ddd.matches('^[1-9][0-9]$')
         && data.phoneNumber is string && data.phoneNumber.matches('^[0-9]{8,9}$')
         && data.countryCode == '55'
         && data.whatsapp == '55' + data.ddd + data.phoneNumber

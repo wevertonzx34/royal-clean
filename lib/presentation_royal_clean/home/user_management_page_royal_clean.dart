@@ -80,6 +80,9 @@ class _UserManagementState extends State<UserManagementPageRoyalClean> {
                   initialValue: role,
                   isExpanded: true,
                   items: roleLabelsRoyalClean.entries
+                      .where(
+                        (e) => e.key != 'master' || data['role'] == 'master',
+                      )
                       .map(
                         (e) => DropdownMenuItem(
                           value: e.key,
@@ -96,7 +99,7 @@ class _UserManagementState extends State<UserManagementPageRoyalClean> {
                   onChanged: (v) => update(() => active = v),
                 ),
                 const Text(
-                  'O convite é apenas uma referência. Confirme a identidade e o vínculo antes de conceder outro perfil.',
+                  'Mestre é liberado no cadastro por convite válido. Alterar outros perfis não concede acesso administrativo.',
                 ),
               ],
             ),
@@ -143,7 +146,7 @@ class _UserManagementState extends State<UserManagementPageRoyalClean> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const Text(
-          'Novos cadastros começam como consumidores. Apenas um administrador ativo pode alterar o perfil. Documentos pessoais não aparecem nesta lista.',
+          'Sem convite, novos cadastros são consumidores. Convites válidos liberam Mestre. Apenas o administrador pode gerenciar acessos. Documentos pessoais não aparecem nesta lista.',
         ),
         const SizedBox(height: 16),
         TextField(

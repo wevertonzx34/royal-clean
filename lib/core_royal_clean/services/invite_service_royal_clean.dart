@@ -9,11 +9,7 @@ class InviteServiceRoyalClean {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  static const List<String> availableProfiles = [
-    'Cliente',
-    'Colaborador',
-    'Promotor',
-  ];
+  static const List<String> availableProfiles = ['Mestre'];
 
   static const List<String> collaboratorFunctions = [
     'VP',
@@ -25,10 +21,19 @@ class InviteServiceRoyalClean {
   static InvitePreviewResult generateInvitePreview({
     required String fullName,
     required String whatsappInput,
+    required String email,
     required String profile,
     String? collaboratorFunction,
   }) {
     final String trimmedName = fullName.trim();
+    final normalizedEmail = email.trim().toLowerCase();
+    if (normalizedEmail.length > 254 ||
+        !RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(normalizedEmail)) {
+      return const InvitePreviewResult(
+        success: false,
+        message: 'Informe um e-mail válido.',
+      );
+    }
     final String normalizedWhatsappInput = normalizeDigits(whatsappInput);
     final String normalizedProfile = normalizeProfile(profile);
     final String? normalizedFunction = normalizeOptionalText(
@@ -99,6 +104,7 @@ class InviteServiceRoyalClean {
       message: 'Preview gerado com sucesso.',
       preview: InvitePreviewData(
         fullName: trimmedName,
+        email: normalizedEmail,
         profile: normalizedProfile,
         collaboratorFunction: normalizedProfile == 'Colaborador'
             ? normalizedFunction
@@ -164,6 +170,7 @@ class InviteServiceRoyalClean {
           'inviteId': inviteId,
           'inviteCode': preview.inviteCode,
           'fullName': preview.fullName,
+          'email': preview.email,
           'profile': preview.profile,
           'collaboratorFunction': preview.collaboratorFunction,
           'ddd': preview.ddd,
@@ -271,15 +278,16 @@ class InviteServiceRoyalClean {
     return '''
 Olá, $fullName!
 
-Seu convite de identificação para o app Royal Clean foi gerado com sucesso.
+Seu convite para cadastro como Mestre no app Royal Clean foi gerado com sucesso.
 
-Referência de perfil: $profile
+Perfil autorizado: $profile
 $functionLine
 CÓDIGO DO CONVITE
 $inviteCode
 
-O código é opcional e vale por 30 dias. Informe somente no cadastro inicial.
-Ele identifica a origem do cadastro, sem conceder benefícios ou permissões.
+O código vale por 30 dias e só pode ser utilizado uma vez, no cadastro inicial.
+Use o mesmo e-mail e telefone informados ao administrador e verifique seu e-mail.
+Sem este convite, o cadastro cria uma conta comum. Não concede acesso administrativo.
 
 Equipe Royal Clean
 ''';
@@ -290,6 +298,7 @@ Equipe Royal Clean
     int totalLength = 8,
   }) {
     final prefix = switch (profile) {
+      'Mestre' => 'M',
       'Cliente' => 'U',
       'Colaborador' => 'C',
       'Promotor' => 'P',
@@ -311,6 +320,7 @@ Equipe Royal Clean
 
 class InvitePreviewData {
   final String fullName;
+  final String email;
   final String profile;
   final String? collaboratorFunction;
   final String ddd;
@@ -320,6 +330,7 @@ class InvitePreviewData {
 
   const InvitePreviewData({
     required this.fullName,
+    required this.email,
     required this.profile,
     required this.collaboratorFunction,
     required this.ddd,

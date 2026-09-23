@@ -23,6 +23,7 @@ class _RegistrationState extends State<RegistrationPageRoyalClean> {
   final _password = TextEditingController();
   final _confirmPassword = TextEditingController();
   final _invite = TextEditingController();
+  final _phone = TextEditingController();
   bool _terms = false, _offers = false, _busy = false, _obscure = true;
   User? _user;
   String? _error;
@@ -45,6 +46,7 @@ class _RegistrationState extends State<RegistrationPageRoyalClean> {
       _password,
       _confirmPassword,
       _invite,
+      _phone,
     ]) {
       controller.dispose();
     }
@@ -89,6 +91,7 @@ class _RegistrationState extends State<RegistrationPageRoyalClean> {
     final registrationData = <String, dynamic>{
       'name': _name.text.trim(),
       'inviteCode': _invite.text.trim().toUpperCase(),
+      'phone': _phone.text.trim(),
       'acceptTerms': _terms,
       'legalVersion': legalVersionRoyalClean,
       'offers': _offers,
@@ -231,9 +234,9 @@ class _RegistrationState extends State<RegistrationPageRoyalClean> {
                 password: true,
                 autofillHints: const [AutofillHints.newPassword],
                 validator: (v) =>
-                    (v?.length ?? 0) >= 15 && (v?.length ?? 0) <= 128
+                    (v?.length ?? 0) >= 8 && (v?.length ?? 0) <= 128
                     ? null
-                    : 'Use entre 15 e 128 caracteres.',
+                    : 'Use entre 8 e 128 caracteres.',
               ),
               _field(
                 _confirmPassword,
@@ -265,7 +268,7 @@ class _RegistrationState extends State<RegistrationPageRoyalClean> {
               subtitle: const Text('Opcional • somente no cadastro inicial'),
               children: [
                 const Text(
-                  'Adicione para identificar a origem do seu cadastro. O código não concede benefícios ou permissões e não poderá ser incluído depois.',
+                  'O convite libera o perfil Mestre. Use o mesmo e-mail e telefone cadastrados pelo administrador. Sem código, sua conta será de consumidor. Não é possível aplicar o convite depois.',
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -278,11 +281,32 @@ class _RegistrationState extends State<RegistrationPageRoyalClean> {
                     labelText: 'Código de convite',
                   ),
                 ),
+                TextFormField(
+                  controller: _phone,
+                  enabled: !_busy,
+                  keyboardType: TextInputType.phone,
+                  autofillHints: const [AutofillHints.telephoneNumberNational],
+                  decoration: const InputDecoration(
+                    labelText: 'Telefone do convite com DDD',
+                    hintText: '11999998888',
+                  ),
+                  validator: (value) {
+                    if (_invite.text.trim().isEmpty) return null;
+                    final digits = (value ?? '').replaceAll(
+                      RegExp(r'[^0-9]'),
+                      '',
+                    );
+                    return RegExp(r'^(?:55)?[1-9][0-9]{9,10}$').hasMatch(digits)
+                        ? null
+                        : 'Informe o telefone do convite com DDD.';
+                  },
+                ),
                 TextButton(
                   onPressed: _busy
                       ? null
                       : () => setState(() {
                           _invite.clear();
+                          _phone.clear();
                           _error = null;
                         }),
                   child: const Text(
@@ -374,7 +398,11 @@ class _RegistrationState extends State<RegistrationPageRoyalClean> {
                         );
                       }
                     },
-              child: const Text('Já tenho conta / voltar ao login'),
+              child: Text(
+                _user == null
+                    ? 'Já tenho conta / voltar ao login'
+                    : 'Sair e voltar ao login',
+              ),
             ),
           ],
         ),

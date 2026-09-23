@@ -136,6 +136,7 @@ class _AccountSessionState extends State<_AccountSession> {
 }
 
 const roleLabelsRoyalClean = {
+  'master': 'Mestre',
   'consumer': 'Consumidor',
   'collaborator': 'Colaborador',
   'promoter': 'Promotor',
@@ -154,7 +155,9 @@ class RoleAreaRoyalClean extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Icon(
-            role == 'collaborator'
+            role == 'master'
+                ? Icons.workspace_premium_outlined
+                : role == 'collaborator'
                 ? Icons.badge_outlined
                 : role == 'promoter'
                 ? Icons.campaign_outlined
@@ -168,7 +171,9 @@ class RoleAreaRoyalClean extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            role == 'collaborator'
+            role == 'master'
+                ? 'Seu cadastro como Mestre foi autorizado por convite da administração.'
+                : role == 'collaborator'
                 ? 'Seu espaço de colaboração com a Royal Clean.'
                 : role == 'promoter'
                 ? 'Seu espaço de relacionamento e divulgação da Royal Clean.'

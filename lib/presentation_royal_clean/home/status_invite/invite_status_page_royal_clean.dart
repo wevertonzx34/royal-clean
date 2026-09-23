@@ -137,6 +137,7 @@ class _InviteStatusPageRoyalCleanState
         'inviteId': invite.inviteId,
         'inviteCode': invite.inviteCode,
         'fullName': invite.fullName,
+        'email': invite.email,
         'profile': invite.profile,
         'collaboratorFunction': invite.collaboratorFunction,
         'whatsapp': invite.whatsapp,

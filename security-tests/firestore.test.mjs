@@ -104,8 +104,9 @@ beforeEach(async () => {
 
 function invite(overrides = {}) {
   return {
-    inviteId: 'AAAAAAAAAAAAAAAAAAAA', inviteCode: 'UABCDEFG', fullName: 'Pessoa Teste',
-    profile: 'Cliente', collaboratorFunction: null, ddd: '11', phoneNumber: '999998888',
+    inviteId: 'AAAAAAAAAAAAAAAAAAAA', inviteCode: 'MABCDEFG', fullName: 'Pessoa Teste', email: 'pessoa@example.test',
+    expiresAt: Timestamp.fromMillis(Date.now() + 30 * 86400000),
+    profile: 'Mestre', collaboratorFunction: null, ddd: '11', phoneNumber: '999998888',
     whatsapp: '5511999998888', countryCode: '55', status: 'processing',
     registrationEnabled: true, isUsed: false, createdAt: serverTimestamp(),
     usedAt: null, usedByUid: null, createdByUid: 'admin-ok', createdByEmail: 'admin@example.test',
@@ -171,12 +172,12 @@ test('New invites may expire within 31 days; past and excessive expiration are r
   await assertFails(createInvite(admin, invite({expiresAt: Timestamp.fromMillis(Date.now() + 90 * 86400000)})));
 });
 for (const role of ['VP', 'Speed', 'Base', 'Web']) {
-  test(`Colaborador ${role}: consistent invitation accepted`, async () => {
-    await assertSucceeds(createInvite(admin, invite({profile:'Colaborador', collaboratorFunction:role, inviteCode:'CABCDEFG'})));
+  test(`Colaborador ${role}: legacy invitation creation rejected`, async () => {
+    await assertFails(createInvite(admin, invite({profile:'Colaborador', collaboratorFunction:role, inviteCode:'CABCDEFG'})));
   });
 }
-test('Promotor: consistent invitation accepted', async () => {
-  await assertSucceeds(createInvite(admin, invite({profile:'Promotor', inviteCode:'PABCDEFG'})));
+test('Promotor: legacy invitation creation rejected', async () => {
+  await assertFails(createInvite(admin, invite({profile:'Promotor', inviteCode:'PABCDEFG'})));
 });
 for (const [name, getDb] of [
   ['anonymous', () => visitor], ['member', () => member], ['inactive', () => inactive],
@@ -190,6 +191,8 @@ for (const [name, getDb] of [
   });
 }
 for (const [name, overrides] of [
+  ['missing recipient email', {email:''}], ['invalid recipient email', {email:'bad'}],
+  ['missing expiration', {expiresAt:null}],
   ['wrong profile', {profile:'Superadmin'}], ['invalid collaborator role', {profile:'Colaborador', collaboratorFunction:'Owner', inviteCode:'CABCDEFG'}],
   ['role on client', {collaboratorFunction:'VP'}], ['wrong code prefix', {inviteCode:'PABCDEFG'}],
   ['invalid code', {inviteCode:'U0000000'}], ['inconsistent phone', {whatsapp:'5511888888888'}],
@@ -210,11 +213,11 @@ test('Indexes cannot diverge from the invitation or add hidden fields', async ()
 test('Uniqueness: duplicate code and duplicate WhatsApp/profile are denied', async () => {
   await createInvite();
   await assertFails(createInvite(admin, invite({inviteId:'BBBBBBBBBBBBBBBBBBBB', phoneNumber:'999997777', whatsapp:'5511999997777'})));
-  await assertFails(createInvite(admin, invite({inviteId:'BBBBBBBBBBBBBBBBBBBB', inviteCode:'UABCDEFH'})));
+  await assertFails(createInvite(admin, invite({inviteId:'BBBBBBBBBBBBBBBBBBBB', inviteCode:'MABCDEFH'})));
 });
-test('Same phone may have different profiles, matching application behavior', async () => {
+test('New invitations cannot target legacy profiles', async () => {
   await createInvite();
-  await assertSucceeds(createInvite(admin, invite({inviteId:'BBBBBBBBBBBBBBBBBBBB', profile:'Promotor', inviteCode:'PABCDEFG'})));
+  await assertFails(createInvite(admin, invite({inviteId:'BBBBBBBBBBBBBBBBBBBB', profile:'Promotor', inviteCode:'PABCDEFG'})));
 });
 test('Existing invites/indexes cannot be changed, deleted, or enumerated via indexes', async () => {
   const refs = paths(invite()); await createInvite();

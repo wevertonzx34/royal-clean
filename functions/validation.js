@@ -1,5 +1,5 @@
 export const LEGAL_VERSION = '2026-09-22';
-export const ROLES = ['consumer', 'collaborator', 'promoter'];
+export const ROLES = ['consumer', 'collaborator', 'promoter', 'master'];
 
 export function validName(value) {
   return typeof value === 'string' && value.trim().length >= 2 &&
@@ -45,4 +45,12 @@ export function inviteProblem(invite, now) {
     return 'Código indisponível. Continue sem código para criar uma conta comum.';
   }
   return null;
+}
+
+// Brazilian national numbers or +55; normalize before comparing invitation data.
+export function normalizePhone(value) {
+  if (typeof value !== 'string' || !/^[+0-9()\s-]+$/.test(value)) return null;
+  const digits = value.replace(/\D/g, '');
+  const national = (digits.length === 12 || digits.length === 13) && digits.startsWith('55') ? digits.slice(2) : digits;
+  return /^[1-9][0-9]{9,10}$/.test(national) ? `55${national}` : null;
 }

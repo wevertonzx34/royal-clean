@@ -6,16 +6,16 @@ O código local está integrado. Isso não publica automaticamente regras, funç
 
 ## Comportamento implementado
 
-- Inicialização → prévia pública → botão Login. A prévia não depende de sessão nem do banco.
+- Inicialização → prévia pública → botão Login (visitante) ou Perfil (autenticado). O conteúdo público continua acessível sem autenticação.
 - Login por e-mail/senha, Google ou Apple. Recuperação de senha disponível.
-- “Novo usuário” abaixo de “Esqueci minha senha”. Nome, e-mail, confirmação de e-mail, senha e confirmação de senha. Convite expansível e opcional. Termos/privacidade acessíveis. Ofertas desmarcadas inicialmente.
+- “Novo usuário” e “Esqueci senha” acima do campo de e-mail. Nome, e-mail, confirmação de e-mail, senha e confirmação de senha. Convite expansível e opcional. Termos/privacidade acessíveis. Ofertas desmarcadas inicialmente.
 - Cadastro por senha: criação da identidade no Authentication, envio do link de verificação e conclusão no servidor após verificação. Se a pessoa interromper, pode entrar novamente e concluir os dados. A identidade no Authentication pode existir antes do perfil `users`; isso é um cadastro incompleto, sem acesso às áreas internas. Convite só é consumido ao concluir.
 - Google/Apple: aproveitam o e-mail fornecido pelo provedor, sem pedir outra senha; novo usuário completa nome, termos e convite opcional. Se o provedor não confirmar e-mail, a verificação é exigida. O usuário pode informar um nome quando o provedor não fornecer.
-- Todas as contas novas começam como **consumer**. O convite identifica origem e perfil de referência, sem conceder perfil, benefício, desconto ou comissão.
+- Sem convite, novas contas são **consumer**. Convite Mestre válido concede **master** após verificar o e-mail e conferir e-mail e telefone contra o convite no backend. Não concede administração ou benefícios comerciais.
 - Admin → botão “Usuários e perfis” no topo do painel → busca por e-mail completo, paginação e edição de consumidor/colaborador/promotor/ativo. Alterações são auditadas pelo servidor. Esse fluxo nunca cria administradores.
 - Cada perfil tem sua área, acesso à prévia e “Meus dados”. Pedidos, comissões e operações internas futuras não são simulados como funcionalidades prontas.
 - “Meus dados”: nome, ofertas e CPF/CNPJ opcionais. Documento validado no servidor, incluindo CNPJ alfanumérico, sem consulta de titularidade à Receita. Selecionar “Não informar / remover” e salvar remove o documento desse cadastro.
-- Convite inválido, utilizado, desativado ou expirado impede concluir **com aquele código**. Remover o código permite uma conta comum. Não existe aplicação posterior. Um novo convite tem prazo de 30 dias; convites antigos sem `expiresAt` continuam válidos conforme o estado anterior, preservando os dados existentes.
+- Convite inválido, utilizado, desativado ou expirado impede concluir **com aquele código**. Remover o código permite uma conta comum. Não existe aplicação posterior. Um novo convite tem prazo de 30 dias; convites antigos permanecem no histórico, mas não liberam novos cadastros: solicite um novo convite Mestre com e-mail, telefone e validade.
 - Sessão nativa persiste pelo Firebase. O antigo checkbox visual de “lembrar acesso”, que não mudava a persistência, foi substituído por informação clara e botão Sair nas áreas privadas.
 
 ## 1. Revisar os documentos antes de receber clientes reais
@@ -29,7 +29,7 @@ Dados de responsável/contato podem ser informados na compilação com `--dart-d
 No console do projeto correto:
 
 1. Authentication → Método de login: habilitar **E-mail/senha**.
-2. Nas configurações de política de senha: definir mínimo **15**, máximo **128** caracteres e política obrigatória para novos cadastros. O app aceita frases longas; não imponha requisitos de composição contraditórios sem adaptar as instruções da tela. Login de contas antigas continua aceitando a senha existente.
+2. Nas configurações de política de senha: definir mínimo **8**, máximo **128** caracteres e política obrigatória para novos cadastros. O app aceita frases longas; não imponha requisitos de composição contraditórios sem adaptar as instruções da tela. Login de contas antigas continua aceitando a senha existente.
 3. Ativar proteção contra enumeração de e-mails quando disponível. As mensagens de recuperação são neutras.
 4. Em Templates, ajustar nome Royal Clean, idioma e endereços autorizados dos e-mails de verificação e recuperação. Testar entrega e spam.
 5. Proteger as contas que administram o console Google com autenticação em duas etapas e conceder só os acessos necessários. A autenticação multifator de **usuários do app** não foi adicionada neste escopo.

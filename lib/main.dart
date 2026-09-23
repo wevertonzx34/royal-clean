@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter/foundation.dart';
@@ -25,6 +26,7 @@ void main() {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    if (kIsWeb) await FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
     await FirebaseAppCheck.instance.activate(
       providerAndroid: kDebugMode
           ? const AndroidDebugProvider()
@@ -42,6 +44,17 @@ class RoyalCleanApp extends StatelessWidget {
   final Future<void> firebaseInitialization;
 
   const RoyalCleanApp({super.key, required this.firebaseInitialization});
+
+  Stream<bool> _session() async* {
+    try {
+      await firebaseInitialization;
+      yield* FirebaseAuth.instance.authStateChanges().map(
+        (user) => user != null,
+      );
+    } catch (_) {
+      yield false;
+    }
+  }
 
   Widget _admin(WidgetBuilder builder) => AdminRouteGuardRoyalClean(
     firebaseInitialization: firebaseInitialization,
@@ -65,7 +78,8 @@ class RoyalCleanApp extends StatelessWidget {
         ),
         AppRoutesRoyalClean.login: (_) =>
             LoginPageRoyalClean(firebaseInitialization: firebaseInitialization),
-        AppRoutesRoyalClean.preview: (_) => const PreviewPageRoyalClean(),
+        AppRoutesRoyalClean.preview: (_) =>
+            PreviewPageRoyalClean(authenticated: _session()),
         '/register': (_) => RegistrationPageRoyalClean(
           firebaseInitialization: firebaseInitialization,
         ),
@@ -102,7 +116,7 @@ class RoyalCleanApp extends StatelessWidget {
       },
       onUnknownRoute: (settings) => MaterialPageRoute(
         settings: settings,
-        builder: (_) => const PreviewPageRoyalClean(),
+        builder: (_) => PreviewPageRoyalClean(authenticated: _session()),
       ),
     );
   }

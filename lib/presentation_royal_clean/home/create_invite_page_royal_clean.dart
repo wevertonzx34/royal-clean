@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core_royal_clean/services/invite_service_royal_clean.dart';
 import 'home_background_royal_clean.dart';
+import '../auth/account_ui_royal_clean.dart';
 
 class CreateInvitePageRoyalClean extends StatefulWidget {
   const CreateInvitePageRoyalClean({super.key});
@@ -18,18 +19,19 @@ class _CreateInvitePageRoyalCleanState
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _whatsappController = TextEditingController();
+  final _emailController = TextEditingController();
 
   bool _isGenerating = false;
   bool _isSaving = false;
   bool _inviteSaved = false;
 
   String _selectedProfile = InviteServiceRoyalClean.availableProfiles.first;
-  String? _selectedCollaboratorFunction;
   InvitePreviewData? _preview;
 
   @override
   void initState() {
     super.initState();
+    _emailController.addListener(_clearPreviewIfNeeded);
     _nameController.addListener(_clearPreviewIfNeeded);
     _whatsappController.addListener(_clearPreviewIfNeeded);
   }
@@ -38,6 +40,8 @@ class _CreateInvitePageRoyalCleanState
   void dispose() {
     _nameController.removeListener(_clearPreviewIfNeeded);
     _whatsappController.removeListener(_clearPreviewIfNeeded);
+    _emailController.removeListener(_clearPreviewIfNeeded);
+    _emailController.dispose();
     _nameController.dispose();
     _whatsappController.dispose();
     super.dispose();
@@ -51,8 +55,6 @@ class _CreateInvitePageRoyalCleanState
       });
     }
   }
-
-  bool get _isCollaborator => _selectedProfile == 'Colaborador';
 
   String? _validateName(String? value) {
     final text = value?.trim() ?? '';
@@ -96,11 +98,9 @@ class _CreateInvitePageRoyalCleanState
 
     final result = InviteServiceRoyalClean.generateInvitePreview(
       fullName: _nameController.text,
+      email: _emailController.text,
       whatsappInput: _whatsappController.text,
       profile: _selectedProfile,
-      collaboratorFunction: _isCollaborator
-          ? _selectedCollaboratorFunction
-          : null,
     );
 
     if (!mounted) return;
@@ -211,40 +211,9 @@ class _CreateInvitePageRoyalCleanState
         if (value == null) return;
         setState(() {
           _selectedProfile = value;
-          if (_selectedProfile != 'Colaborador') {
-            _selectedCollaboratorFunction = null;
-          }
           _preview = null;
           _inviteSaved = false;
         });
-      },
-    );
-  }
-
-  Widget _buildCollaboratorFunctionField() {
-    return DropdownButtonFormField<String>(
-      initialValue: _selectedCollaboratorFunction,
-      decoration: const InputDecoration(
-        labelText: 'Função',
-        prefixIcon: Icon(Icons.work_outline_rounded),
-      ),
-      items: InviteServiceRoyalClean.collaboratorFunctions
-          .map(
-            (role) => DropdownMenuItem<String>(value: role, child: Text(role)),
-          )
-          .toList(),
-      onChanged: (value) {
-        setState(() {
-          _selectedCollaboratorFunction = value;
-          _preview = null;
-          _inviteSaved = false;
-        });
-      },
-      validator: (_) {
-        if (_isCollaborator && _selectedCollaboratorFunction == null) {
-          return 'Selecione a função do colaborador.';
-        }
-        return null;
       },
     );
   }
@@ -265,6 +234,7 @@ class _CreateInvitePageRoyalCleanState
           Text('Preview do convite', style: theme.textTheme.titleMedium),
           const SizedBox(height: 14),
           _PreviewRow(label: 'Nome', value: preview.fullName),
+          _PreviewRow(label: 'E-mail', value: preview.email),
           _PreviewRow(label: 'Perfil', value: preview.profile),
           if (preview.profile == 'Colaborador' &&
               preview.collaboratorFunction != null)
@@ -371,79 +341,91 @@ class _CreateInvitePageRoyalCleanState
                             borderRadius: BorderRadius.circular(24),
                             border: Border.all(color: const Color(0xFF155A78)),
                           ),
-                          child: Form(
-                            key: _formKey,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Text(
-                                  'Novo convite de acesso',
-                                  style: theme.textTheme.titleLarge,
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  'Preencha nome, WhatsApp com DDD e perfil. Para Colaborador, selecione também a função. O convite será gerado primeiro em preview e só será salvo no Firebase após sua confirmação.',
-                                  style: theme.textTheme.bodyMedium,
-                                ),
-                                const SizedBox(height: 24),
-                                TextFormField(
-                                  controller: _nameController,
-                                  textCapitalization: TextCapitalization.words,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Nome',
-                                    hintText: 'Digite o nome completo',
-                                    prefixIcon: Icon(
-                                      Icons.person_outline_rounded,
-                                    ),
+                          child: AbsorbPointer(
+                            absorbing: _isSaving,
+                            child: Form(
+                              key: _formKey,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Text(
+                                    'Novo convite de acesso',
+                                    style: theme.textTheme.titleLarge,
                                   ),
-                                  validator: _validateName,
-                                ),
-                                const SizedBox(height: 16),
-                                TextFormField(
-                                  controller: _whatsappController,
-                                  keyboardType: TextInputType.phone,
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.allow(
-                                      RegExp(r'[0-9()\-\s]'),
-                                    ),
-                                    LengthLimitingTextInputFormatter(15),
-                                  ],
-                                  decoration: const InputDecoration(
-                                    labelText: 'WhatsApp com DDD',
-                                    hintText: '11999998888',
-                                    prefixIcon: Icon(
-                                      Icons.phone_iphone_rounded,
-                                    ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    'Preencha nome, telefone com DDD e e-mail. O convite libera o cadastro como Mestre somente com o mesmo e-mail verificado e telefone. Confira os dados antes de salvar. Validade: 30 dias e uso único.',
+                                    style: theme.textTheme.bodyMedium,
                                   ),
-                                  validator: _validateWhatsapp,
-                                ),
-                                const SizedBox(height: 16),
-                                _buildProfileField(),
-                                if (_isCollaborator) ...[
+                                  const SizedBox(height: 24),
+                                  TextFormField(
+                                    controller: _nameController,
+                                    textCapitalization:
+                                        TextCapitalization.words,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Nome',
+                                      hintText: 'Digite o nome completo',
+                                      prefixIcon: Icon(
+                                        Icons.person_outline_rounded,
+                                      ),
+                                    ),
+                                    validator: _validateName,
+                                  ),
                                   const SizedBox(height: 16),
-                                  _buildCollaboratorFunctionField(),
-                                ],
-                                const SizedBox(height: 22),
-                                ElevatedButton(
-                                  onPressed: _isGenerating
-                                      ? null
-                                      : _generatePreview,
-                                  child: _isGenerating
-                                      ? const SizedBox(
-                                          width: 22,
-                                          height: 22,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2.4,
-                                            color: Colors.black,
-                                          ),
-                                        )
-                                      : const Text('Gerar convite'),
-                                ),
-                                if (_preview != null) ...[
+                                  TextFormField(
+                                    controller: _whatsappController,
+                                    keyboardType: TextInputType.phone,
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.allow(
+                                        RegExp(r'[0-9()\-\s]'),
+                                      ),
+                                      LengthLimitingTextInputFormatter(15),
+                                    ],
+                                    decoration: const InputDecoration(
+                                      labelText: 'Telefone com DDD',
+                                      hintText: '11999998888',
+                                      prefixIcon: Icon(
+                                        Icons.phone_iphone_rounded,
+                                      ),
+                                    ),
+                                    validator: _validateWhatsapp,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  TextFormField(
+                                    controller: _emailController,
+                                    keyboardType: TextInputType.emailAddress,
+                                    autocorrect: false,
+                                    decoration: const InputDecoration(
+                                      labelText: 'E-mail',
+                                      prefixIcon: Icon(Icons.alternate_email),
+                                    ),
+                                    validator: validateEmailRoyalClean,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  _buildProfileField(),
+
                                   const SizedBox(height: 22),
-                                  _buildPreviewCard(context, _preview!),
+                                  ElevatedButton(
+                                    onPressed: _isGenerating
+                                        ? null
+                                        : _generatePreview,
+                                    child: _isGenerating
+                                        ? const SizedBox(
+                                            width: 22,
+                                            height: 22,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2.4,
+                                              color: Colors.black,
+                                            ),
+                                          )
+                                        : const Text('Gerar convite'),
+                                  ),
+                                  if (_preview != null) ...[
+                                    const SizedBox(height: 22),
+                                    _buildPreviewCard(context, _preview!),
+                                  ],
                                 ],
-                              ],
+                              ),
                             ),
                           ),
                         ),

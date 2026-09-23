@@ -72,6 +72,7 @@ class InviteStatusDetailsPageRoyalClean extends StatelessWidget {
                     ),
                     const SizedBox(height: 18),
                     _row(context, 'Nome', _stringValue('fullName')),
+                    _row(context, 'E-mail', _stringValue('email')),
                     _row(context, 'Perfil', _stringValue('profile')),
                     if (_stringValue('collaboratorFunction') != '-')
                       _row(
