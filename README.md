@@ -6,11 +6,16 @@ Versão atual: **1.0.3+4**, declarada em `pubspec.yaml`.
 
 ## Funcionalidades
 
-- Login administrativo.
+- Login por e-mail/senha, Google e Apple, com configuração dos provedores pendente nos consoles.
+- Cadastro com confirmação de e-mail/senha, verificação do e-mail, convite opcional e preferências de ofertas.
+- Áreas de consumidor, colaborador, promotor e administrador; gestão de perfis pelo admin.
+- Meus dados com CPF/CNPJ opcional, gravado por backend e privado ao titular.
 - Página inicial pública com vitrine, categorias e notícias demonstrativas.
 - Criação e consulta de convites para Cliente, Colaborador e Promotor.
 - Compartilhamento de convites pelo WhatsApp.
 - Rotas administrativas protegidas por autenticação e confirmação de permissão ativa no Firestore.
+
+**Ativação do cadastro:** consulte [o guia de Firebase, OAuth, App Check e backend](docs/ativacao-cadastro-firebase.md). Os arquivos locais estão preparados, mas regras e funções precisam ser publicados e os provedores precisam ser configurados. As telas de termos e privacidade contêm minutas para revisão antes da abertura pública dos cadastros.
 
 ## Inicialização no Android
 

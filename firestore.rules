@@ -35,6 +35,24 @@ service cloud.firestore {
       allow list, create, update, delete: if false;
     }
 
+    // Cadastro, referência de convite e permissões são gravados só pelo backend.
+    // O titular pode consultar o próprio estado, inclusive para entender bloqueios.
+    match /users/{uid} {
+      allow get: if signedIn() &&
+        ((request.auth.uid == uid && request.auth.token.email_verified == true) || activeAdmin());
+      allow list: if signedIn() && activeAdmin();
+      allow create, update, delete: if false;
+    }
+
+    // CPF/CNPJ ficam separados da listagem de usuários e privados ao titular.
+    match /personal_data/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid &&
+        (activeAdmin() || (request.auth.token.email_verified == true &&
+          !exists(/databases/$(database)/documents/admin/$(uid)) &&
+          get(/databases/$(database)/documents/users/$(uid)).data.active == true));
+      allow list, create, update, delete: if false;
+    }
+
     function validProfile(data) {
       return data.profile in ['Cliente', 'Colaborador', 'Promotor']
         && ((data.profile == 'Colaborador'
@@ -78,12 +96,20 @@ service cloud.firestore {
     }
 
     function validInvite(data, id) {
-      return exactFields(data, [
+      return data.keys().hasAll([
           'inviteId', 'inviteCode', 'fullName', 'profile',
           'collaboratorFunction', 'ddd', 'phoneNumber', 'whatsapp',
           'countryCode', 'status', 'registrationEnabled', 'isUsed',
           'createdAt', 'usedAt', 'usedByUid', 'createdByUid', 'createdByEmail'
         ])
+        && data.keys().hasOnly([
+          'inviteId', 'inviteCode', 'fullName', 'profile',
+          'collaboratorFunction', 'ddd', 'phoneNumber', 'whatsapp',
+          'countryCode', 'status', 'registrationEnabled', 'isUsed',
+          'createdAt', 'usedAt', 'usedByUid', 'createdByUid', 'createdByEmail', 'expiresAt'
+        ])
+        && (!('expiresAt' in data) || (data.expiresAt is timestamp
+          && data.expiresAt > request.time && data.expiresAt <= request.time + duration.value(31, 'd')))
         && id.matches('^[a-zA-Z0-9]{20}$')
         && data.inviteId == id
         && text(data.fullName, 3, 160)
@@ -115,8 +141,7 @@ service cloud.firestore {
       allow create: if signedIn() && activeAdmin()
         && validInvite(request.resource.data, id)
         && inviteHasIndexes(request.resource.data);
-      // O resgate/consumo do convite será implementado no backend.
-      // O aplicativo atual não edita nem exclui convites.
+      // Somente a função registerAccount consome convites via Admin SDK.
       allow update, delete: if false;
     }
 

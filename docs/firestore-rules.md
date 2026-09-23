@@ -4,6 +4,8 @@ Arquivo para copiar: `../firestore.rules`. Projeto: **royal-clean-fire**.
 
 Este conjunto cobre o contrato do aplicativo atual e define um contrato inicial para produtos e notícias. Não é uma garantia de segurança absoluta nem uma implementação de funcionalidades futuras. As regras não foram publicadas automaticamente.
 
+O cadastro e os perfis agora incluem backend em `functions/`. Consulte [ativação completa](ativacao-cadastro-firebase.md): publicar apenas as regras não ativa as funções, o Google, a Apple ou o App Check.
+
 ## Publicar no Firebase
 
 1. Abra o projeto `royal-clean-fire`.
@@ -42,9 +44,12 @@ Contas autenticadas comuns, contas sem documento administrativo, administradores
 - Os índices precisam reproduzir exatamente os dados do convite.
 - Um mesmo telefone pode ter perfis diferentes, mas não convites duplicados para o mesmo perfil.
 - Leitura de convites e consulta individual dos índices somente para administradores ativos.
-- Atualização e exclusão de convites/índices bloqueadas no cliente. Esses fluxos não existem no aplicativo atual.
+- Novos convites incluem `expiresAt`, com validade de 30 dias; regras aceitam até 31 dias para acomodar diferenças pequenas de relógio. Convites legados sem esse campo continuam compatíveis.
+- Atualização e exclusão de convites/índices bloqueadas no cliente. O backend consome o convite em transação na conclusão do cadastro.
 
-**Resgate do convite:** não será permitido consultar códigos livremente ou marcar convites como utilizados pelo cliente. O futuro cadastro deverá validar posse/identidade, unicidade e consumo em um backend confiável. As regras atuais não implementam esse resgate.
+**Resgate do convite:** a função `registerAccount` exige identidade autenticada, e-mail verificado e App Check, valida o estado do convite e consome o código junto com a criação do perfil. O código é apenas referência de origem; não comprova vínculo, não concede perfil e não pode ser incluído depois. O aplicativo não pode consultar índices de convites como usuário comum.
+
+**Perfis e dados pessoais:** `users/{uid}` pode ser lido pelo titular verificado e pelo admin ativo; somente backend grava. `personal_data/{uid}` é privado ao titular autorizado e somente backend grava. Alteração de perfil passa por `setUserRole`; auditoria e contadores de tentativas ficam fechados ao cliente.
 
 ## Contrato da futura vitrine pública
 
@@ -74,11 +79,11 @@ Administradores ativos podem criar, editar, publicar, despublicar e excluir esse
 ## Limites e próximas etapas
 
 - Authentication valida credenciais; regras do Firestore autorizam operações no banco. Regras não impedem por si só a criação de contas no Authentication.
-- E-mail verificado e MFA não são exigidos neste arquivo, pois o aplicativo atual ainda não implementa esses fluxos. Devem ser tratados antes da liberação final do painel em produção.
+- Novos usuários comuns precisam de e-mail verificado. A política dos administradores existentes foi preservada; MFA dos usuários do aplicativo não foi implementado.
 - App Check deve ser configurado e validado no aplicativo antes de ativar a exigência no console.
 - Cloud Storage usa regras próprias; este arquivo não autoriza upload de imagens.
 - O módulo visual Controle de regras não publica regras de segurança do Firebase.
-- Todo caminho não declarado permanece bloqueado, incluindo faturamento, integrações e cadastros de usuários futuros.
+- Todo caminho não declarado permanece bloqueado, incluindo faturamento e integrações.
 - O SDK Admin e acessos administrativos do console não ficam sujeitos a estas regras. Suas permissões IAM e a validação no backend precisam de controle próprio.
 
 ## Testes locais
@@ -87,7 +92,7 @@ Em `security-tests`, execute `npm ci` e depois `npm test`, usando Java compatív
 
 Os testes usam somente o projeto fictício `demo-royal-clean` no emulador `127.0.0.1:8185`. Eles não alteram o projeto Firebase real. A suíte cobre login, escalada de privilégios, contas inativas, transações e duplicidade de convites, campos inválidos, rascunhos, consultas públicas e bloqueio de caminhos desconhecidos.
 
-Validação em 21/09/2026: **41 testes aprovados, zero falhas**, com Firebase CLI 15.30.2, emulador Firestore 1.22.0 e `@firebase/rules-unit-testing` 5.0.2. O login real no aplicativo ainda deverá ser verificado após a publicação no console.
+Validação em 22/09/2026: a suíte inclui regras e handlers do backend, com Auth e Firestore locais. O login real e o App Check ainda deverão ser verificados após publicar as regras/funções e configurar os consoles.
 
 ## Referências oficiais
 

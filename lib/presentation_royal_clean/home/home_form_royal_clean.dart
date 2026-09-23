@@ -41,7 +41,7 @@ class HomeFormRoyalClean extends StatelessWidget {
         const SizedBox(height: 18),
         HomePrimaryButtonRoyalClean(
           title: 'Controle de acesso',
-          subtitle: 'Gerencie convites e autenticação de novos usuários.',
+          subtitle: 'Gerencie convites de identificação de novos cadastros.',
           icon: Icons.admin_panel_settings_rounded,
           onPressed: onAccessControlPressed,
         ),

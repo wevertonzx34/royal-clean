@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "589116886810",
+    "firebase_url": "https://royal-clean-fire-default-rtdb.firebaseio.com",
     "project_id": "royal-clean-fire",
     "storage_bucket": "royal-clean-fire.firebasestorage.app"
   },
@@ -12,7 +13,20 @@
           "package_name": "com.example.royal_clean"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "589116886810-lttatpan3q24bjvjtkocfvk0nudd9dea.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.royal_clean",
+            "certificate_hash": "b0d68faa7bc80e7d16b07c5409e4a486a8a9a20c"
+          }
+        },
+        {
+          "client_id": "589116886810-npbrnhf0r6acq3q1gmuhnn5g8sonseom.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyD6PkOHwUxBwjc7ljDNZC8vzfr-h3OsZ0I"
@@ -20,7 +34,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "589116886810-npbrnhf0r6acq3q1gmuhnn5g8sonseom.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

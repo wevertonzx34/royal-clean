@@ -18,6 +18,7 @@
                                                   }
                                   }
                 },
+    "functions": [{"source": "functions", "codebase": "royal-clean-accounts", "runtime": "nodejs22"}],
     "firestore":  {
                       "rules":  "firestore.rules"
                   }

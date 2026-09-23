@@ -31,6 +31,63 @@ before(async () => {
   noEmail = env.authenticatedContext('noemail').firestore();
 });
 after(async () => { if (env) await env.cleanup(); });
+
+test('Accounts: verified owner and active admin can read profiles; strangers and unverified accounts cannot', async () => {
+  await env.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(context.firestore(), 'users/member'), {role:'consumer',active:true,email:'member@example.test'});
+  });
+  const verified = env.authenticatedContext('member', {email:'member@example.test',email_verified:true}).firestore();
+  await assertSucceeds(getDoc(doc(verified,'users/member')));
+  await assertSucceeds(getDoc(doc(admin,'users/member')));
+  await assertSucceeds(getDocs(collection(admin,'users')));
+  await assertFails(getDoc(doc(visitor,'users/member')));
+  await assertFails(getDoc(doc(member,'users/member')));
+  await assertFails(getDoc(doc(verified,'users/another')));
+  await assertFails(getDocs(collection(verified,'users')));
+  await assertFails(getDocs(collection(inactive,'users')));
+});
+test('Accounts: all client profile writes, role escalation and late invites are denied, including admin writes', async () => {
+  const verified = env.authenticatedContext('member', {email:'member@example.test',email_verified:true}).firestore();
+  await env.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(context.firestore(), 'users/member'), {role:'consumer',active:true});
+  });
+  for (const db of [verified,admin]) {
+    await assertFails(setDoc(doc(db,'users/new-user'), {role:'admin',active:true}));
+    await assertFails(updateDoc(doc(db,'users/member'), {role:'collaborator'}));
+    await assertFails(updateDoc(doc(db,'users/member'), {referral:{code:'UABCDEFG'}}));
+    await assertFails(deleteDoc(doc(db,'users/member')));
+  }
+});
+test('Accounts: personal documents are owner-only and writes are backend-only', async () => {
+  const verified = env.authenticatedContext('member', {email:'member@example.test',email_verified:true}).firestore();
+  await env.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(context.firestore(), 'users/member'), {role:'consumer',active:true});
+    await setDoc(doc(context.firestore(), 'personal_data/member'), {document:'52998224725'});
+  });
+  await assertSucceeds(getDoc(doc(verified,'personal_data/member')));
+  for (const db of [visitor,member,admin]) await assertFails(getDoc(doc(db,'personal_data/member')));
+  await assertFails(getDocs(collection(verified,'personal_data')));
+  await assertFails(setDoc(doc(verified,'personal_data/member'), {document:'other'}));
+  await env.withSecurityRulesDisabled(async context => {
+    await updateDoc(doc(context.firestore(),'users/member'), {active:false});
+  });
+  await assertFails(getDoc(doc(verified,'personal_data/member')));
+  await assertSucceeds(getDoc(doc(verified,'users/member')));
+});
+test('Inactive administrator cannot use a leftover consumer profile to read personal data', async () => {
+  const account = env.authenticatedContext('inactive',{email:'inactive@example.test',email_verified:true}).firestore();
+  await env.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(context.firestore(),'users/inactive'), {active:true,role:'consumer'});
+    await setDoc(doc(context.firestore(),'personal_data/inactive'), {document:'52998224725'});
+  });
+  await assertFails(getDoc(doc(account,'personal_data/inactive')));
+});
+test('Accounts: audit and rate limits are not exposed to clients', async () => {
+  for (const name of ['account_audit','account_rate_limits']) {
+    await assertFails(getDocs(collection(admin,name)));
+    await assertFails(setDoc(doc(member,`${name}/fake`),{count:0}));
+  }
+});
 beforeEach(async () => {
   await env.clearFirestore();
   await env.withSecurityRulesDisabled(async context => {
@@ -103,6 +160,15 @@ test('Actual application transaction: two index reads followed by three writes s
     tx.set(doc(admin, refs.code), values.code);
   }));
   await assertSucceeds(getDocs(query(collection(admin, 'access_invites'), orderBy('createdAt', 'desc'))));
+});
+
+test('New invites may expire within 31 days; past and excessive expiration are rejected', async () => {
+  await assertSucceeds(createInvite(admin, invite({expiresAt: Timestamp.fromMillis(Date.now() + 30 * 86400000)})));
+  await env.clearFirestore();
+  await env.withSecurityRulesDisabled(context => setDoc(doc(context.firestore(), 'admin/admin-ok'),
+    {email:'admin@example.test', eAdministrador:true, ativo:true}));
+  await assertFails(createInvite(admin, invite({expiresAt: Timestamp.fromMillis(1)})));
+  await assertFails(createInvite(admin, invite({expiresAt: Timestamp.fromMillis(Date.now() + 90 * 86400000)})));
 });
 for (const role of ['VP', 'Speed', 'Base', 'Web']) {
   test(`Colaborador ${role}: consistent invitation accepted`, async () => {
@@ -199,7 +265,7 @@ for (const kind of ['products', 'news']) {
   });
 }
 test('Unknown collections and nested documents remain denied even to admins', async () => {
-  for (const path of ['billing/secret','users/member','admin/admin-ok/private/secret','products/example/internal/secret']) {
+  for (const path of ['billing/secret','users/member/private/secret','admin/admin-ok/private/secret','products/example/internal/secret']) {
     await assertFails(setDoc(doc(admin, path), {value:1}));
     await assertFails(getDoc(doc(admin, path)));
   }

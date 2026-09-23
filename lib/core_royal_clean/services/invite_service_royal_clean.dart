@@ -174,6 +174,9 @@ class InviteServiceRoyalClean {
           'registrationEnabled': true,
           'isUsed': false,
           'createdAt': FieldValue.serverTimestamp(),
+          'expiresAt': Timestamp.fromDate(
+            DateTime.now().add(const Duration(days: 30)),
+          ),
           'usedAt': null,
           'usedByUid': null,
           'createdByUid': currentUser.uid,
@@ -268,14 +271,15 @@ class InviteServiceRoyalClean {
     return '''
 Olá, $fullName!
 
-Seu convite de acesso ao app Royal Clean foi gerado com sucesso.
+Seu convite de identificação para o app Royal Clean foi gerado com sucesso.
 
-Perfil do convite: $profile
+Referência de perfil: $profile
 $functionLine
 CÓDIGO DO CONVITE
 $inviteCode
 
-Guarde esse código com segurança. Ele será usado no cadastro do aplicativo.
+O código é opcional e vale por 30 dias. Informe somente no cadastro inicial.
+Ele identifica a origem do cadastro, sem conceder benefícios ou permissões.
 
 Equipe Royal Clean
 ''';

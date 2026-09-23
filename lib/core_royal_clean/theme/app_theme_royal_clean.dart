@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class AppThemeRoyalClean {
   static ThemeData get theme {
@@ -25,6 +26,7 @@ class AppThemeRoyalClean {
         error: danger,
       ),
       appBarTheme: const AppBarTheme(
+        systemOverlayStyle: SystemUiOverlayStyle.light,
         backgroundColor: Colors.transparent,
         foregroundColor: textPrimary,
         elevation: 0,

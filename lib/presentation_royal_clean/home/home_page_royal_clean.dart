@@ -22,6 +22,21 @@ class HomePageRoyalClean extends StatelessWidget {
     final email = AuthServiceRoyalClean.currentUser?.email ?? '-';
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Painel administrativo'),
+        actions: [
+          IconButton(
+            tooltip: 'Usuários e perfis',
+            onPressed: () => Navigator.pushNamed(context, '/users'),
+            icon: const Icon(Icons.manage_accounts),
+          ),
+          IconButton(
+            tooltip: 'Meus dados',
+            onPressed: () => Navigator.pushNamed(context, '/my-data'),
+            icon: const Icon(Icons.person_outline),
+          ),
+        ],
+      ),
       body: HomeBackgroundRoyalClean(
         child: LayoutBuilder(
           builder: (context, constraints) {

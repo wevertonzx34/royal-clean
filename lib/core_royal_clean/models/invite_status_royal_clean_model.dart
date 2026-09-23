@@ -12,6 +12,7 @@ class InviteStatusRoyalCleanModel {
   final bool isUsed;
   final DateTime? createdAt;
   final DateTime? usedAt;
+  final DateTime? expiresAt;
   final String? usedByUid;
   final String? createdByUid;
   final String? createdByEmail;
@@ -28,6 +29,7 @@ class InviteStatusRoyalCleanModel {
     required this.isUsed,
     required this.createdAt,
     required this.usedAt,
+    this.expiresAt,
     required this.usedByUid,
     required this.createdByUid,
     required this.createdByEmail,
@@ -67,13 +69,18 @@ class InviteStatusRoyalCleanModel {
       isUsed: map['isUsed'] == true,
       createdAt: createdAt,
       usedAt: usedAt,
+      expiresAt: map['expiresAt'] is Timestamp
+          ? (map['expiresAt'] as Timestamp).toDate()
+          : null,
       usedByUid: map['usedByUid']?.toString(),
       createdByUid: map['createdByUid']?.toString(),
       createdByEmail: map['createdByEmail']?.toString(),
     );
   }
 
-  bool get isActive => registrationEnabled && !isUsed;
+  bool get isExpired =>
+      expiresAt != null && !expiresAt!.isAfter(DateTime.now());
+  bool get isActive => registrationEnabled && !isUsed && !isExpired;
 
   bool get isProcessing => status.trim().toLowerCase() == 'processing';
 }

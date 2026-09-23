@@ -63,7 +63,7 @@ class AccessControlPageRoyalClean extends StatelessWidget {
                                 ),
                               ),
                               child: Text(
-                                'Gerencie convites de autenticação para novos usuários do app Royal Clean.',
+                                'Gerencie convites para identificar a origem dos novos cadastros, sem conceder benefícios ou permissões.',
                                 style: theme.textTheme.bodyMedium,
                               ),
                             ),
@@ -71,7 +71,7 @@ class AccessControlPageRoyalClean extends StatelessWidget {
                             HomePrimaryButtonRoyalClean(
                               title: 'Criar convite',
                               subtitle:
-                                  'Gerar acesso para novo usuário do app Royal Clean.',
+                                  'Criar código opcional de identificação, válido por 30 dias.',
                               icon: Icons.person_add_alt_1_rounded,
                               onPressed: () {
                                 Navigator.pushNamed(

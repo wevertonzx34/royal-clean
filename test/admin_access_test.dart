@@ -47,6 +47,7 @@ void main() {
         AppRoutesRoyalClean.createInvite,
         AppRoutesRoyalClean.inviteStatus,
         AppRoutesRoyalClean.inviteStatusDetails,
+        '/users',
       ]) {
         navigator.pushNamed(route, arguments: <String, dynamic>{});
         await tester.pumpAndSettle();

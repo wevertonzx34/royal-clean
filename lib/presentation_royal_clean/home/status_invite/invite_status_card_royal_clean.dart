@@ -30,6 +30,7 @@ class InviteStatusCardRoyalClean extends StatelessWidget {
 
   String _statusLabel() {
     if (invite.isUsed) return 'Usado';
+    if (invite.isExpired) return 'Expirado';
     if (invite.isActive) return 'Ativo';
     if (invite.isProcessing) return 'Processing';
     return invite.status.isEmpty ? '-' : invite.status;
