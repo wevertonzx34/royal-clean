@@ -236,6 +236,47 @@ service cloud.firestore {
       allow delete: if signedIn() && activeAdmin();
     }
 
+    // Projeções públicas independentes dos cadastros e documentos privados.
+    function validPartnerPublication(data) {
+      return exactFields(data, [
+          'title', 'description', 'imageUrl', 'published', 'createdAt', 'updatedAt'
+        ])
+        && text(data.title, 1, 120)
+        && text(data.description, 1, 2000)
+        && text(data.imageUrl, 9, 2048)
+        && data.imageUrl.matches('^https://.+$')
+        && data.published is bool
+        && data.createdAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    match /public_partners/{id} {
+      allow get, list: if resource.data.published == true
+        || (signedIn() && activeAdmin());
+      allow create: if signedIn() && activeAdmin()
+        && validPartnerPublication(request.resource.data)
+        && newPublication(request.resource.data);
+      allow update: if signedIn() && activeAdmin()
+        && validPartnerPublication(request.resource.data)
+        && editedPublication(request.resource.data);
+      allow delete: if signedIn() && activeAdmin();
+    }
+
+    // Quatro posições fixas: não é possível criar um quinto anúncio no cliente.
+    match /partner_ads/{id} {
+      allow get, list: if resource.data.published == true
+        || (signedIn() && activeAdmin());
+      allow create: if signedIn() && activeAdmin()
+        && id in ['1', '2', '3', '4']
+        && validPartnerPublication(request.resource.data)
+        && newPublication(request.resource.data);
+      allow update: if signedIn() && activeAdmin()
+        && id in ['1', '2', '3', '4']
+        && validPartnerPublication(request.resource.data)
+        && editedPublication(request.resource.data);
+      allow delete: if signedIn() && activeAdmin();
+    }
+
     // Novas coleções e subcoleções permanecem fechadas por padrão.
     match /{document=**} {
       allow read, write: if false;

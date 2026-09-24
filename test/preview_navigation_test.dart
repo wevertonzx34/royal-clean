@@ -20,6 +20,56 @@ Widget testApp({bool splash = false}) => MaterialApp(
 
 void main() {
   testWidgets(
+    'Notifications open and partnerships shortcut scrolls to section',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 720);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(testApp());
+      await tester.pumpAndSettle();
+      final about = find.widgetWithText(TextButton, 'Sobre nós');
+      final account = find.widgetWithText(FilledButton, 'Login');
+      expect(
+        tester.getCenter(about).dx,
+        closeTo(tester.getCenter(account).dx, .1),
+      );
+      final menuTop = tester.getTopLeft(find.text('Novidades')).dy;
+      for (final label in [
+        'Produtos',
+        'Novidades',
+        'Desempenho',
+        'Sobre nós',
+      ]) {
+        expect(find.text(label).hitTestable(), findsOneWidget);
+      }
+      await tester.tap(find.byTooltip('Notificações'));
+      await tester.pumpAndSettle();
+      expect(find.text('Nenhuma notificação por aqui.'), findsOneWidget);
+      await tester.tap(find.byTooltip('Fechar notificações'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Novidades'));
+      await tester.pumpAndSettle();
+      expect(find.text('NOSSA PARCERIA').hitTestable(), findsOneWidget);
+      expect(tester.getTopLeft(find.text('Novidades')).dy, menuTop);
+      for (final label in [
+        'Produtos',
+        'Novidades',
+        'Desempenho',
+        'Sobre nós',
+      ]) {
+        expect(find.text(label).hitTestable(), findsOneWidget);
+      }
+      await tester.tap(find.text('Sobre nós'));
+      await tester.pumpAndSettle();
+      expect(find.text('FIQUE POR DENTRO').hitTestable(), findsOneWidget);
+      await tester.tap(find.text('Desempenho'));
+      await tester.pumpAndSettle();
+      expect(find.text('NOSSA PARCERIA').hitTestable(), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
     'Preview follows session changes and profile routes through account guard',
     (tester) async {
       final session = StreamController<bool>();
@@ -78,6 +128,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Produtos'));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Nichos'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.widgetWithText(ChoiceChip, 'Kits'));
     await tester.tap(find.widgetWithText(ChoiceChip, 'Kits'));
     await tester.pumpAndSettle();
     expect(find.text('Multiuso essencial'), findsNothing);
@@ -110,4 +163,69 @@ void main() {
       expect(tester.takeException(), isNull);
     }
   });
+
+  testWidgets(
+    'Product search matches names codes and accent-insensitive tags',
+    (tester) async {
+      await tester.pumpWidget(testApp());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Produtos'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Nichos'));
+      await tester.pumpAndSettle();
+      final lensPosition = tester.getCenter(
+        find.byTooltip('Pesquisar produtos'),
+      );
+      await tester.ensureVisible(find.widgetWithText(ChoiceChip, 'Ofertas'));
+      expect(
+        tester.getCenter(find.byTooltip('Pesquisar produtos')).dx,
+        lensPosition.dx,
+      );
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Ofertas'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Nenhum produto encontrado. Tente outro termo ou nicho.'),
+        findsOneWidget,
+      );
+      await tester.tap(find.byTooltip('Pesquisar produtos'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ChoiceChip), findsNothing);
+      expect(find.text('Nichos'), findsOneWidget);
+      expect(find.byType(TextField), findsNothing);
+      // Repeat the niches/lens cycle without losing the search behavior.
+      await tester.tap(find.text('Nichos'));
+      await tester.pumpAndSettle();
+      expect(find.text('Nichos'), findsNothing);
+      expect(find.byTooltip('Rolar a lista de nichos'), findsOneWidget);
+      await tester.tap(find.byTooltip('Rolar a lista de nichos'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Pesquisar produtos'));
+      await tester.pumpAndSettle();
+      expect(find.text('Nichos'), findsOneWidget);
+      await tester.tap(find.byTooltip('Pesquisar produtos'));
+      await tester.pumpAndSettle();
+      for (final term in ['Detergente', 'demo-002', 'loucas']) {
+        await tester.enterText(find.byType(TextField), term);
+        if (term == 'demo-002') {
+          await tester.tap(find.byTooltip('Pesquisar produtos'));
+        } else {
+          await tester.testTextInput.receiveAction(TextInputAction.search);
+        }
+        await tester.pumpAndSettle();
+        expect(find.text('Nichos'), findsNothing);
+        expect(find.text('Detergente fresh'), findsOneWidget);
+        expect(find.text('Multiuso essencial'), findsNothing);
+        expect(tester.takeException(), isNull);
+      }
+      await tester.tap(find.byTooltip('Fechar pesquisa'));
+      await tester.pumpAndSettle();
+      expect(find.text('Nichos'), findsOneWidget);
+      expect(find.byType(TextField), findsNothing);
+      await tester.tap(find.byTooltip('Pesquisar produtos'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Pesquisar produtos'));
+      await tester.pumpAndSettle();
+      expect(find.text('Nichos'), findsOneWidget);
+    },
+  );
 }

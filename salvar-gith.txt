@@ -1,0 +1,8 @@
+cd /d C:\royal_clean && git add . && git commit -m "Atualização do aplicativo" && git push
+
+
+---
+
+6 - 20X30
+6 - 40X60
+SABONETE E ALCOOL SPRAY

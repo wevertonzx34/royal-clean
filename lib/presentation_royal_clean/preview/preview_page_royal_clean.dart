@@ -4,19 +4,27 @@ import 'package:flutter/services.dart';
 import '../../core_royal_clean/constants/app_routes_royal_clean.dart';
 import '../../core_royal_clean/services/biometric_access_royal_clean.dart';
 import 'preview_content_royal_clean.dart';
+import 'partnership_content_royal_clean.dart';
+import 'partnership_section_royal_clean.dart';
+import 'product_filters_royal_clean.dart';
 
 const _navy = Color(0xFF092F43);
 const _teal = Color(0xFF007F9F);
 const _muted = Color(0xFF607783);
 const _paper = Color(0xFFF5F8FA);
+const _accountColumnWidth = 104.0;
 
 class PreviewPageRoyalClean extends StatefulWidget {
   final Stream<bool>? authenticated;
   final Future<void> Function()? prepareAccount;
+  final Stream<List<PublicPartnerRoyalClean>>? partners;
+  final Stream<List<PublicPartnerRoyalClean>>? partnerAds;
   const PreviewPageRoyalClean({
     super.key,
     this.authenticated,
     this.prepareAccount,
+    this.partners,
+    this.partnerAds,
   });
 
   @override
@@ -26,7 +34,9 @@ class PreviewPageRoyalClean extends StatefulWidget {
 class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
   final _productsKey = GlobalKey();
   final _newsKey = GlobalKey();
+  final _partnersKey = GlobalKey();
   String _category = 'Todos';
+  String _searchQuery = '';
   bool _openingAccount = false;
   bool _signedIn = false;
   late final _session = widget.authenticated ?? Stream<bool>.value(false);
@@ -80,6 +90,78 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
         curve: Curves.easeOutCubic,
       );
     }
+  }
+
+  Widget _menuButton(String title, VoidCallback? onPressed) => TextButton(
+    onPressed: onPressed,
+    style: TextButton.styleFrom(
+      minimumSize: const Size(0, 48),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+    ),
+    child: FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Text(title, maxLines: 1, softWrap: false),
+    ),
+  );
+
+  void _openNotifications() {
+    showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      builder: (context) => SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Notificações',
+                      style: TextStyle(
+                        color: _navy,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Fechar notificações',
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close_rounded, color: _navy),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              const Icon(Icons.public_rounded, color: _teal, size: 44),
+              const SizedBox(height: 16),
+              const Text(
+                'Nenhuma notificação por aqui.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: _navy,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Enquanto isso, explore as novidades e parcerias da Royal Clean.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: _muted, height: 1.5),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _openStory(
@@ -203,53 +285,94 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
                 ),
                 const SizedBox(width: 10),
                 const Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'ROYAL CLEAN',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: .5,
-                          color: _navy,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'ROYAL CLEAN',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: .5,
+                            color: _navy,
+                          ),
                         ),
-                      ),
-                      Text(
-                        'D I S T R I B U I D O R A',
-                        style: TextStyle(fontSize: 8, color: _muted),
-                      ),
-                    ],
+                        Text(
+                          'D I S T R I B U I D O R A',
+                          style: TextStyle(fontSize: 8, color: _muted),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
             actions: [
+              IconButton(
+                tooltip: 'Notificações',
+                onPressed: _openNotifications,
+                icon: const Icon(Icons.public_rounded, color: _navy),
+              ),
               Padding(
                 padding: const EdgeInsets.only(right: 16),
-                child: FilledButton.icon(
-                  onPressed: _openingAccount
-                      ? null
-                      : () => _openAccount(signedIn),
-                  icon: _openingAccount
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.person_outline_rounded, size: 18),
-                  label: Text(signedIn ? 'Perfil' : 'Login'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: _navy,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  width: _accountColumnWidth,
+                  child: FilledButton.icon(
+                    onPressed: _openingAccount
+                        ? null
+                        : () => _openAccount(signedIn),
+                    icon: _openingAccount
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.person_outline_rounded, size: 18),
+                    label: Text(signedIn ? 'Perfil' : 'Login'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _navy,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),
               ),
             ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(52),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _menuButton('Produtos', () => _goTo(_productsKey)),
+                    ),
+                    Expanded(
+                      child: _menuButton(
+                        'Novidades',
+                        () => _goTo(_partnersKey),
+                      ),
+                    ),
+                    Expanded(
+                      child: _menuButton(
+                        'Desempenho',
+                        () => _goTo(_partnersKey),
+                      ),
+                    ),
+                    SizedBox(
+                      width: _accountColumnWidth,
+                      child: _menuButton('Sobre nós', () => _goTo(_newsKey)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
           body: SingleChildScrollView(
             padding: EdgeInsets.only(
@@ -261,39 +384,6 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 6,
-                      ),
-                      child: Wrap(
-                        alignment: WrapAlignment.spaceBetween,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          const Text(
-                            'EXPLORE A ROYAL CLEAN',
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
-                              color: _muted,
-                              letterSpacing: .8,
-                            ),
-                          ),
-                          Wrap(
-                            children: [
-                              TextButton(
-                                onPressed: () => _goTo(_productsKey),
-                                child: const Text('Produtos'),
-                              ),
-                              TextButton(
-                                onPressed: () => _goTo(_newsKey),
-                                child: const Text('Novidades'),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
                     _hero(),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(22, 22, 22, 4),
@@ -330,64 +420,50 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
                                 'Explore uma seleção feita para inspirar.',
                           ),
                           const SizedBox(height: 18),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              for (final category in [
-                                'Todos',
-                                'Dia a dia',
-                                'Kits',
-                              ])
-                                ChoiceChip(
-                                  label: Text(category),
-                                  selected: category == _category,
-                                  showCheckmark: false,
-                                  selectedColor: _navy,
-                                  backgroundColor: Colors.white,
-                                  side: BorderSide(
-                                    color: category == _category
-                                        ? _navy
-                                        : const Color(0xFFDCE5EA),
-                                  ),
-                                  labelStyle: TextStyle(
-                                    color: category == _category
-                                        ? Colors.white
-                                        : _muted,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  onSelected: (_) =>
-                                      setState(() => _category = category),
-                                ),
-                            ],
+                          ProductFiltersRoyalClean(
+                            onCategory: (value) =>
+                                setState(() => _category = value),
+                            onSearch: (value) =>
+                                setState(() => _searchQuery = value),
                           ),
                           const SizedBox(height: 18),
                         ],
                       ),
                     ),
-                    SizedBox(
-                      height: 250 + MediaQuery.textScalerOf(context).scale(110),
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        itemCount: _visibleProducts.length,
-                        separatorBuilder: (_, index) =>
-                            const SizedBox(width: 14),
-                        itemBuilder: (context, index) {
-                          final product = _visibleProducts[index];
-                          return _ProductCard(
-                            product: product,
-                            onTap: () => _openStory(
-                              context,
-                              title: product.name,
-                              label: 'PRODUTO DEMONSTRATIVO',
-                              image: product.image,
-                              body: product.description,
-                            ),
-                          );
-                        },
+                    if (_visibleProducts.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Text(
+                          'Nenhum produto encontrado. Tente outro termo ou nicho.',
+                          style: TextStyle(color: _muted),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
-                    ),
+                    if (_visibleProducts.isNotEmpty)
+                      SizedBox(
+                        height:
+                            250 + MediaQuery.textScalerOf(context).scale(110),
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          itemCount: _visibleProducts.length,
+                          separatorBuilder: (_, index) =>
+                              const SizedBox(width: 14),
+                          itemBuilder: (context, index) {
+                            final product = _visibleProducts[index];
+                            return _ProductCard(
+                              product: product,
+                              onTap: () => _openStory(
+                                context,
+                                title: product.name,
+                                label: 'PRODUTO DEMONSTRATIVO',
+                                image: product.image,
+                                body: product.description,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                     const Padding(
                       padding: EdgeInsets.fromLTRB(20, 14, 20, 0),
                       child: _DemoNote(),
@@ -420,6 +496,11 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
                               ),
                             ),
                           const SizedBox(height: 14),
+                          PartnershipSectionRoyalClean(
+                            key: _partnersKey,
+                            partners: widget.partners,
+                            ads: widget.partnerAds,
+                          ),
                           Container(
                             padding: const EdgeInsets.all(24),
                             decoration: BoxDecoration(
@@ -471,12 +552,14 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
                           ),
                           const SizedBox(height: 30),
                           const Text(
-                            'ROYAL CLEAN',
+                            'ROYAL CLEAN DISTRIBUIDORA LTDA',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: _navy,
                               fontWeight: FontWeight.w900,
-                              letterSpacing: 2,
+                              fontSize: 13,
+                              height: 1.5,
+                              letterSpacing: 0.8,
                             ),
                           ),
                           const SizedBox(height: 6),
@@ -484,6 +567,26 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
                             'Cuidado em cada detalhe.',
                             textAlign: TextAlign.center,
                             style: TextStyle(color: _muted, fontSize: 12),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'CNPJ 62.581.826/0001-49',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: _muted,
+                              fontSize: 12,
+                              height: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'R. Ouro Preto\nSetor Candida de Morais, Goiânia-GO',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: _muted,
+                              fontSize: 12,
+                              height: 1.5,
+                            ),
                           ),
                           const SizedBox(height: 16),
                         ],
@@ -500,11 +603,19 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
   }
 
   List<PreviewProductRoyalClean> get _visibleProducts =>
-      previewProductsRoyalClean
-          .where(
-            (product) => _category == 'Todos' || product.category == _category,
-          )
-          .toList();
+      previewProductsRoyalClean.where((product) {
+        final categoryMatches =
+            _category == 'Todos' ||
+            product.category == _category ||
+            product.niches.contains(_category);
+        final haystack = normalizeProductSearchRoyalClean(
+          '${product.name} ${product.code} ${product.tags.join(' ')}',
+        );
+        final words = normalizeProductSearchRoyalClean(
+          _searchQuery,
+        ).split(RegExp(r'\s+')).where((word) => word.isNotEmpty);
+        return categoryMatches && words.every(haystack.contains);
+      }).toList();
 
   Widget _hero() => Padding(
     padding: const EdgeInsets.symmetric(horizontal: 16),

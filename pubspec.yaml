@@ -43,6 +43,7 @@ flutter:
 
   assets:
     - assets/preview/
+    - assets/preview/logo-parceiro/coroa-royal.webp
     - assets/logo/logo-gif.webp
     - assets/logo/google-g.png
     - assets/logo/logo-laucher.webp

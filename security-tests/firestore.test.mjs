@@ -267,6 +267,30 @@ for (const kind of ['products', 'news']) {
     }
   });
 }
+for (const kind of ['public_partners', 'partner_ads']) {
+  test(`${kind}: only approved public projections; private data and unauthorized writes denied`, async () => {
+    const payload = {title:'Parceiro autorizado', description:'Apresentação pública',
+      imageUrl:'https://example.test/logo.png', published:true,
+      createdAt:serverTimestamp(), updatedAt:serverTimestamp()};
+    await assertSucceeds(setDoc(doc(admin, `${kind}/1`), payload));
+    await assertSucceeds(getDocs(query(collection(visitor, kind), where('published','==',true))));
+    await assertFails(getDocs(collection(visitor, kind)));
+    for (const db of [visitor, member, inactive]) {
+      await assertFails(setDoc(doc(db, `${kind}/2`), payload));
+    }
+    for (const extra of [{email:'private@example.test'}, {phone:'123'}, {role:'admin'},
+      {imageUrl:'http://example.test/logo.png'}, {description:''}]) {
+      await assertFails(setDoc(doc(admin, `${kind}/2`), {...payload,...extra}));
+    }
+    await assertSucceeds(updateDoc(doc(admin, `${kind}/1`), {published:false,updatedAt:serverTimestamp()}));
+    await assertFails(getDoc(doc(visitor, `${kind}/1`)));
+    await assertSucceeds(deleteDoc(doc(admin, `${kind}/1`)));
+    if (kind === 'partner_ads') {
+      await assertFails(setDoc(doc(admin, `${kind}/5`), payload));
+    }
+  });
+}
+
 test('Unknown collections and nested documents remain denied even to admins', async () => {
   for (const path of ['billing/secret','users/member/private/secret','admin/admin-ok/private/secret','products/example/internal/secret']) {
     await assertFails(setDoc(doc(admin, path), {value:1}));

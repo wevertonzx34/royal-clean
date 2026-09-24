@@ -5,13 +5,19 @@ class PreviewProductRoyalClean {
   final String category;
   final String image;
   final String description;
+  final String code;
+  final List<String> tags;
+  final List<String> niches;
 
   const PreviewProductRoyalClean(
     this.name,
     this.category,
     this.image,
-    this.description,
-  );
+    this.description, {
+    this.code = '',
+    this.tags = const [],
+    this.niches = const [],
+  });
 }
 
 const previewProductsRoyalClean = [
@@ -20,18 +26,27 @@ const previewProductsRoyalClean = [
     'Dia a dia',
     'assets/preview/multiuso.png',
     'Uma proposta de apresentação para a linha de cuidados do dia a dia. Aqui você poderá conhecer cada produto, sua embalagem e as informações publicadas pela Royal Clean.\n\nEste item e sua embalagem são ilustrativos. Composição, indicação de uso, volume e disponibilidade serão informados no catálogo oficial.',
+    code: 'DEMO-001',
+    tags: ['limpeza', 'multiuso', 'casa'],
+    niches: ['Básicos'],
   ),
   PreviewProductRoyalClean(
     'Detergente fresh',
     'Dia a dia',
     'assets/preview/detergente.png',
     'Uma proposta de vitrine para os essenciais da cozinha, com uma apresentação simples e fácil de consultar.\n\nEste item e sua embalagem são ilustrativos. As características e instruções do produto real serão publicadas pela administração.',
+    code: 'DEMO-002',
+    tags: ['cozinha', 'louças', 'detergente'],
+    niches: ['Básicos'],
   ),
   PreviewProductRoyalClean(
     'Seleção Royal Clean',
     'Kits',
     'assets/preview/collection.png',
     'Um conceito de seleção que reúne diferentes cuidados em um só lugar. Um espaço pensado para apresentar combinações e novidades da Royal Clean.\n\nKit demonstrativo, sem oferta comercial, preço ou disponibilidade confirmada.',
+    code: 'DEMO-003',
+    tags: ['seleção', 'kit', 'cuidados'],
+    niches: ['Lançamentos'],
   ),
 ];
 

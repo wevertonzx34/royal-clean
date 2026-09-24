@@ -24,6 +24,7 @@ import 'presentation_royal_clean/home/status_invite/invite_status_details_page_r
 import 'presentation_royal_clean/home/status_invite/invite_status_page_royal_clean.dart';
 import 'presentation_royal_clean/splash/splash_page_royal_clean.dart';
 import 'presentation_royal_clean/preview/preview_page_royal_clean.dart';
+import 'presentation_royal_clean/preview/partnership_content_royal_clean.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -106,6 +107,13 @@ class RoyalCleanApp extends StatelessWidget {
     await AccountAccessRoyalClean.instance.ready();
   }
 
+  Stream<List<PublicPartnerRoyalClean>> _partnerships({
+    bool ads = false,
+  }) async* {
+    await firebaseInitialization;
+    yield* PartnershipContentRoyalClean.watch(ads: ads);
+  }
+
   Widget _admin(WidgetBuilder builder) => AdminRouteGuardRoyalClean(
     firebaseInitialization: firebaseInitialization,
     builder: (context) => BiometricGateRoyalClean(builder: builder),
@@ -129,6 +137,8 @@ class RoyalCleanApp extends StatelessWidget {
         AppRoutesRoyalClean.login: (_) =>
             LoginPageRoyalClean(firebaseInitialization: firebaseInitialization),
         AppRoutesRoyalClean.preview: (_) => PreviewPageRoyalClean(
+          partners: _partnerships(),
+          partnerAds: _partnerships(ads: true),
           authenticated: _session(),
           prepareAccount: _prepareAccount,
         ),
@@ -169,6 +179,8 @@ class RoyalCleanApp extends StatelessWidget {
       onUnknownRoute: (settings) => MaterialPageRoute(
         settings: settings,
         builder: (_) => PreviewPageRoyalClean(
+          partners: _partnerships(),
+          partnerAds: _partnerships(ads: true),
           authenticated: _session(),
           prepareAccount: _prepareAccount,
         ),
