@@ -16,7 +16,7 @@ O código local está integrado. Isso não publica automaticamente regras, funç
 - Cada perfil tem sua área, acesso à prévia e “Meus dados”. Pedidos, comissões e operações internas futuras não são simulados como funcionalidades prontas.
 - “Meus dados”: nome, ofertas e CPF/CNPJ opcionais. Documento validado no servidor, incluindo CNPJ alfanumérico, sem consulta de titularidade à Receita. Selecionar “Não informar / remover” e salvar remove o documento desse cadastro.
 - Convite inválido, utilizado, desativado ou expirado impede concluir **com aquele código**. Remover o código permite uma conta comum. Não existe aplicação posterior. Um novo convite tem prazo de 30 dias; convites antigos permanecem no histórico, mas não liberam novos cadastros: solicite um novo convite Mestre com e-mail, telefone e validade.
-- Sessão nativa persiste pelo Firebase. O antigo checkbox visual de “lembrar acesso”, que não mudava a persistência, foi substituído por informação clara e botão Sair nas áreas privadas.
+- O login oferece “Manter conectado”, abaixo de Google/Apple, com preferência local funcional. Marcada, preserva a sessão; desmarcada, limpa a sessão na próxima inicialização antes de liberar as rotas. Sair encerra imediatamente. Consulte `docs/manter-conectado.md`.
 
 ## 1. Revisar os documentos antes de receber clientes reais
 

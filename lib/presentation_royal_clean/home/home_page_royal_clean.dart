@@ -2,20 +2,11 @@ import 'package:flutter/material.dart';
 import '../../core_royal_clean/constants/app_routes_royal_clean.dart';
 import '../../core_royal_clean/services/auth_service_royal_clean.dart';
 import 'home_background_royal_clean.dart';
+import '../auth/logout_royal_clean.dart';
 import 'home_form_royal_clean.dart';
 
 class HomePageRoyalClean extends StatelessWidget {
   const HomePageRoyalClean({super.key});
-
-  Future<void> _logout(BuildContext context) async {
-    await AuthServiceRoyalClean.signOut();
-
-    if (!context.mounted) return;
-
-    Navigator.of(
-      context,
-    ).pushNamedAndRemoveUntil(AppRoutesRoyalClean.preview, (route) => false);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +50,7 @@ class HomePageRoyalClean extends StatelessWidget {
                         AppRoutesRoyalClean.accessControl,
                       );
                     },
-                    onLogoutPressed: () => _logout(context),
+                    onLogoutPressed: () => logoutToPreviewRoyalClean(context),
                   ),
                 ),
               ),

@@ -5,7 +5,7 @@ Backup anterior às alterações: commit `1e996ba`. A tentativa de push desta se
 ## Comportamento
 
 - Prévia pública preservada. Visitante vê Login; usuário autenticado vê Perfil, com acesso pela verificação de permissões existente.
-- Sessão Firebase persistente ao reabrir o aplicativo. Sair é explícito dentro das áreas privadas, inclusive no painel administrativo. Revogação, desativação de conta ou limpeza dos dados do aparelho ainda podem exigir nova autenticação.
+- Sessão Firebase persistente ao reabrir quando “Manter conectado” estiver marcada no login. Desmarcada, exige novo login na próxima inicialização. Sair é explícito dentro das áreas privadas, inclusive no painel administrativo. Revogação, desativação de conta ou limpeza dos dados do aparelho ainda podem exigir nova autenticação.
 - Admin cria convite com nome, telefone brasileiro com DDD, e-mail e perfil Mestre. Código M + 7 caracteres, validade de 30 dias, uso único.
 - Novo usuário informa convite e telefone no campo expansível. E-mail verificado no Authentication e telefone normalizado precisam coincidir com o convite. A comparação ocorre na transação do backend; dados de e-mail/perfil enviados pelo cliente não podem substituí-la.
 - Convite válido cria perfil `master`; sem convite cria `consumer`. Erro no convite impede concluir com o código, sem consumi-lo. Removê-lo permite cadastro comum. Convite não pode ser adicionado depois.

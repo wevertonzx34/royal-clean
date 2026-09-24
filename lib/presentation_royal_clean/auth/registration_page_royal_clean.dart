@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../core_royal_clean/services/account_service_royal_clean.dart';
+import 'logout_royal_clean.dart';
 import 'account_ui_royal_clean.dart';
 
 class RegistrationPageRoyalClean extends StatefulWidget {
@@ -389,7 +390,10 @@ class _RegistrationState extends State<RegistrationPageRoyalClean> {
               onPressed: _busy
                   ? null
                   : () async {
-                      if (_user != null) await FirebaseAuth.instance.signOut();
+                      if (_user != null) {
+                        await logoutToPreviewRoyalClean(context);
+                        return;
+                      }
                       if (context.mounted) {
                         Navigator.pushNamedAndRemoveUntil(
                           context,
@@ -401,7 +405,7 @@ class _RegistrationState extends State<RegistrationPageRoyalClean> {
               child: Text(
                 _user == null
                     ? 'Já tenho conta / voltar ao login'
-                    : 'Sair e voltar ao login',
+                    : 'Sair e voltar à loja',
               ),
             ),
           ],

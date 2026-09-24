@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
@@ -6,7 +7,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'core_royal_clean/constants/app_routes_royal_clean.dart';
 import 'core_royal_clean/theme/app_theme_royal_clean.dart';
+import 'core_royal_clean/services/session_preferences_royal_clean.dart';
+import 'core_royal_clean/services/biometric_access_royal_clean.dart';
+import 'presentation_royal_clean/auth/biometric_gate_royal_clean.dart';
 import 'firebase_options.dart';
+import 'core_royal_clean/services/account_access_royal_clean.dart';
 import 'presentation_royal_clean/auth/login_page_royal_clean.dart';
 import 'presentation_royal_clean/auth/account_gate_royal_clean.dart';
 import 'presentation_royal_clean/auth/registration_page_royal_clean.dart';
@@ -26,7 +31,23 @@ void main() {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    if (kIsWeb) await FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
+    var biometricSession = false;
+    try {
+      biometricSession = await BiometricAccessRoyalClean.instance.restore();
+    } catch (_) {
+      // A corrupt/unavailable device binding must never expose a restored session.
+      await FirebaseAuth.instance.signOut();
+    }
+    if (!biometricSession) {
+      await SessionPreferencesRoyalClean.instance.restore(
+        signOut: () => FirebaseAuth.instance.signOut(),
+        configureWebPersistence: kIsWeb
+            ? (remember) => FirebaseAuth.instance.setPersistence(
+                remember ? Persistence.LOCAL : Persistence.NONE,
+              )
+            : null,
+      );
+    }
     await FirebaseAppCheck.instance.activate(
       providerAndroid: kDebugMode
           ? const AndroidDebugProvider()
@@ -35,9 +56,29 @@ void main() {
           ? const AppleDebugProvider()
           : const AppleAppAttestWithDeviceCheckFallbackProvider(),
     );
+    AccountAccessRoyalClean.instance.start();
+    if (kDebugMode && const bool.fromEnvironment('VERIFY_APP_CHECK')) {
+      debugPrint(
+        'RoyalClean session: retained=${FirebaseAuth.instance.currentUser != null}; biometric=${BiometricAccessRoyalClean.instance.enabled}; locked=${BiometricAccessRoyalClean.instance.locked}',
+      );
+      unawaited(_verifyAppCheck());
+    }
   });
   firebaseInitialization.ignore();
   runApp(RoyalCleanApp(firebaseInitialization: firebaseInitialization));
+}
+
+Future<void> _verifyAppCheck() async {
+  try {
+    final token = await FirebaseAppCheck.instance
+        .getToken(true)
+        .timeout(const Duration(seconds: 20));
+    debugPrint(
+      'RoyalClean AppCheck verification: ${token != null && token.isNotEmpty ? 'OK' : 'EMPTY'}',
+    );
+  } catch (_) {
+    debugPrint('RoyalClean AppCheck verification: FAILED');
+  }
 }
 
 class RoyalCleanApp extends StatelessWidget {
@@ -48,17 +89,26 @@ class RoyalCleanApp extends StatelessWidget {
   Stream<bool> _session() async* {
     try {
       await firebaseInitialization;
-      yield* FirebaseAuth.instance.authStateChanges().map(
-        (user) => user != null,
+      yield* BiometricAccessRoyalClean.instance.visibleSession(
+        FirebaseAuth.instance.authStateChanges().map((user) => user != null),
       );
     } catch (_) {
       yield false;
     }
   }
 
+  Future<void> _prepareAccount() async {
+    await firebaseInitialization;
+    final biometric = BiometricAccessRoyalClean.instance;
+    if (biometric.locked && !await biometric.unlock()) {
+      throw const BiometricCancelledRoyalClean();
+    }
+    await AccountAccessRoyalClean.instance.ready();
+  }
+
   Widget _admin(WidgetBuilder builder) => AdminRouteGuardRoyalClean(
     firebaseInitialization: firebaseInitialization,
-    builder: builder,
+    builder: (context) => BiometricGateRoyalClean(builder: builder),
   );
 
   @override
@@ -78,8 +128,10 @@ class RoyalCleanApp extends StatelessWidget {
         ),
         AppRoutesRoyalClean.login: (_) =>
             LoginPageRoyalClean(firebaseInitialization: firebaseInitialization),
-        AppRoutesRoyalClean.preview: (_) =>
-            PreviewPageRoyalClean(authenticated: _session()),
+        AppRoutesRoyalClean.preview: (_) => PreviewPageRoyalClean(
+          authenticated: _session(),
+          prepareAccount: _prepareAccount,
+        ),
         '/register': (_) => RegistrationPageRoyalClean(
           firebaseInitialization: firebaseInitialization,
         ),
@@ -116,7 +168,10 @@ class RoyalCleanApp extends StatelessWidget {
       },
       onUnknownRoute: (settings) => MaterialPageRoute(
         settings: settings,
-        builder: (_) => PreviewPageRoyalClean(authenticated: _session()),
+        builder: (_) => PreviewPageRoyalClean(
+          authenticated: _session(),
+          prepareAccount: _prepareAccount,
+        ),
       ),
     );
   }

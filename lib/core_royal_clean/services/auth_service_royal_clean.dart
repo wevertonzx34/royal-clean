@@ -1,5 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'biometric_access_royal_clean.dart';
+import 'session_preferences_royal_clean.dart';
+import 'remembered_login_royal_clean.dart';
 
 class AuthServiceRoyalClean {
   AuthServiceRoyalClean._();
@@ -12,7 +15,20 @@ class AuthServiceRoyalClean {
   static Stream<User?> get authStateChanges => _auth.authStateChanges();
 
   static Future<void> signOut() async {
+    final email = _auth.currentUser?.email;
+    try {
+      final remember = await SessionPreferencesRoyalClean.instance.read();
+      await RememberedLoginRoyalClean.instance.write(remember ? email : null);
+    } catch (_) {
+      // Remembering an email is optional and must never prevent logout.
+    }
+    // End the Firebase session even if secure-storage cleanup fails.
     await _auth.signOut();
+    try {
+      await BiometricAccessRoyalClean.instance.disable();
+    } catch (_) {
+      /* No authenticated session remains. */
+    }
   }
 
   static Future<AuthAdminResult> signInAdmin({

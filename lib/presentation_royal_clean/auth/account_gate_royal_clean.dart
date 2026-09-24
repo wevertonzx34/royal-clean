@@ -1,13 +1,15 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../../core_royal_clean/services/admin_access_royal_clean.dart';
+import '../../core_royal_clean/services/account_access_royal_clean.dart';
+import '../preview/preview_page_royal_clean.dart';
+import 'logout_royal_clean.dart';
 import '../home/home_page_royal_clean.dart';
 import 'account_ui_royal_clean.dart';
 import 'my_data_page_royal_clean.dart';
 import 'registration_page_royal_clean.dart';
+import 'biometric_gate_royal_clean.dart';
 
-class AccountGateRoyalClean extends StatelessWidget {
+class AccountGateRoyalClean extends StatefulWidget {
   final Future<void> firebaseInitialization;
   final bool personalData;
   const AccountGateRoyalClean({
@@ -16,122 +18,105 @@ class AccountGateRoyalClean extends StatelessWidget {
     this.personalData = false,
   });
   @override
-  Widget build(BuildContext context) => FutureBuilder<void>(
-    future: firebaseInitialization,
-    builder: (context, initialization) {
-      if (initialization.hasError) {
-        return const _AccessMessage(
-          'Não foi possível conectar. Reabra o aplicativo e tente novamente.',
-        );
-      }
-      if (initialization.connectionState != ConnectionState.done) {
-        return const _AccessMessage('Conectando…');
-      }
-      return StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.idTokenChanges(),
-        builder: (context, auth) {
-          if (auth.hasError) {
-            return const _AccessMessage(
-              'Sessão indisponível. Entre novamente.',
-            );
-          }
-          if (auth.connectionState == ConnectionState.waiting) {
-            return const _AccessMessage('Verificando sessão…');
-          }
-          if (auth.data == null) {
-            return const _AccessMessage('Entre para acessar sua conta.');
-          }
-          return _AccountSession(
-            key: ValueKey(auth.data!.uid),
-            user: auth.data!,
-            personalData: personalData,
-          );
+  State<AccountGateRoyalClean> createState() => _AccountGateRoyalCleanState();
+}
+
+class _AccountGateRoyalCleanState extends State<AccountGateRoyalClean> {
+  bool _ready = false;
+  bool _failed = false;
+  String? _registrationUid;
+  @override
+  void initState() {
+    super.initState();
+    _ready = AccountAccessRoyalClean.instance.started;
+    if (!_ready) {
+      widget.firebaseInitialization.then(
+        (_) {
+          AccountAccessRoyalClean.instance.start();
+          if (mounted) setState(() => _ready = true);
+        },
+        onError: (Object error) {
+          if (mounted) setState(() => _failed = true);
         },
       );
-    },
-  );
-}
-
-class _AccountSession extends StatefulWidget {
-  final User user;
-  final bool personalData;
-  const _AccountSession({
-    super.key,
-    required this.user,
-    required this.personalData,
-  });
-  @override
-  State<_AccountSession> createState() => _AccountSessionState();
-}
-
-class _AccountSessionState extends State<_AccountSession> {
-  bool _finishingRegistration = false;
-  late final _admin = FirebaseFirestore.instance
-      .doc('admin/${widget.user.uid}')
-      .snapshots(includeMetadataChanges: true);
-  late final _profile = FirebaseFirestore.instance
-      .doc('users/${widget.user.uid}')
-      .snapshots(includeMetadataChanges: true);
+    }
+  }
 
   @override
-  Widget build(
-    BuildContext context,
-  ) => StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-    stream: _admin,
-    builder: (context, admin) {
-      if (admin.hasError) {
-        return const _AccessMessage(
-          'Não foi possível verificar o acesso. Confira a conexão e tente entrar novamente.',
-        );
-      }
-      if (!admin.hasData ||
-          admin.data!.metadata.isFromCache ||
-          admin.data!.metadata.hasPendingWrites) {
-        return const _AccessMessage('Verificando permissões no servidor…');
-      }
-      if (admin.data!.exists) {
-        if (!isActiveAdminRoyalClean(admin.data!.data(), widget.user.email)) {
+  Widget build(BuildContext context) {
+    if (_failed) {
+      return const _AccessMessage(
+        'Não foi possível conectar. Confira sua conexão e tente novamente.',
+      );
+    }
+    if (!_ready) return const _AccountLoading();
+    return ValueListenableBuilder<AccountAccessState>(
+      valueListenable: AccountAccessRoyalClean.instance,
+      builder: (context, access, _) {
+        if (access.status == AccountAccessStatus.signedOut) {
+          return const PreviewPageRoyalClean();
+        }
+        if (access.status == AccountAccessStatus.registration) {
+          _registrationUid = access.identity?.uid;
+        }
+        final finishingRegistration =
+            _registrationUid != null &&
+            _registrationUid == access.identity?.uid &&
+            (access.status == AccountAccessStatus.checking ||
+                access.status == AccountAccessStatus.registration);
+        if (access.status == AccountAccessStatus.checking &&
+            !finishingRegistration) {
+          return const _AccountLoading();
+        }
+        if (access.status == AccountAccessStatus.unavailable) {
           return const _AccessMessage(
-            'Acesso administrativo indisponível. Contate o responsável.',
+            'Não foi possível confirmar o acesso. Confira a conexão e tente novamente.',
           );
         }
-        return widget.personalData
-            ? MyDataPageRoyalClean(user: widget.user, profile: const {})
-            : const HomePageRoyalClean();
-      }
-      if (!widget.user.emailVerified) _finishingRegistration = true;
-      if (_finishingRegistration) {
-        return RegistrationPageRoyalClean(user: widget.user);
-      }
-      return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-        stream: _profile,
-        builder: (context, profile) {
-          if (profile.hasError) {
-            return const _AccessMessage(
-              'Não foi possível carregar seu cadastro. Confira a conexão e tente novamente.',
-            );
-          }
-          if (!profile.hasData ||
-              profile.data!.metadata.isFromCache ||
-              profile.data!.metadata.hasPendingWrites) {
-            return const _AccessMessage('Carregando seu perfil…');
-          }
-          if (!profile.data!.exists) {
-            return RegistrationPageRoyalClean(user: widget.user);
-          }
-          final data = profile.data!.data()!;
-          if (data['active'] != true ||
-              !roleLabelsRoyalClean.containsKey(data['role'])) {
-            return const _AccessMessage(
-              'Seu acesso está indisponível. Entre em contato com o atendimento.',
-            );
-          }
-          return widget.personalData
-              ? MyDataPageRoyalClean(user: widget.user, profile: data)
-              : RoleAreaRoyalClean(profile: data);
-        },
-      );
-    },
+        if (access.status == AccountAccessStatus.denied) {
+          return const _AccessMessage(
+            'Seu acesso está indisponível. Contate o responsável.',
+          );
+        }
+        final user = FirebaseAuth.instance.currentUser;
+        if (user == null || user.uid != access.identity?.uid) {
+          return const _AccountLoading();
+        }
+        return BiometricGateRoyalClean(
+          builder: (_) {
+            if (finishingRegistration) {
+              return RegistrationPageRoyalClean(
+                key: ValueKey(user.uid),
+                user: user,
+              );
+            }
+            if (widget.personalData) {
+              return MyDataPageRoyalClean(
+                user: user,
+                profile: access.profile ?? const {},
+              );
+            }
+            return access.status == AccountAccessStatus.admin
+                ? const HomePageRoyalClean()
+                : RoleAreaRoyalClean(profile: access.profile!);
+          },
+        );
+      },
+    );
+  }
+}
+
+class _AccountLoading extends StatelessWidget {
+  const _AccountLoading();
+  @override
+  Widget build(BuildContext context) => const Scaffold(
+    body: Center(
+      child: SizedBox(
+        width: 24,
+        height: 24,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      ),
+    ),
   );
 }
 
@@ -211,16 +196,7 @@ class RoleAreaRoyalClean extends StatelessWidget {
             ),
           const SizedBox(height: 24),
           OutlinedButton(
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              if (context.mounted) {
-                Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  '/preview',
-                  (_) => false,
-                );
-              }
-            },
+            onPressed: () => logoutToPreviewRoyalClean(context),
             child: const Text('Sair'),
           ),
         ],

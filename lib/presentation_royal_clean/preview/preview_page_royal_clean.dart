@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core_royal_clean/constants/app_routes_royal_clean.dart';
+import '../../core_royal_clean/services/biometric_access_royal_clean.dart';
 import 'preview_content_royal_clean.dart';
 
 const _navy = Color(0xFF092F43);
@@ -11,7 +12,12 @@ const _paper = Color(0xFFF5F8FA);
 
 class PreviewPageRoyalClean extends StatefulWidget {
   final Stream<bool>? authenticated;
-  const PreviewPageRoyalClean({super.key, this.authenticated});
+  final Future<void> Function()? prepareAccount;
+  const PreviewPageRoyalClean({
+    super.key,
+    this.authenticated,
+    this.prepareAccount,
+  });
 
   @override
   State<PreviewPageRoyalClean> createState() => _PreviewPageRoyalCleanState();
@@ -21,7 +27,49 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
   final _productsKey = GlobalKey();
   final _newsKey = GlobalKey();
   String _category = 'Todos';
+  bool _openingAccount = false;
+  bool _signedIn = false;
   late final _session = widget.authenticated ?? Stream<bool>.value(false);
+
+  Future<void> _openAccount(bool signedIn) async {
+    if (_openingAccount) return;
+    if (!signedIn) {
+      Navigator.pushNamed(context, AppRoutesRoyalClean.login);
+      return;
+    }
+    setState(() => _openingAccount = true);
+    try {
+      await widget.prepareAccount?.call();
+      if (mounted && _signedIn) Navigator.pushNamed(context, '/account');
+    } on BiometricCancelledRoyalClean {
+      if (mounted) {
+        _profileMessage(
+          'Perfil protegido. Na janela do aparelho, use a digital ou escolha PIN, padrão ou senha.',
+          deviceUnlock: true,
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        _profileMessage(
+          'Não foi possível abrir seu perfil. Confira a conexão e tente novamente.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _openingAccount = false);
+    }
+  }
+
+  void _profileMessage(String message, {bool deviceUnlock = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        action: SnackBarAction(
+          label: deviceUnlock ? 'PIN do aparelho' : 'Tentar novamente',
+          onPressed: () => _openAccount(_signedIn),
+        ),
+      ),
+    );
+  }
 
   void _goTo(GlobalKey key) {
     final section = key.currentContext;
@@ -66,7 +114,12 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
             ),
             ClipRRect(
               borderRadius: BorderRadius.circular(20),
-              child: Image.asset(image, height: 230, fit: BoxFit.cover),
+              child: Image.asset(
+                image,
+                height: 230,
+                fit: BoxFit.cover,
+                cacheWidth: 1080,
+              ),
             ),
             const SizedBox(height: 24),
             _Eyebrow(label),
@@ -96,7 +149,10 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
   @override
   Widget build(BuildContext context) => StreamBuilder<bool>(
     stream: _session,
-    builder: (context, snapshot) => _buildPage(context, snapshot.data == true),
+    builder: (context, snapshot) {
+      _signedIn = snapshot.data == true;
+      return _buildPage(context, _signedIn);
+    },
   );
 
   Widget _buildPage(BuildContext context, bool signedIn) {
@@ -139,6 +195,7 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
                   borderRadius: BorderRadius.circular(12),
                   child: Image.asset(
                     'assets/logo/logo-laucher.webp',
+                    cacheWidth: 168,
                     width: 42,
                     height: 42,
                   ),
@@ -170,11 +227,16 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
               Padding(
                 padding: const EdgeInsets.only(right: 16),
                 child: FilledButton.icon(
-                  onPressed: () => Navigator.pushNamed(
-                    context,
-                    signedIn ? '/account' : AppRoutesRoyalClean.login,
-                  ),
-                  icon: const Icon(Icons.person_outline_rounded, size: 18),
+                  onPressed: _openingAccount
+                      ? null
+                      : () => _openAccount(signedIn),
+                  icon: _openingAccount
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.person_outline_rounded, size: 18),
                   label: Text(signedIn ? 'Perfil' : 'Login'),
                   style: FilledButton.styleFrom(
                     backgroundColor: _navy,
@@ -390,12 +452,9 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
                                 ),
                                 const SizedBox(height: 20),
                                 FilledButton.icon(
-                                  onPressed: () => Navigator.pushNamed(
-                                    context,
-                                    signedIn
-                                        ? '/account'
-                                        : AppRoutesRoyalClean.login,
-                                  ),
+                                  onPressed: _openingAccount
+                                      ? null
+                                      : () => _openAccount(signedIn),
                                   icon: const Icon(
                                     Icons.arrow_forward_rounded,
                                     size: 18,
@@ -495,6 +554,7 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
             );
             final photo = Image.asset(
               'assets/preview/collection.png',
+              cacheWidth: 1080,
               width: double.infinity,
               height: constraints.maxWidth > 700 ? 360 : 205,
               fit: BoxFit.cover,
@@ -606,6 +666,7 @@ class _ProductCard extends StatelessWidget {
           children: [
             Image.asset(
               product.image,
+              cacheWidth: 630,
               height: 194,
               width: 210,
               fit: BoxFit.cover,
@@ -672,6 +733,7 @@ class _NewsCard extends StatelessWidget {
         children: [
           Image.asset(
             news.image,
+            cacheWidth: 1080,
             height: 164,
             fit: BoxFit.cover,
             alignment: const Alignment(0, -.2),

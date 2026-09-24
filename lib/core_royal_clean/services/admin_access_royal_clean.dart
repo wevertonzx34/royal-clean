@@ -21,6 +21,7 @@ Stream<AdminAccessRoyalClean> watchAdminAccessRoyalClean() {
   StreamSubscription<User?>? authSubscription;
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? adminSubscription;
   var generation = 0;
+  String? identity;
   void emit(AdminAccessRoyalClean state) {
     if (!controller.isClosed) controller.add(state);
   }
@@ -29,6 +30,15 @@ Stream<AdminAccessRoyalClean> watchAdminAccessRoyalClean() {
     onListen: () {
       authSubscription = FirebaseAuth.instance.idTokenChanges().listen(
         (user) {
+          final nextIdentity = user == null
+              ? null
+              : '${user.uid}:${user.email}';
+          if (nextIdentity != null &&
+              nextIdentity == identity &&
+              adminSubscription != null) {
+            return;
+          }
+          identity = nextIdentity;
           final currentGeneration = ++generation;
           unawaited(adminSubscription?.cancel());
           adminSubscription = null;

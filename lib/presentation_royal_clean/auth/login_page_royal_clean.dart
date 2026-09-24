@@ -1,12 +1,28 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../core_royal_clean/services/account_service_royal_clean.dart';
+import '../../core_royal_clean/services/session_preferences_royal_clean.dart';
+import '../../core_royal_clean/services/biometric_access_royal_clean.dart';
+import '../../core_royal_clean/services/remembered_login_royal_clean.dart';
 import 'auth_background_royal_clean.dart';
 import 'account_ui_royal_clean.dart';
 
 class LoginPageRoyalClean extends StatefulWidget {
   final Future<void>? firebaseInitialization;
-  const LoginPageRoyalClean({super.key, this.firebaseInitialization});
+  final SessionPreferencesRoyalClean? sessionPreferences;
+  final BiometricAccessRoyalClean? biometricAccess;
+  final RememberedLoginRoyalClean? rememberedLogin;
+  final Future<void> Function(String email, String password)? passwordSignIn;
+  const LoginPageRoyalClean({
+    super.key,
+    this.firebaseInitialization,
+    this.sessionPreferences,
+    this.biometricAccess,
+    this.rememberedLogin,
+    this.passwordSignIn,
+  });
   @override
   State<LoginPageRoyalClean> createState() => _LoginState();
 }
@@ -16,10 +32,127 @@ class _LoginState extends State<LoginPageRoyalClean> {
     foregroundColor: Colors.white,
     disabledForegroundColor: Colors.white38,
   );
+  static final _socialButtonStyle = TextButton.styleFrom(
+    foregroundColor: Colors.white,
+    disabledForegroundColor: Colors.white38,
+    padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 12),
+  );
   final _form = GlobalKey<FormState>();
   final _email = TextEditingController();
   final _password = TextEditingController();
-  bool _busy = false, _obscure = true;
+  bool _busy = true, _obscure = true, _remember = true;
+  late final _preferences =
+      widget.sessionPreferences ?? SessionPreferencesRoyalClean.instance;
+  late final _biometric =
+      widget.biometricAccess ?? BiometricAccessRoyalClean.instance;
+  late final _rememberedLogin =
+      widget.rememberedLogin ?? RememberedLoginRoyalClean.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPreference();
+  }
+
+  Future<void> _offerBiometric() async {
+    // Never make an optional device feature a condition for a valid login.
+    try {
+      if (_biometric.enabled ||
+          !await _biometric.checkAvailable() ||
+          !mounted) {
+        return;
+      }
+      final accepted = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          icon: const Icon(Icons.fingerprint, size: 40),
+          title: const Text('Proteger acesso neste aparelho?'),
+          content: const Text(
+            'Ao fechar e reabrir o aplicativo, confirme sua digital ou use o PIN, padrão ou senha do aparelho para acessar o perfil. Apenas alternar entre aplicativos não bloqueia o acesso. Ative somente no seu aparelho pessoal.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Agora não'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Ativar'),
+            ),
+          ],
+        ),
+      );
+      if (accepted != true || !mounted) return;
+      final enabled = await _biometric.enable(confirmDevice: false);
+      if (mounted) {
+        showAccountMessageRoyalClean(
+          context,
+          enabled
+              ? 'Proteção ativada para a próxima abertura do aplicativo.'
+              : 'Proteção não ativada. Seu login continua normalmente.',
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        showAccountMessageRoyalClean(
+          context,
+          'Não foi possível ativar a biometria. Seu login continua normalmente.',
+        );
+      }
+    }
+  }
+
+  Future<void> _loadPreference() async {
+    var remember = false;
+    try {
+      remember = await _preferences.read();
+    } catch (_) {
+      // Fail closed; login also requires a successful preference write.
+    }
+    if (remember) {
+      try {
+        final email = await _rememberedLogin.read();
+        if (mounted && _email.text.isEmpty && email != null) {
+          _email.text = email;
+        }
+      } catch (_) {
+        // A saved email is optional; storage failure must not block normal login.
+      }
+    }
+    if (mounted) {
+      setState(() {
+        _remember = remember;
+        _busy = false;
+      });
+    }
+  }
+
+  Future<void> _changeRemember(bool value) async {
+    setState(() => _busy = true);
+    try {
+      await _preferences.save(value);
+      if (!value) {
+        TextInput.finishAutofillContext(shouldSave: false);
+        try {
+          await _rememberedLogin.write(null);
+        } catch (_) {
+          // The disabled preference also prevents loading any remembered email.
+        }
+      }
+      if (mounted) setState(() => _remember = value);
+    } catch (_) {
+      if (mounted) {
+        showAccountMessageRoyalClean(
+          context,
+          'Não foi possível salvar a preferência. Tente novamente.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   @override
   void dispose() {
     _email.dispose();
@@ -27,13 +160,44 @@ class _LoginState extends State<LoginPageRoyalClean> {
     super.dispose();
   }
 
-  Future<void> _authenticate(Future<void> Function() action) async {
+  Future<void> _authenticate(
+    Future<void> Function() action, {
+    bool passwordLogin = false,
+  }) async {
     if (_busy) return;
     FocusScope.of(context).unfocus();
     setState(() => _busy = true);
     try {
       await widget.firebaseInitialization?.timeout(const Duration(seconds: 15));
+      // Persist the choice before authentication, including Google and Apple.
+      await _preferences.save(_remember);
+      if (kIsWeb) {
+        await FirebaseAuth.instance.setPersistence(
+          _remember ? Persistence.LOCAL : Persistence.NONE,
+        );
+      }
       await action();
+      _biometric.credentialsAccepted();
+      try {
+        await _rememberedLogin.write(
+          _remember
+              ? (passwordLogin
+                    ? _email.text.trim()
+                    : FirebaseAuth.instance.currentUser?.email)
+              : null,
+        );
+      } catch (_) {
+        if (mounted) {
+          showAccountMessageRoyalClean(
+            context,
+            'Login realizado. Não foi possível lembrar o e-mail neste dispositivo.',
+          );
+        }
+      }
+      if (!mounted) return;
+      await _offerBiometric();
+      // Request saving only valid credentials, after the consent dialog closes.
+      TextInput.finishAutofillContext(shouldSave: _remember && passwordLogin);
       if (!mounted) return;
       _password.clear();
       if (mounted) Navigator.pushReplacementNamed(context, '/account');
@@ -96,6 +260,7 @@ class _LoginState extends State<LoginPageRoyalClean> {
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 520),
               child: AutofillGroup(
+                onDisposeAction: AutofillContextAction.cancel,
                 child: Form(
                   key: _form,
                   child: Column(
@@ -165,10 +330,12 @@ class _LoginState extends State<LoginPageRoyalClean> {
                         controller: _email,
                         enabled: !_busy,
                         keyboardType: TextInputType.emailAddress,
-                        autofillHints: const [
-                          AutofillHints.username,
-                          AutofillHints.email,
-                        ],
+                        autofillHints: _remember
+                            ? const [
+                                AutofillHints.username,
+                                AutofillHints.email,
+                              ]
+                            : null,
                         autocorrect: false,
                         decoration: const InputDecoration(
                           labelText: 'E-mail',
@@ -183,7 +350,9 @@ class _LoginState extends State<LoginPageRoyalClean> {
                         obscureText: _obscure,
                         enableSuggestions: false,
                         autocorrect: false,
-                        autofillHints: const [AutofillHints.password],
+                        autofillHints: _remember
+                            ? const [AutofillHints.password]
+                            : null,
                         decoration: InputDecoration(
                           labelText: 'Senha',
                           prefixIcon: const Icon(Icons.lock_outline),
@@ -211,12 +380,19 @@ class _LoginState extends State<LoginPageRoyalClean> {
                             : () {
                                 if (_form.currentState!.validate()) {
                                   _authenticate(() async {
-                                    await FirebaseAuth.instance
-                                        .signInWithEmailAndPassword(
-                                          email: _email.text.trim(),
-                                          password: _password.text,
-                                        );
-                                  });
+                                    if (widget.passwordSignIn != null) {
+                                      await widget.passwordSignIn!(
+                                        _email.text.trim(),
+                                        _password.text,
+                                      );
+                                    } else {
+                                      await FirebaseAuth.instance
+                                          .signInWithEmailAndPassword(
+                                            email: _email.text.trim(),
+                                            password: _password.text,
+                                          );
+                                    }
+                                  }, passwordLogin: true);
                                 }
                               },
                         child: Text(_busy ? 'Aguarde…' : 'Entrar'),
@@ -241,7 +417,7 @@ class _LoginState extends State<LoginPageRoyalClean> {
                             child: Align(
                               alignment: Alignment.centerLeft,
                               child: TextButton(
-                                style: _secondaryButtonStyle,
+                                style: _socialButtonStyle,
                                 onPressed: _busy
                                     ? null
                                     : () => _authenticate(
@@ -251,9 +427,18 @@ class _LoginState extends State<LoginPageRoyalClean> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(Icons.apple, size: 22),
-                                    SizedBox(width: 8),
+                                    SizedBox(width: 4),
                                     Flexible(
-                                      child: Text('Continuar com Apple'),
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          'Continuar com Apple',
+                                          maxLines: 1,
+                                          softWrap: false,
+                                          style: TextStyle(fontSize: 12),
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -265,7 +450,7 @@ class _LoginState extends State<LoginPageRoyalClean> {
                             child: Align(
                               alignment: Alignment.centerRight,
                               child: TextButton(
-                                style: _secondaryButtonStyle,
+                                style: _socialButtonStyle,
                                 onPressed: _busy
                                     ? null
                                     : () => _authenticate(
@@ -283,9 +468,18 @@ class _LoginState extends State<LoginPageRoyalClean> {
                                         excludeFromSemantics: true,
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
+                                    const SizedBox(width: 4),
                                     const Flexible(
-                                      child: Text('Continuar com Google'),
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        alignment: Alignment.centerRight,
+                                        child: Text(
+                                          'Continuar com Google',
+                                          maxLines: 1,
+                                          softWrap: false,
+                                          style: TextStyle(fontSize: 12),
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -294,9 +488,24 @@ class _LoginState extends State<LoginPageRoyalClean> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 12),
+                      CheckboxListTile(
+                        contentPadding: EdgeInsets.zero,
+                        controlAffinity: ListTileControlAffinity.leading,
+                        value: _remember,
+                        onChanged: _busy
+                            ? null
+                            : (value) => _changeRemember(value ?? false),
+                        title: const Text(
+                          'Manter conectado',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
                       Text(
-                        'Sua sessão fica disponível neste dispositivo. Use “Sair” ao terminar em um aparelho compartilhado.',
+                        _remember
+                            ? 'Sua sessão e seu e-mail serão lembrados neste dispositivo. A senha pode ser salva pelo gerenciador do aparelho.'
+                            : 'Ao reiniciar o aplicativo, entre novamente. O preenchimento automático não será solicitado.',
                         textAlign: TextAlign.center,
                         style: Theme.of(
                           context,

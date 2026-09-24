@@ -18,6 +18,11 @@ dependencies:
   cloud_functions: ^6.5.0
   google_sign_in: ^7.2.0
   firebase_app_check: ^0.4.8
+  shared_preferences: ^2.5.5
+  local_auth: ^3.0.2
+  flutter_secure_storage: ^11.2.0
+  path_provider_android: 2.2.23
+  local_auth_android: 2.2.0
 
 dev_dependencies:
   flutter_test:

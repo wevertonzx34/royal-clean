@@ -1,3 +1,4 @@
+import '../preview/preview_page_royal_clean.dart';
 import 'package:flutter/material.dart';
 import '../../core_royal_clean/constants/app_routes_royal_clean.dart';
 import '../../core_royal_clean/services/admin_access_royal_clean.dart';
@@ -50,6 +51,9 @@ class _AdminRouteGuardRoyalCleanState extends State<AdminRouteGuardRoyalClean> {
                   snapshot.connectionState == ConnectionState.done
               ? AdminAccessRoyalClean.unavailable
               : snapshot.data ?? AdminAccessRoyalClean.checking;
+          if (state == AdminAccessRoyalClean.signedOut) {
+            return const PreviewPageRoyalClean();
+          }
           // Lazy construction: protected widgets never build before authorization.
           return state == AdminAccessRoyalClean.allowed
               ? widget.builder(context)
