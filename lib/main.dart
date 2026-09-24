@@ -118,7 +118,7 @@ class RoyalCleanApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppThemeRoyalClean.theme,
       builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
-        value: SystemUiOverlayStyle.light,
+        value: AppThemeRoyalClean.systemUiStyle,
         child: child!,
       ),
       initialRoute: AppRoutesRoyalClean.splash,

@@ -2,6 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class AppThemeRoyalClean {
+  // Always reset the background as well as icon contrast after a light route.
+  static const systemUiStyle = SystemUiOverlayStyle(
+    statusBarColor: Color(0xFF031923),
+    statusBarIconBrightness: Brightness.light,
+    statusBarBrightness: Brightness.dark,
+    systemNavigationBarColor: Colors.black,
+    systemNavigationBarIconBrightness: Brightness.light,
+  );
+
   static ThemeData get theme {
     const background = Color(0xFF031923);
     const surface = Color(0xFF062B3D);
@@ -26,7 +35,7 @@ class AppThemeRoyalClean {
         error: danger,
       ),
       appBarTheme: const AppBarTheme(
-        systemOverlayStyle: SystemUiOverlayStyle.light,
+        systemOverlayStyle: systemUiStyle,
         backgroundColor: Colors.transparent,
         foregroundColor: textPrimary,
         elevation: 0,

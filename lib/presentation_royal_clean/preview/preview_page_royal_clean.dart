@@ -185,6 +185,7 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
             systemOverlayStyle: const SystemUiOverlayStyle(
               statusBarColor: Colors.white,
               statusBarIconBrightness: Brightness.dark,
+              statusBarBrightness: Brightness.light,
               systemNavigationBarColor: _paper,
               systemNavigationBarIconBrightness: Brightness.dark,
             ),
