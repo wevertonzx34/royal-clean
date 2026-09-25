@@ -5,6 +5,7 @@ import 'package:royal_clean/core_royal_clean/constants/app_routes_royal_clean.da
 import 'package:royal_clean/core_royal_clean/theme/app_theme_royal_clean.dart';
 import 'package:royal_clean/presentation_royal_clean/auth/login_page_royal_clean.dart';
 import 'package:royal_clean/presentation_royal_clean/preview/preview_page_royal_clean.dart';
+import 'package:royal_clean/presentation_royal_clean/preview/product_filters_royal_clean.dart';
 import 'package:royal_clean/presentation_royal_clean/splash/splash_page_royal_clean.dart';
 
 Widget testApp({bool splash = false}) => MaterialApp(
@@ -141,9 +142,13 @@ void main() {
     expect(find.text('PRODUTO DEMONSTRATIVO'), findsOneWidget);
     await tester.tap(find.byTooltip('Fechar'));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(
-      find.text('Um novo jeito de estar perto de você.'),
+    await tester.tap(find.text('Sobre nós'));
+    await tester.pumpAndSettle();
+    await Scrollable.ensureVisible(
+      tester.element(find.text('Um novo jeito de estar perto de você.')),
+      alignment: .4,
     );
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Um novo jeito de estar perto de você.'));
     await tester.pumpAndSettle();
     expect(find.text('UNIVERSO ROYAL CLEAN · DEMONSTRAÇÃO'), findsOneWidget);
@@ -189,7 +194,13 @@ void main() {
       );
       await tester.tap(find.byTooltip('Pesquisar produtos'));
       await tester.pumpAndSettle();
-      expect(find.byType(ChoiceChip), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(ProductFiltersRoyalClean),
+          matching: find.byType(ChoiceChip),
+        ),
+        findsNothing,
+      );
       expect(find.text('Nichos'), findsOneWidget);
       expect(find.byType(TextField), findsNothing);
       // Repeat the niches/lens cycle without losing the search behavior.

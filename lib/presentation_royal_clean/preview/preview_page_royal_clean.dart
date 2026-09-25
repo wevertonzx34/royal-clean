@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/rendering.dart';
 
 import '../../core_royal_clean/constants/app_routes_royal_clean.dart';
 import '../../core_royal_clean/services/biometric_access_royal_clean.dart';
@@ -7,6 +8,7 @@ import 'preview_content_royal_clean.dart';
 import 'partnership_content_royal_clean.dart';
 import 'partnership_section_royal_clean.dart';
 import 'product_filters_royal_clean.dart';
+import 'product_categories_royal_clean.dart';
 
 const _navy = Color(0xFF092F43);
 const _teal = Color(0xFF007F9F);
@@ -35,7 +37,9 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
   final _productsKey = GlobalKey();
   final _newsKey = GlobalKey();
   final _partnersKey = GlobalKey();
+  final _pageScroll = ScrollController();
   String _category = 'Todos';
+  String? _generalCategory;
   String _searchQuery = '';
   bool _openingAccount = false;
   bool _signedIn = false;
@@ -83,13 +87,26 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
 
   void _goTo(GlobalKey key) {
     final section = key.currentContext;
-    if (section != null) {
-      Scrollable.ensureVisible(
-        section,
+    final target = section?.findRenderObject();
+    if (target != null && _pageScroll.hasClients) {
+      final offset = RenderAbstractViewport.of(
+        target,
+      ).getOffsetToReveal(target, 0).offset;
+      final header = key == _productsKey
+          ? 0.0
+          : 32 + MediaQuery.textScalerOf(context).scale(24);
+      _pageScroll.animateTo(
+        (offset - header).clamp(0.0, _pageScroll.position.maxScrollExtent),
         duration: const Duration(milliseconds: 450),
         curve: Curves.easeOutCubic,
       );
     }
+  }
+
+  @override
+  void dispose() {
+    _pageScroll.dispose();
+    super.dispose();
   }
 
   Widget _menuButton(String title, VoidCallback? onPressed) => TextButton(
@@ -346,256 +363,304 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
             ],
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(52),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _menuButton('Produtos', () => _goTo(_productsKey)),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _menuButton(
+                            'Produtos',
+                            () => _goTo(_productsKey),
+                          ),
+                        ),
+                        Expanded(
+                          child: _menuButton(
+                            'Novidades',
+                            () => _goTo(_partnersKey),
+                          ),
+                        ),
+                        Expanded(
+                          child: _menuButton(
+                            'Desempenho',
+                            () => _goTo(_partnersKey),
+                          ),
+                        ),
+                        SizedBox(
+                          width: _accountColumnWidth,
+                          child: _menuButton(
+                            'Sobre nós',
+                            () => _goTo(_newsKey),
+                          ),
+                        ),
+                      ],
                     ),
-                    Expanded(
-                      child: _menuButton(
-                        'Novidades',
-                        () => _goTo(_partnersKey),
-                      ),
-                    ),
-                    Expanded(
-                      child: _menuButton(
-                        'Desempenho',
-                        () => _goTo(_partnersKey),
-                      ),
-                    ),
-                    SizedBox(
-                      width: _accountColumnWidth,
-                      child: _menuButton('Sobre nós', () => _goTo(_newsKey)),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
-          body: SingleChildScrollView(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.viewPaddingOf(context).bottom + 16,
-            ),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1120),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _hero(),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(22, 22, 22, 4),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.auto_awesome_outlined,
-                            size: 19,
-                            color: _teal,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              'Um cuidado especial para cada ambiente.',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: _navy.withValues(alpha: .8),
+          body: CustomScrollView(
+            controller: _pageScroll,
+            slivers: [
+              SliverToBoxAdapter(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1120),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _hero(),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(22, 22, 22, 4),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.auto_awesome_outlined,
+                                size: 19,
+                                color: _teal,
                               ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 30, 20, 0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _SectionTitle(
-                            key: _productsKey,
-                            eyebrow: 'NOSSA VITRINE',
-                            title: 'Encontre seu essencial.',
-                            subtitle:
-                                'Explore uma seleção feita para inspirar.',
-                          ),
-                          const SizedBox(height: 18),
-                          ProductFiltersRoyalClean(
-                            onCategory: (value) =>
-                                setState(() => _category = value),
-                            onSearch: (value) =>
-                                setState(() => _searchQuery = value),
-                          ),
-                          const SizedBox(height: 18),
-                        ],
-                      ),
-                    ),
-                    if (_visibleProducts.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text(
-                          'Nenhum produto encontrado. Tente outro termo ou nicho.',
-                          style: TextStyle(color: _muted),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    if (_visibleProducts.isNotEmpty)
-                      SizedBox(
-                        height:
-                            250 + MediaQuery.textScalerOf(context).scale(110),
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          itemCount: _visibleProducts.length,
-                          separatorBuilder: (_, index) =>
-                              const SizedBox(width: 14),
-                          itemBuilder: (context, index) {
-                            final product = _visibleProducts[index];
-                            return _ProductCard(
-                              product: product,
-                              onTap: () => _openStory(
-                                context,
-                                title: product.name,
-                                label: 'PRODUTO DEMONSTRATIVO',
-                                image: product.image,
-                                body: product.description,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    const Padding(
-                      padding: EdgeInsets.fromLTRB(20, 14, 20, 0),
-                      child: _DemoNote(),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 38, 20, 24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _SectionTitle(
-                            key: _newsKey,
-                            eyebrow: 'FIQUE POR DENTRO',
-                            title: 'Acontece na Royal.',
-                            subtitle:
-                                'Histórias, ideias e novas possibilidades.',
-                          ),
-                          const SizedBox(height: 20),
-                          for (final news in previewNewsRoyalClean)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 14),
-                              child: _NewsCard(
-                                news: news,
-                                onTap: () => _openStory(
-                                  context,
-                                  title: news.title,
-                                  label: '${news.category} · DEMONSTRAÇÃO',
-                                  image: news.image,
-                                  body: news.body,
-                                ),
-                              ),
-                            ),
-                          const SizedBox(height: 14),
-                          PartnershipSectionRoyalClean(
-                            key: _partnersKey,
-                            partners: widget.partners,
-                            ads: widget.partnerAds,
-                          ),
-                          Container(
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: _navy,
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Icon(
-                                  Icons.waving_hand_outlined,
-                                  color: Color(0xFF7CDDED),
-                                  size: 27,
-                                ),
-                                const SizedBox(height: 16),
-                                const Text(
-                                  'Bom ter você por aqui.',
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Um cuidado especial para cada ambiente.',
                                   style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 23,
-                                    fontWeight: FontWeight.w800,
+                                    fontSize: 12,
+                                    color: _navy.withValues(alpha: .8),
                                   ),
                                 ),
-                                const SizedBox(height: 8),
-                                const Text(
-                                  'Já tem acesso? Entre na sua conta para continuar.',
-                                  style: TextStyle(
-                                    color: Color(0xFFB6CED9),
-                                    height: 1.5,
-                                  ),
-                                ),
-                                const SizedBox(height: 20),
-                                FilledButton.icon(
-                                  onPressed: _openingAccount
-                                      ? null
-                                      : () => _openAccount(signedIn),
-                                  icon: const Icon(
-                                    Icons.arrow_forward_rounded,
-                                    size: 18,
-                                  ),
-                                  label: const Text('Acessar minha conta'),
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: _navy,
-                                  ),
-                                ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 30),
-                          const Text(
-                            'ROYAL CLEAN DISTRIBUIDORA LTDA',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: _navy,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 13,
-                              height: 1.5,
-                              letterSpacing: 0.8,
-                            ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 30, 20, 0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _SectionTitle(
+                                key: _productsKey,
+                                eyebrow: 'NOSSA VITRINE',
+                                title: 'Encontre seu essencial.',
+                                subtitle:
+                                    'Explore uma seleção feita para inspirar.',
+                              ),
+                              const SizedBox(height: 18),
+                              ProductFiltersRoyalClean(
+                                onCategory: (value) =>
+                                    setState(() => _category = value),
+                                onSearch: (value) =>
+                                    setState(() => _searchQuery = value),
+                              ),
+                              const SizedBox(height: 18),
+                            ],
                           ),
-                          const SizedBox(height: 6),
-                          const Text(
-                            'Cuidado em cada detalhe.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: _muted, fontSize: 12),
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'CNPJ 62.581.826/0001-49',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: _muted,
-                              fontSize: 12,
-                              height: 1.5,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          const Text(
-                            'R. Ouro Preto\nSetor Candida de Morais, Goiânia-GO',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: _muted,
-                              fontSize: 12,
-                              height: 1.5,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _CategoryHeaderRoyalClean(
+                  height: 32 + MediaQuery.textScalerOf(context).scale(24),
+                  child: ProductCategoriesRoyalClean(
+                    selected: _generalCategory,
+                    onSelected: (value) {
+                      setState(() => _generalCategory = value);
+                      _goTo(_productsKey);
+                    },
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1120),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 18),
+                        if (_visibleProducts.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.all(24),
+                            child: Text(
+                              'Nenhum produto encontrado. Tente outro termo ou nicho.',
+                              style: TextStyle(color: _muted),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        if (_visibleProducts.isNotEmpty)
+                          SizedBox(
+                            height:
+                                250 +
+                                MediaQuery.textScalerOf(context).scale(110),
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                              ),
+                              itemCount: _visibleProducts.length,
+                              separatorBuilder: (_, index) =>
+                                  const SizedBox(width: 14),
+                              itemBuilder: (context, index) {
+                                final product = _visibleProducts[index];
+                                return _ProductCard(
+                                  product: product,
+                                  onTap: () => _openStory(
+                                    context,
+                                    title: product.name,
+                                    label: 'PRODUTO DEMONSTRATIVO',
+                                    image: product.image,
+                                    body:
+                                        '${product.description}\n\nCódigo demonstrativo: ${product.code}\nTags: ${product.tags.join(', ')}',
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        const Padding(
+                          padding: EdgeInsets.fromLTRB(20, 14, 20, 0),
+                          child: _DemoNote(),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 38, 20, 24),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _SectionTitle(
+                                key: _newsKey,
+                                eyebrow: 'FIQUE POR DENTRO',
+                                title: 'Acontece na Royal.',
+                                subtitle:
+                                    'Histórias, ideias e novas possibilidades.',
+                              ),
+                              const SizedBox(height: 20),
+                              for (final news in previewNewsRoyalClean)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 14),
+                                  child: _NewsCard(
+                                    news: news,
+                                    onTap: () => _openStory(
+                                      context,
+                                      title: news.title,
+                                      label: '${news.category} · DEMONSTRAÇÃO',
+                                      image: news.image,
+                                      body: news.body,
+                                    ),
+                                  ),
+                                ),
+                              const SizedBox(height: 14),
+                              PartnershipSectionRoyalClean(
+                                key: _partnersKey,
+                                partners: widget.partners,
+                                ads: widget.partnerAds,
+                              ),
+                              Container(
+                                padding: const EdgeInsets.all(24),
+                                decoration: BoxDecoration(
+                                  color: _navy,
+                                  borderRadius: BorderRadius.circular(24),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Icon(
+                                      Icons.waving_hand_outlined,
+                                      color: Color(0xFF7CDDED),
+                                      size: 27,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    const Text(
+                                      'Bom ter você por aqui.',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 23,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    const Text(
+                                      'Já tem acesso? Entre na sua conta para continuar.',
+                                      style: TextStyle(
+                                        color: Color(0xFFB6CED9),
+                                        height: 1.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 20),
+                                    FilledButton.icon(
+                                      onPressed: _openingAccount
+                                          ? null
+                                          : () => _openAccount(signedIn),
+                                      icon: const Icon(
+                                        Icons.arrow_forward_rounded,
+                                        size: 18,
+                                      ),
+                                      label: const Text('Acessar minha conta'),
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        foregroundColor: _navy,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 30),
+                              const Text(
+                                'ROYAL CLEAN DISTRIBUIDORA LTDA',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: _navy,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 13,
+                                  height: 1.5,
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              const Text(
+                                'Cuidado em cada detalhe.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: _muted, fontSize: 12),
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'CNPJ 62.581.826/0001-49',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: _muted,
+                                  fontSize: 12,
+                                  height: 1.5,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              const Text(
+                                'R. Ouro Preto\nSetor Candida de Morais, Goiânia-GO',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: _muted,
+                                  fontSize: 12,
+                                  height: 1.5,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: MediaQuery.viewPaddingOf(context).bottom + 16,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -614,7 +679,10 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
         final words = normalizeProductSearchRoyalClean(
           _searchQuery,
         ).split(RegExp(r'\s+')).where((word) => word.isNotEmpty);
-        return categoryMatches && words.every(haystack.contains);
+        return (_generalCategory == null ||
+                product.generalCategory == _generalCategory) &&
+            categoryMatches &&
+            words.every(haystack.contains);
       }).toList();
 
   Widget _hero() => Padding(
@@ -824,6 +892,34 @@ class _ProductCard extends StatelessWidget {
       ),
     ),
   );
+}
+
+class _CategoryHeaderRoyalClean extends SliverPersistentHeaderDelegate {
+  final double height;
+  final Widget child;
+  const _CategoryHeaderRoyalClean({required this.height, required this.child});
+  @override
+  double get minExtent => height;
+  @override
+  double get maxExtent => height;
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) => Material(
+    color: _paper,
+    elevation: overlapsContent ? 1 : 0,
+    child: Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1120),
+        child: child,
+      ),
+    ),
+  );
+  @override
+  bool shouldRebuild(_CategoryHeaderRoyalClean oldDelegate) =>
+      height != oldDelegate.height || child != oldDelegate.child;
 }
 
 class _NewsCard extends StatelessWidget {

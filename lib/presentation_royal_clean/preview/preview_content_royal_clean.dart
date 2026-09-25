@@ -8,6 +8,7 @@ class PreviewProductRoyalClean {
   final String code;
   final List<String> tags;
   final List<String> niches;
+  final String generalCategory;
 
   const PreviewProductRoyalClean(
     this.name,
@@ -17,6 +18,7 @@ class PreviewProductRoyalClean {
     this.code = '',
     this.tags = const [],
     this.niches = const [],
+    this.generalCategory = 'limpeza-profissional',
   });
 }
 
@@ -47,6 +49,72 @@ const previewProductsRoyalClean = [
     code: 'DEMO-003',
     tags: ['seleção', 'kit', 'cuidados'],
     niches: ['Lançamentos'],
+  ),
+  PreviewProductRoyalClean(
+    'Papel toalha interfolhado',
+    'Dia a dia',
+    'assets/preview/logo-parceiro/coroa-royal.webp',
+    'Produto simulado de Papéis e higiene. Imagem institucional ilustrativa; especificações, preço e estoque serão definidos no catálogo real.',
+    code: 'DEMO-PAP-001',
+    generalCategory: 'papeis-higiene',
+    tags: ['papel toalha', 'interfolhado', 'higiene'],
+    niches: ['Básicos'],
+  ),
+  PreviewProductRoyalClean(
+    'Saco de lixo preto 100 L',
+    'Dia a dia',
+    'assets/preview/logo-parceiro/coroa-royal.webp',
+    'Produto simulado de Limpeza profissional, grupo Sacos de lixo. Imagem institucional ilustrativa, sem estoque ou oferta comercial confirmados.',
+    code: 'DEMO-SAC-100',
+    generalCategory: 'limpeza-profissional',
+    tags: ['sacos de lixo', 'saco preto', '100 litros', 'resíduos'],
+    niches: ['Básicos'],
+  ),
+  PreviewProductRoyalClean(
+    'Sabonete líquido algodão',
+    'Dia a dia',
+    'assets/preview/logo-parceiro/coroa-royal.webp',
+    'Produto simulado de Cuidados pessoais. Imagem institucional ilustrativa; composição e disponibilidade serão informadas no catálogo real.',
+    code: 'DEMO-CUI-001',
+    generalCategory: 'cuidados-pessoais',
+    tags: ['sabonete', 'algodão', 'refil', 'cuidados pessoais'],
+    niches: ['Básicos'],
+  ),
+  PreviewProductRoyalClean(
+    'Copo descartável 200 ml',
+    'Dia a dia',
+    'assets/preview/logo-parceiro/coroa-royal.webp',
+    'Produto simulado de Descartáveis para alimentação. Imagem institucional ilustrativa; material e quantidade por embalagem serão definidos depois.',
+    code: 'DEMO-DES-001',
+    generalCategory: 'descartaveis-alimentacao',
+    tags: ['copos', 'descartáveis', 'alimentação', '200 ml'],
+  ),
+  PreviewProductRoyalClean(
+    'Bobina picotada',
+    'Dia a dia',
+    'assets/preview/logo-parceiro/coroa-royal.webp',
+    'Produto simulado de Embalagens e conservação. Imagem institucional ilustrativa; dimensões e especificações serão atualizadas com os dados reais.',
+    code: 'DEMO-EMB-001',
+    generalCategory: 'embalagens-conservacao',
+    tags: ['bobinas', 'embalagens', 'conservação', 'picotada'],
+  ),
+  PreviewProductRoyalClean(
+    'Dispenser de sabonete',
+    'Dia a dia',
+    'assets/preview/logo-parceiro/coroa-royal.webp',
+    'Produto simulado de Dispensers e acessórios. Imagem institucional ilustrativa; capacidade e compatibilidade serão informadas no catálogo real.',
+    code: 'DEMO-DIS-001',
+    generalCategory: 'dispensers-acessorios',
+    tags: ['dispenser', 'saboneteira', 'acessórios'],
+  ),
+  PreviewProductRoyalClean(
+    'Luva nitrílica',
+    'Dia a dia',
+    'assets/preview/logo-parceiro/coroa-royal.webp',
+    'Produto simulado de Proteção e uso profissional. Imagem institucional ilustrativa; tamanhos, finalidade e certificações serão informados antes da comercialização.',
+    code: 'DEMO-PRO-001',
+    generalCategory: 'protecao-profissional',
+    tags: ['luvas', 'nitrílicas', 'proteção', 'uso profissional'],
   ),
 ];
 
