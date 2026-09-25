@@ -1,3 +1,5 @@
+import '../../core_royal_clean/services/intercom_royal_clean.dart';
+import 'notifications_panel_royal_clean.dart';
 import 'package:flutter/material.dart';
 import '../../core_royal_clean/constants/app_routes_royal_clean.dart';
 import '../../core_royal_clean/services/account_access_royal_clean.dart';
@@ -9,62 +11,7 @@ void showNotificationsRoyalClean(BuildContext context) {
     isScrollControlled: true,
     showDragHandle: true,
     backgroundColor: Colors.white,
-    builder: (context) => SafeArea(
-      top: false,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    'Notificações',
-                    style: TextStyle(
-                      color: Color(0xFF092F43),
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  tooltip: 'Fechar notificações',
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(
-                    Icons.close_rounded,
-                    color: Color(0xFF092F43),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            const Icon(
-              Icons.public_rounded,
-              color: Color(0xFF007F9F),
-              size: 44,
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Nenhuma notificação por aqui.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Color(0xFF092F43),
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Enquanto isso, explore as novidades e parcerias da Royal Clean.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFF607783), height: 1.5),
-            ),
-          ],
-        ),
-      ),
-    ),
+    builder: (_) => const NotificationsPanelRoyalClean(),
   );
 }
 
@@ -72,10 +19,20 @@ class NotificationButtonRoyalClean extends StatelessWidget {
   final Color? color;
   const NotificationButtonRoyalClean({super.key, this.color});
   @override
-  Widget build(BuildContext context) => IconButton(
-    tooltip: 'Notificações',
-    onPressed: () => showNotificationsRoyalClean(context),
-    icon: Icon(Icons.public_rounded, color: color),
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: IntercomRoyalClean.instance,
+    builder: (context, _) {
+      final count = IntercomRoyalClean.instance.unreadCount;
+      return IconButton(
+        tooltip: 'Notificações',
+        onPressed: () => showNotificationsRoyalClean(context),
+        icon: Badge(
+          isLabelVisible: count > 0,
+          label: Text(count > 99 ? '99+' : '$count'),
+          child: Icon(Icons.public_rounded, color: color),
+        ),
+      );
+    },
   );
 }
 

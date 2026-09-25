@@ -4,6 +4,7 @@ import 'home_background_royal_clean.dart';
 import '../auth/logout_royal_clean.dart';
 import 'home_form_royal_clean.dart';
 import '../shared/header_actions_royal_clean.dart';
+import 'dashboard_chart_royal_clean.dart';
 
 class HomePageRoyalClean extends StatelessWidget {
   const HomePageRoyalClean({super.key});
@@ -19,7 +20,6 @@ class HomePageRoyalClean extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final bool isSmall = constraints.maxWidth < 700;
-            final double maxWidth = isSmall ? 560 : 720;
 
             return Center(
               child: SingleChildScrollView(
@@ -27,17 +27,26 @@ class HomePageRoyalClean extends StatelessWidget {
                   horizontal: isSmall ? 16 : 24,
                   vertical: 24,
                 ),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: maxWidth),
-                  child: HomeFormRoyalClean(
-                    onAccessControlPressed: () {
-                      Navigator.pushNamed(
-                        context,
-                        AppRoutesRoyalClean.accessControl,
-                      );
-                    },
-                    onLogoutPressed: () => logoutToPreviewRoyalClean(context),
-                  ),
+                child: Column(
+                  children: [
+                    DashboardChartRoyalClean(
+                      availableHeight: constraints.maxHeight,
+                    ),
+                    const SizedBox(height: 24),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 720),
+                      child: HomeFormRoyalClean(
+                        onAccessControlPressed: () {
+                          Navigator.pushNamed(
+                            context,
+                            AppRoutesRoyalClean.accessControl,
+                          );
+                        },
+                        onLogoutPressed: () =>
+                            logoutToPreviewRoyalClean(context),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             );

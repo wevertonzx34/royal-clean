@@ -48,6 +48,9 @@ void main() {
         AppRoutesRoyalClean.inviteStatus,
         AppRoutesRoyalClean.inviteStatusDetails,
         '/users',
+        '/intercom',
+        '/bling',
+        '/bling-data',
       ]) {
         navigator.pushNamed(route, arguments: <String, dynamic>{});
         await tester.pumpAndSettle();

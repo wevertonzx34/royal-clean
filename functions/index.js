@@ -1,13 +1,23 @@
 import {initializeApp} from 'firebase-admin/app';
 import {getAuth} from 'firebase-admin/auth';
 import {getFirestore, FieldValue, Timestamp} from 'firebase-admin/firestore';
-import {onCall, HttpsError} from 'firebase-functions/v2/https';
+import {onCall, onRequest, HttpsError} from 'firebase-functions/v2/https';
+import {createBlingHandlers} from './bling.js';
+import {createBlingDataHandler} from './bling-data.js';
 import {LEGAL_VERSION, ROLES, validName, validDocument, normalizeDocument, inviteProblem, normalizePhone} from './validation.js';
 
 initializeApp();
 const db = getFirestore();
 // App Check is required in production. Use registered debug tokens for local APKs.
 const options = {region: 'southamerica-east1', enforceAppCheck: true, maxInstances: 10};
+const bling = createBlingHandlers({db, auth: getAuth(), authenticated, requireAdmin, rateLimit});
+const blingOptions = {...options, maxInstances: 2, concurrency: 20, timeoutSeconds: 60};
+export const blingConnectionStatus = onCall(blingOptions, bling.status);
+export const blingBeginAuthorization = onCall(blingOptions, bling.begin);
+export const blingReadData = onCall(blingOptions,
+  createBlingDataHandler({db, authenticated, requireAdmin, rateLimit}));
+export const blingCallback = onRequest({region: 'southamerica-east1', maxInstances: 2,
+  concurrency: 20, timeoutSeconds: 60, invoker: 'public'}, bling.callback);
 const fail = (message, code = 'invalid-argument') => { throw new HttpsError(code, message); };
 
 async function authenticated(request, verified = true) {

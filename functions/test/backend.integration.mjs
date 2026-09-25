@@ -9,10 +9,82 @@ const {registerAccount, updateMyData, setUserRole} = await import('../index.js')
 const {getFirestore, Timestamp} = await import('firebase-admin/firestore');
 const {getAuth} = await import('firebase-admin/auth');
 const {getApp, deleteApp} = await import('firebase-admin/app');
+const {createBlingHandlers} = await import('../bling.js');
+const {createBlingDataHandler} = await import('../bling-data.js');
 const db = getFirestore();
 const auth = getAuth();
 const data = (extra={}) => ({name:'João da Silva', acceptTerms:true, legalVersion:'2026-09-22', offers:false, inviteCode:'', ...extra});
 const request = (uid, input = {}) => ({auth:{uid}, data:input});
+
+test('Bling OAuth: admin gate, browser binding, single use and private token storage', async () => {
+  await db.doc('integrations_private/bling').delete();
+  await db.doc('integrations_private/bling_attempt').delete();
+  let exchanges = 0;
+  const handlers = createBlingHandlers({db, auth,
+    authenticated: async req => { if (!req.auth) throw new Error('No auth'); return auth.getUser(req.auth.uid); },
+    requireAdmin: async user => { if (user.uid !== 'role-admin') throw new Error('Not admin'); },
+    rateLimit: async () => {}, readCredentials: async () => ({clientId: 'demo-id', clientSecret: 'demo-secret'}),
+    exchangeCode: async () => { exchanges++; return {accessToken: 'test-access', refreshToken: 'test-refresh', expiresIn: 3600, scope: ''}; },
+  });
+  const response = () => ({headers: {}, statusCode: 200, body: '',
+    set(name, value) { this.headers[name] = value; return this; },
+    status(code) { this.statusCode = code; return this; }, type() { return this; },
+    send(body) { this.body = body; return this; }, redirect(code, location) { this.statusCode = code; this.location = location; return this; }});
+  await assert.rejects(handlers.begin({}), /No auth/);
+  await assert.rejects(handlers.begin(request('intruder')), /Not admin/);
+  const started = await handlers.begin(request('role-admin'));
+  const state = new URL(started.url).searchParams.get('start');
+  await assert.rejects(handlers.begin(request('role-admin')), /andamento/);
+  const browser = response();
+  await handlers.callback({method: 'GET', query: {start: state}, get: () => ''}, browser);
+  assert.equal(browser.statusCode, 303);
+  assert.equal(new URL(browser.location).host, 'www.bling.com.br');
+  const cookie = browser.headers['Set-Cookie'].split(';')[0];
+  const attack = response();
+  await handlers.callback({method: 'GET', query: {state, code: 'example'}, get: () => ''}, attack);
+  assert.equal(attack.statusCode, 400);
+  assert.equal(exchanges, 0);
+  const done = response();
+  await handlers.callback({method: 'GET', query: {state, code: 'example'}, get: () => cookie}, done);
+  assert.equal(done.statusCode, 303);
+  assert.equal(exchanges, 1);
+  assert.equal((await db.doc('integrations_private/bling').get()).data().refreshToken, 'test-refresh');
+  const status = await handlers.status(request('role-admin'));
+  assert.equal(status.status, 'authorized');
+  assert.equal(JSON.stringify(status).includes('test-refresh'), false);
+  const replay = response();
+  await handlers.callback({method: 'GET', query: {state, code: 'example'}, get: () => cookie}, replay);
+  assert.equal(replay.statusCode, 400);
+  assert.equal(exchanges, 1);
+  await assert.rejects(handlers.begin(request('role-admin')), /já foi autorizada/);
+  const renewed = await handlers.begin(request('role-admin', {reconnect:true}));
+  const nextState = new URL(renewed.url).searchParams.get('start');
+  const nextBrowser = response();
+  await handlers.callback({method:'GET',query:{start:nextState},get:()=>''},nextBrowser);
+  const nextCookie = nextBrowser.headers['Set-Cookie'].split(';')[0];
+  const nextDone = response();
+  await handlers.callback({method:'GET',query:{state:nextState,code:'renewed'},get:()=>nextCookie},nextDone);
+  assert.equal(nextDone.statusCode,303);
+  assert.equal(exchanges,2);
+});
+
+test('Bling OAuth: expired sessions and revoked administrators never exchange codes', async () => {
+  const {createHash} = await import('node:crypto');
+  const state = 'a'.repeat(64);
+  const hash = createHash('sha256').update(state).digest('hex');
+  const ref = db.doc(`bling_oauth_sessions/${hash}`);
+  let exchanges = 0;
+  const handlers = createBlingHandlers({db, auth, authenticated: async () => {}, requireAdmin: async () => {throw new Error('Revoked');},
+    rateLimit: async () => {}, readCredentials: async () => ({}), exchangeCode: async () => {exchanges++;}});
+  const res = {set() {return this;}, status(code) {this.code = code; return this;}, type() {return this;}, send() {return this;}};
+  await ref.set({uid: 'role-admin', expiresAt: Timestamp.fromMillis(Date.now() - 1000), status: 'started'});
+  await handlers.callback({method: 'GET', query: {state, code: 'code'}, get: () => ''}, res);
+  assert.equal(res.code, 400);
+  await ref.update({expiresAt: Timestamp.fromMillis(Date.now() + 60000)});
+  await handlers.callback({method: 'GET', query: {state, code: 'code'}, get: () => ''}, res);
+  assert.equal(res.code, 400);
+  assert.equal(exchanges, 0);
+});
 
 before(async () => {
   for (const uid of ['new-one','new-two','new-three','unverified','role-admin','intruder','expired','admin-disabled']) {
@@ -22,6 +94,37 @@ before(async () => {
   await db.doc('admin/admin-disabled').set({email:'admin-disabled@example.test', ativo:false, eAdministrador:true});
 });
 after(async () => { await deleteApp(getApp()); });
+
+test('Bling data: admin-only private sync, scope denial and coordinated renewal', async () => {
+  const connection = db.doc('integrations_private/bling');
+  await connection.set({accessToken:'old-access-token',refreshToken:'old-refresh-token',expiresAt:Timestamp.fromMillis(1)});
+  let refreshes = 0;
+  let blocked = false;
+  const handler = createBlingDataHandler({db,
+    authenticated: async r => { if (!r.auth) throw new Error('No auth'); return {uid:r.auth.uid}; },
+    requireAdmin: async user => { if (user.uid !== 'role-admin') throw new Error('Not admin'); },
+    rateLimit: async () => {}, readCredentials: async () => ({clientId:'test',clientSecret:'test'}),
+    fetchImpl: async (url, options) => {
+      if (url.endsWith('/oauth/token')) {
+        refreshes++;
+        assert.equal(options.body.get('grant_type'),'refresh_token');
+        return {ok:true,json:async()=>({access_token:'new-access-token',refresh_token:'new-refresh-token',expires_in:3600,token_type:'Bearer'})};
+      }
+      assert.equal(options.headers.Authorization,'Bearer new-access-token');
+      if (blocked) return {ok:false,status:403};
+      return {ok:true,status:200,json:async()=>({data:[{id:123,nome:'Produto real de teste',preco:10,custo:9}]})};
+    }});
+  await assert.rejects(handler(request('intruder')), /Not admin/);
+  const results = await Promise.allSettled([handler(request('role-admin')),handler(request('role-admin'))]);
+  assert.ok(results.some(r=>r.status==='fulfilled'));
+  assert.equal(refreshes,1);
+  assert.equal((await connection.get()).data().refreshToken,'new-refresh-token');
+  const product = (await db.doc('bling_private_products/123').get()).data();
+  assert.equal(product.price,10);
+  assert.equal(product.custo,undefined);
+  blocked = true;
+  await assert.rejects(handler(request('role-admin',{kind:'sales',start:'2026-09-01',end:'2026-09-25'})), {code:'permission-denied'});
+});
 
 test('backend: unauthenticated and unverified registration rejected', async () => {
   await assert.rejects(registerAccount.run({data:data()}), {code:'unauthenticated'});

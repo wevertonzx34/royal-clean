@@ -16,6 +16,41 @@ let inactive;
 let mismatch;
 let nonAdmin;
 let noEmail;
+
+const intercomMessage = () => ({title: 'Aviso Royal Clean', body: 'Mensagem pública de teste.',
+  kind: 'Mensagem', publishedAt: serverTimestamp(), expiresAt: Timestamp.fromMillis(Date.now() + 86400000)});
+
+test('Interfone: only active admin publishes, and public messages are readable by guests', async () => {
+  for (const db of [visitor, member, inactive, mismatch, nonAdmin, noEmail]) {
+    await assertFails(setDoc(doc(db, 'intercom_messages/blocked'), intercomMessage()));
+  }
+  await assertSucceeds(setDoc(doc(admin, 'intercom_messages/notice'), intercomMessage()));
+  await assertSucceeds(getDoc(doc(visitor, 'intercom_messages/notice')));
+  await assertSucceeds(getDocs(query(collection(visitor, 'intercom_messages'), orderBy('publishedAt', 'desc'))));
+  await assertFails(updateDoc(doc(admin, 'intercom_messages/notice'), {title: 'Alterado'}));
+  await assertFails(deleteDoc(doc(member, 'intercom_messages/notice')));
+});
+
+test('Interfone: validates length, public schema, type, timestamps and expiration', async () => {
+  for (const changes of [{title: 'a'}, {body: ''}, {body: 'x'.repeat(2001)}, {kind: 'invalid'},
+    {privateEmail: 'private@example.test'}, {publishedAt: Timestamp.fromMillis(0)},
+    {expiresAt: Timestamp.fromMillis(0)}, {expiresAt: Timestamp.fromMillis(Date.now() + 86400000 * 40)}]) {
+    await assertFails(setDoc(doc(admin, 'intercom_messages/invalid'), {...intercomMessage(), ...changes}));
+  }
+});
+
+test('Interfone: reviews remain disabled until the user evaluation workflow is defined', async () => {
+  await assertSucceeds(setDoc(doc(admin, 'intercom_messages/notice'), intercomMessage()));
+  const review = {reviewedAt: serverTimestamp(), reviewedBy: 'admin-ok'};
+  await assertFails(setDoc(doc(admin, 'intercom_reviews/missing'), review));
+  await assertFails(setDoc(doc(admin, 'intercom_reviews/notice'), {...review, reviewedBy: 'other'}));
+  await assertFails(setDoc(doc(admin, 'intercom_reviews/notice'), review));
+  await assertFails(getDocs(collection(admin, 'intercom_reviews')));
+  for (const db of [visitor, member, inactive, admin]) {
+    await assertFails(getDoc(doc(db, 'intercom_reviews/notice')));
+    await assertFails(setDoc(doc(db, 'intercom_reviews/notice'), review));
+  }
+});
 before(async () => {
   env = await initializeTestEnvironment({
     projectId: 'demo-royal-clean',
@@ -86,6 +121,19 @@ test('Accounts: audit and rate limits are not exposed to clients', async () => {
   for (const name of ['account_audit','account_rate_limits']) {
     await assertFails(getDocs(collection(admin,name)));
     await assertFails(setDoc(doc(member,`${name}/fake`),{count:0}));
+  }
+});
+
+test('Bling credentials and OAuth sessions are denied to every client, including admins', async () => {
+  for (const collectionName of ['integrations_private', 'bling_oauth_sessions']) {
+    await env.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), `${collectionName}/test`), {secret: 'test-only'});
+    });
+    for (const db of [visitor, member, admin]) {
+      await assertFails(getDoc(doc(db, `${collectionName}/test`)));
+      await assertFails(getDocs(collection(db, collectionName)));
+      await assertFails(setDoc(doc(db, `${collectionName}/test`), {secret: 'replacement'}));
+    }
   }
 });
 beforeEach(async () => {

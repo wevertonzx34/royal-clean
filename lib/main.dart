@@ -1,9 +1,13 @@
 import 'dart:async';
+import 'core_royal_clean/services/intercom_royal_clean.dart';
+import 'presentation_royal_clean/home/intercom_page_royal_clean.dart';
+import 'presentation_royal_clean/home/bling_integration_page_royal_clean.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'presentation_royal_clean/home/bling_data_page_royal_clean.dart';
 import 'package:flutter/services.dart';
 import 'core_royal_clean/constants/app_routes_royal_clean.dart';
 import 'core_royal_clean/theme/app_theme_royal_clean.dart';
@@ -58,6 +62,7 @@ void main() {
           : const AppleAppAttestWithDeviceCheckFallbackProvider(),
     );
     AccountAccessRoyalClean.instance.start();
+    IntercomRoyalClean.instance.start();
     if (kDebugMode && const bool.fromEnvironment('VERIFY_APP_CHECK')) {
       debugPrint(
         'RoyalClean session: retained=${FirebaseAuth.instance.currentUser != null}; biometric=${BiometricAccessRoyalClean.instance.enabled}; locked=${BiometricAccessRoyalClean.instance.locked}',
@@ -153,6 +158,9 @@ class RoyalCleanApp extends StatelessWidget {
           personalData: true,
         ),
         '/users': (_) => _admin((_) => const UserManagementPageRoyalClean()),
+        '/intercom': (_) => _admin((_) => const IntercomPageRoyalClean()),
+        '/bling': (_) => _admin((_) => const BlingIntegrationPageRoyalClean()),
+        '/bling-data': (_) => _admin((_) => const BlingDataPageRoyalClean()),
         AppRoutesRoyalClean.home: (_) =>
             _admin((_) => const HomePageRoyalClean()),
         AppRoutesRoyalClean.accessControl: (_) =>
