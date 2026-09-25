@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 const productNichesRoyalClean = [
   'Todos',
   'Lançamentos',
+  'Ofertas',
   'Dia a dia',
   'Kits',
   'Básicos',
-  'Ofertas',
 ];
 
 String normalizeProductSearchRoyalClean(String value) {
