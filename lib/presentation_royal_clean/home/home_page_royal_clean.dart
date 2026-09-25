@@ -1,32 +1,19 @@
 import 'package:flutter/material.dart';
 import '../../core_royal_clean/constants/app_routes_royal_clean.dart';
-import '../../core_royal_clean/services/auth_service_royal_clean.dart';
 import 'home_background_royal_clean.dart';
 import '../auth/logout_royal_clean.dart';
 import 'home_form_royal_clean.dart';
+import '../shared/header_actions_royal_clean.dart';
 
 class HomePageRoyalClean extends StatelessWidget {
   const HomePageRoyalClean({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final email = AuthServiceRoyalClean.currentUser?.email ?? '-';
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Painel administrativo'),
-        actions: [
-          IconButton(
-            tooltip: 'Usuários e perfis',
-            onPressed: () => Navigator.pushNamed(context, '/users'),
-            icon: const Icon(Icons.manage_accounts),
-          ),
-          IconButton(
-            tooltip: 'Meus dados',
-            onPressed: () => Navigator.pushNamed(context, '/my-data'),
-            icon: const Icon(Icons.person_outline),
-          ),
-        ],
+        actions: const [HeaderActionsRoyalClean()],
       ),
       body: HomeBackgroundRoyalClean(
         child: LayoutBuilder(
@@ -43,7 +30,6 @@ class HomePageRoyalClean extends StatelessWidget {
                 child: ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: maxWidth),
                   child: HomeFormRoyalClean(
-                    adminEmail: email,
                     onAccessControlPressed: () {
                       Navigator.pushNamed(
                         context,

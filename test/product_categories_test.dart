@@ -6,6 +6,48 @@ import 'package:royal_clean/presentation_royal_clean/preview/product_categories_
 import 'package:royal_clean/presentation_royal_clean/preview/product_filters_royal_clean.dart';
 
 void main() {
+  testWidgets('Category arrows navigate both ways and disable at the ends', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: 360,
+              height: 60,
+              child: ProductCategoriesRoyalClean(
+                selected: null,
+                onSelected: (_) {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final left = find.widgetWithIcon(
+      IconButton,
+      Icons.keyboard_double_arrow_left_rounded,
+    );
+    final right = find.widgetWithIcon(
+      IconButton,
+      Icons.keyboard_double_arrow_right_rounded,
+    );
+    expect(tester.widget<IconButton>(left).onPressed, isNull);
+    expect(tester.widget<IconButton>(right).onPressed, isNotNull);
+    await tester.tap(right);
+    await tester.pumpAndSettle();
+    expect(tester.widget<IconButton>(left).onPressed, isNotNull);
+    await tester.tap(left);
+    await tester.pumpAndSettle();
+    expect(tester.widget<IconButton>(left).onPressed, isNull);
+    await tester.drag(find.byType(ListView), const Offset(-4000, 0));
+    await tester.pumpAndSettle();
+    expect(tester.widget<IconButton>(right).onPressed, isNull);
+    expect(tester.takeException(), isNull);
+  });
   test('Seven categories cover samples and waste bags belong to cleaning', () {
     expect(productCategoriesRoyalClean.length, 7);
     expect(

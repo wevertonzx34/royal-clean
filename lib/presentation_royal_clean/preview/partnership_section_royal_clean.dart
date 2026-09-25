@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../shared/header_actions_royal_clean.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'partnership_content_royal_clean.dart';
@@ -175,13 +176,16 @@ void _openPartner(BuildContext context, PublicPartnerRoyalClean item) {
         controller: controller,
         padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
         children: [
-          Align(
-            alignment: Alignment.centerRight,
-            child: IconButton(
-              tooltip: 'Fechar',
-              onPressed: () => Navigator.pop(context),
-              icon: const Icon(Icons.close),
-            ),
+          Row(
+            children: [
+              const HeaderActionsRoyalClean(color: _navy, showMyData: false),
+              const Spacer(),
+              IconButton(
+                tooltip: 'Fechar',
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close),
+              ),
+            ],
           ),
           SizedBox(
             height: 180,

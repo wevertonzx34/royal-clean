@@ -1,3 +1,4 @@
+import '../shared/header_actions_royal_clean.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
@@ -122,65 +123,6 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
     ),
   );
 
-  void _openNotifications() {
-    showModalBottomSheet<void>(
-      context: context,
-      useSafeArea: true,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: Colors.white,
-      builder: (context) => SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'Notificações',
-                      style: TextStyle(
-                        color: _navy,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: 'Fechar notificações',
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close_rounded, color: _navy),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              const Icon(Icons.public_rounded, color: _teal, size: 44),
-              const SizedBox(height: 16),
-              const Text(
-                'Nenhuma notificação por aqui.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: _navy,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Enquanto isso, explore as novidades e parcerias da Royal Clean.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: _muted, height: 1.5),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   void _openStory(
     BuildContext context, {
     required String title,
@@ -203,13 +145,16 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
           controller: controller,
           padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
           children: [
-            Align(
-              alignment: Alignment.centerRight,
-              child: IconButton(
-                tooltip: 'Fechar',
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close_rounded, color: _navy),
-              ),
+            Row(
+              children: [
+                const HeaderActionsRoyalClean(color: _navy, showMyData: false),
+                const Spacer(),
+                IconButton(
+                  tooltip: 'Fechar',
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close_rounded, color: _navy),
+                ),
+              ],
             ),
             ClipRRect(
               borderRadius: BorderRadius.circular(20),
@@ -328,11 +273,7 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
               ],
             ),
             actions: [
-              IconButton(
-                tooltip: 'Notificações',
-                onPressed: _openNotifications,
-                icon: const Icon(Icons.public_rounded, color: _navy),
-              ),
+              const NotificationButtonRoyalClean(color: _navy),
               Padding(
                 padding: const EdgeInsets.only(right: 16),
                 child: SizedBox(

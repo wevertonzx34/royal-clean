@@ -94,6 +94,7 @@ class _AccountGateRoyalCleanState extends State<AccountGateRoyalClean> {
               return MyDataPageRoyalClean(
                 user: user,
                 profile: access.profile ?? const {},
+                isAdmin: access.status == AccountAccessStatus.admin,
               );
             }
             return access.status == AccountAccessStatus.admin

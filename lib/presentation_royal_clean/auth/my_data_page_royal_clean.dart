@@ -7,10 +7,12 @@ import 'account_ui_royal_clean.dart';
 class MyDataPageRoyalClean extends StatefulWidget {
   final User user;
   final Map<String, dynamic> profile;
+  final bool isAdmin;
   const MyDataPageRoyalClean({
     super.key,
     required this.user,
     required this.profile,
+    this.isAdmin = false,
   });
   @override
   State<MyDataPageRoyalClean> createState() => _MyDataState();
@@ -92,7 +94,18 @@ class _MyDataState extends State<MyDataPageRoyalClean> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('E-mail: ${widget.user.email ?? ''}'),
+          if (widget.isAdmin) ...[
+            Text(
+              'Admin autenticado:',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 4),
+            SelectableText(
+              widget.user.email ?? 'E-mail não informado',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+          ] else
+            Text('E-mail: ${widget.user.email ?? ''}'),
           const SizedBox(height: 16),
           TextFormField(
             controller: _name,

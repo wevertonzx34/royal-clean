@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../shared/header_actions_royal_clean.dart';
 import '../../core_royal_clean/services/biometric_access_royal_clean.dart';
 
 /// Defense in depth: private widgets are not built until local unlock succeeds.
@@ -61,7 +62,10 @@ class _BiometricGateState extends State<BiometricGateRoyalClean> {
       builder: (context, _) {
         if (!service.locked) return widget.builder(context);
         return Scaffold(
-          appBar: AppBar(title: const Text('Desbloquear perfil')),
+          appBar: AppBar(
+            title: const Text('Desbloquear perfil'),
+            actions: const [HeaderActionsRoyalClean(showMyData: false)],
+          ),
           body: Center(
             child: Padding(
               padding: const EdgeInsets.all(24),

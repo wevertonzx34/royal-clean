@@ -129,7 +129,6 @@ void main() {
       MaterialApp(
         home: Scaffold(
           body: HomeFormRoyalClean(
-            adminEmail: 'admin@example.test',
             onAccessControlPressed: () {},
             onLogoutPressed: () {},
           ),

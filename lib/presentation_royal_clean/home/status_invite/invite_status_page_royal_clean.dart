@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../shared/header_actions_royal_clean.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -184,7 +185,7 @@ class _InviteStatusPageRoyalCleanState
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      const SizedBox(width: 48),
+                      const HeaderActionsRoyalClean(),
                     ],
                   ),
                 ),

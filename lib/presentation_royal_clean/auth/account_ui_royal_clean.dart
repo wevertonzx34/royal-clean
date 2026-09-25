@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../shared/header_actions_royal_clean.dart';
 
 class AccountLayoutRoyalClean extends StatelessWidget {
   final String title;
@@ -13,7 +14,10 @@ class AccountLayoutRoyalClean extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(title), actions: actions),
+    appBar: AppBar(
+      title: Text(title),
+      actions: [...?actions, const HeaderActionsRoyalClean()],
+    ),
     body: SafeArea(
       child: Align(
         alignment: Alignment.topCenter,

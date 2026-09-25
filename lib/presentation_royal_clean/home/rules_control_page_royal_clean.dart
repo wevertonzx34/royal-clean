@@ -1,3 +1,4 @@
+import '../shared/header_actions_royal_clean.dart';
 import 'package:flutter/material.dart';
 import 'home_background_royal_clean.dart';
 import 'home_buttons_royal_clean.dart';
@@ -36,7 +37,7 @@ class RulesControlPageRoyalClean extends StatelessWidget {
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      const SizedBox(width: 48),
+                      const HeaderActionsRoyalClean(),
                     ],
                   ),
                 ),

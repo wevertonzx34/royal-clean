@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../shared/header_actions_royal_clean.dart';
 
 class InviteStatusDetailsPageRoyalClean extends StatelessWidget {
   final Map<String, dynamic> inviteMap;
@@ -48,6 +49,7 @@ class InviteStatusDetailsPageRoyalClean extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detalhes do convite'),
+        actions: const [HeaderActionsRoyalClean()],
         centerTitle: true,
       ),
       body: SafeArea(

@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../shared/header_actions_royal_clean.dart';
 import 'package:flutter/services.dart';
 import '../../core_royal_clean/services/account_service_royal_clean.dart';
 import '../../core_royal_clean/services/session_preferences_royal_clean.dart';
@@ -252,6 +253,7 @@ class _LoginState extends State<LoginPageRoyalClean> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(actions: const [HeaderActionsRoyalClean(showMyData: false)]),
     body: AuthBackgroundRoyalClean(
       child: SafeArea(
         child: Center(

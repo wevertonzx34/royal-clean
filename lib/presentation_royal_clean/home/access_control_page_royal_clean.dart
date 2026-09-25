@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core_royal_clean/constants/app_routes_royal_clean.dart';
 import 'home_background_royal_clean.dart';
 import 'home_buttons_royal_clean.dart';
+import '../shared/header_actions_royal_clean.dart';
 
 class AccessControlPageRoyalClean extends StatelessWidget {
   const AccessControlPageRoyalClean({super.key});
@@ -37,7 +38,7 @@ class AccessControlPageRoyalClean extends StatelessWidget {
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      const SizedBox(width: 48),
+                      const HeaderActionsRoyalClean(),
                     ],
                   ),
                 ),
@@ -63,11 +64,20 @@ class AccessControlPageRoyalClean extends StatelessWidget {
                                 ),
                               ),
                               child: Text(
-                                  'Autorize o cadastro de Mestres com convites vinculados ao e-mail e telefone de cada pessoa.',
+                                'Autorize o cadastro de Mestres com convites vinculados ao e-mail e telefone de cada pessoa.',
                                 style: theme.textTheme.bodyMedium,
                               ),
                             ),
                             const SizedBox(height: 18),
+                            HomePrimaryButtonRoyalClean(
+                              title: 'Usuários e perfis',
+                              subtitle:
+                                  'Consulte usuários e gerencie os perfis de acesso.',
+                              icon: Icons.manage_accounts,
+                              onPressed: () =>
+                                  Navigator.pushNamed(context, '/users'),
+                            ),
+                            const SizedBox(height: 14),
                             HomePrimaryButtonRoyalClean(
                               title: 'Criar convite',
                               subtitle:
