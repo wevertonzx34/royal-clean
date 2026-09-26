@@ -125,7 +125,8 @@ test('Accounts: audit and rate limits are not exposed to clients', async () => {
 });
 
 test('Bling credentials and OAuth sessions are denied to every client, including admins', async () => {
-  for (const collectionName of ['integrations_private', 'bling_oauth_sessions']) {
+  for (const collectionName of ['integrations_private', 'bling_oauth_sessions',
+    'bling_private_products', 'bling_private_sales', 'bling_private_invoices']) {
     await env.withSecurityRulesDisabled(async context => {
       await setDoc(doc(context.firestore(), `${collectionName}/test`), {secret: 'test-only'});
     });

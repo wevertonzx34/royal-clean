@@ -45,3 +45,10 @@ app.*.map.json
 /android/app/release
 # Widget Preview related
 .widget_preview/
+
+# Artes SVG provisórias arquivadas localmente; não usadas na versão estável.
+/assets/preview/logo-parceiro/logo-bts.svg
+/assets/preview/publi-parceira/publi-bts.svg
+/assets/preview/publi-parceira/publi-yotta.svg
+/assets/preview/publi-parceira/publi-avatar.svg
+/assets/preview/publi-parceira/publi-estrutura.svg

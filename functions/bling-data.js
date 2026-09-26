@@ -6,6 +6,17 @@ import {readBlingCredentials, validateBlingTokens} from './bling.js';
 const fail = (code, message) => { throw new HttpsError(code, message); };
 const text = (value, limit = 250) => typeof value === 'string' ? value.slice(0, limit) : '';
 const number = value => typeof value === 'number' && Number.isFinite(value) ? value : null;
+export function sanitizeInvoiceItems(item, expectedId) {
+  const invoice = sanitizeBlingRecord('invoices', item);
+  if (invoice.id !== expectedId || !Array.isArray(item.itens)) fail('data-loss', 'Detalhes da nota inválidos.');
+  return {invoice, total:number(item.valorNota), freight:number(item.valorFrete),
+    items:item.itens.map(line => {
+      if (!line || typeof line !== 'object') fail('data-loss', 'Item da nota inválido.');
+      return {code:text(line.codigo,100),description:text(line.descricao,1000),unit:text(line.unidade,30),
+        quantity:number(line.quantidade),unitPrice:number(line.valor),total:number(line.valorTotal),
+        type:text(line.tipo,10)};
+    })};
+}
 export function sanitizeBlingRecord(kind, item) {
   if (!item || !Number.isSafeInteger(item.id) || item.id <= 0) {
     fail('data-loss', 'O Bling retornou um registro inválido.');
@@ -13,6 +24,18 @@ export function sanitizeBlingRecord(kind, item) {
   if (kind === 'products') return {id: String(item.id), name: text(item.nome),
     code: text(item.codigo, 100), price: number(item.preco), unit: text(item.unidade, 30),
     status: text(item.situacao, 30), stock: number(item.estoque?.saldoVirtualTotal)};
+  if (kind === 'invoices') {
+    if (item.tipo !== 1) fail('data-loss', 'O Bling retornou uma nota que não é de saída.');
+    const statuses = {1:'Pendente',2:'Cancelada',3:'Aguardando recibo',4:'Rejeitada',
+      5:'Autorizada',6:'Emitida DANFE',7:'Registrada',8:'Aguardando protocolo',
+      9:'Denegada',10:'Consulta situação',11:'Bloqueada'};
+    return {id:String(item.id), code:text(String(item.numero ?? ''),100),
+      date:text(item.dataEmissao, 30), operationDate:text(item.dataOperacao,30),
+      status:Number.isInteger(item.situacao) ? String(item.situacao) : '',
+      statusLabel:statuses[item.situacao] ?? 'Não informada',
+      accessKey:typeof item.chaveAcesso === 'string' && /^\d{44}$/.test(item.chaveAcesso) ? item.chaveAcesso : '',
+      type:'outgoing'};
+  }
   return {id: String(item.id), code: String(item.numero ?? '').slice(0, 100),
     date: text(item.data, 10), total: number(item.total),
     status: Number.isSafeInteger(item.situacao?.id) ? String(item.situacao.id) : ''};
@@ -20,22 +43,39 @@ export function sanitizeBlingRecord(kind, item) {
 
 export function validateBlingQuery(input = {}) {
   const kind = input.kind ?? 'products';
+  if (kind === 'invoiceItems') {
+    if (typeof input.invoiceId !== 'string' || !/^[1-9]\d{0,15}$/.test(input.invoiceId) ||
+        !Number.isSafeInteger(Number(input.invoiceId))) fail('invalid-argument', 'Nota fiscal inválida.');
+    return {kind, page:1, path:`nfe/${input.invoiceId}`};
+  }
   const page = input.page ?? 1;
-  if (!['products', 'sales'].includes(kind) || !Number.isSafeInteger(page) || page < 1 || page > 10000) {
+  if (!['products', 'sales', 'invoices'].includes(kind) || !Number.isSafeInteger(page) || page < 1 || page > 10000) {
     fail('invalid-argument', 'Consulta inválida.');
   }
   const query = new URLSearchParams({pagina: String(page), limite: '25'});
-  if (kind === 'sales') {
+  if (kind === 'sales' || kind === 'invoices') {
     const validDate = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) &&
       Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
     if (!validDate(input.start) || !validDate(input.end) || input.start > input.end ||
         Date.parse(input.end) - Date.parse(input.start) > 366 * 86400000) {
       fail('invalid-argument', 'Selecione um período válido de até um ano.');
     }
-    query.set('dataInicial', input.start);
-    query.set('dataFinal', input.end);
+    if (kind === 'invoices') {
+      query.set('tipo', '1');
+      query.set('dataEmissaoInicial', `${input.start} 00:00:00`);
+      query.set('dataEmissaoFinal', `${input.end} 23:59:59`);
+      if (input.invoiceStatus != null) {
+        if (!Number.isInteger(input.invoiceStatus) || input.invoiceStatus < 1 || input.invoiceStatus > 11) {
+          fail('invalid-argument', 'Situação da nota inválida.');
+        }
+        query.set('situacao', String(input.invoiceStatus));
+      }
+    } else {
+      query.set('dataInicial', input.start);
+      query.set('dataFinal', input.end);
+    }
   }
-  return {kind, page, path: `${kind === 'products' ? 'produtos' : 'pedidos/vendas'}?${query}`};
+  return {kind, page, path: `${kind === 'products' ? 'produtos' : kind === 'invoices' ? 'nfe' : 'pedidos/vendas'}?${query}`};
 }
 
 export function createBlingDataHandler({db, authenticated, requireAdmin, rateLimit,
@@ -96,7 +136,9 @@ export function createBlingDataHandler({db, authenticated, requireAdmin, rateLim
         redirect: 'error', signal: AbortSignal.timeout(15000),
       });
     } catch (_) { fail('unavailable', 'O Bling não respondeu. Tente novamente.'); }
-    if (response.status === 403) fail('permission-denied', kind === 'sales'
+    if (response.status === 403) fail('permission-denied', ['invoices','invoiceItems'].includes(kind)
+      ? 'Habilite Notas Fiscais — visualização no Bling e renove a autorização na tela de integração.'
+      : kind === 'sales'
       ? 'Habilite a visualização de Pedidos de Venda no Bling e renove a autorização na tela de integração.'
       : 'Habilite a visualização de Produtos no Bling e renove a autorização.');
     if (response.status === 401) {
@@ -107,8 +149,14 @@ export function createBlingDataHandler({db, authenticated, requireAdmin, rateLim
       fail('failed-precondition', 'A autorização expirou ou foi revogada. Renove a autorização do Bling.');
     }
     if (response.status === 429) fail('resource-exhausted', 'O Bling limitou as consultas. Aguarde um minuto.');
+    if (response.status === 404) fail('not-found', 'A nota não foi encontrada no Bling. Atualize a lista.');
     if (!response.ok) fail('unavailable', 'Consulta indisponível no Bling. Tente novamente.');
     const payload = await response.json();
+    if (kind === 'invoiceItems') {
+      const result = sanitizeInvoiceItems(payload.data, request.data.invoiceId);
+      await requireAdmin(await authenticated(request));
+      return {...result, checkedAt:new Date().toISOString(), source:'Bling'};
+    }
     if (!Array.isArray(payload.data)) fail('data-loss', 'Resposta inesperada do Bling.');
     const items = payload.data.map(item => sanitizeBlingRecord(kind, item));
     await requireAdmin(await authenticated(request));
@@ -116,7 +164,8 @@ export function createBlingDataHandler({db, authenticated, requireAdmin, rateLim
     // Private mirror only. Never expose sales or unreviewed prices in the public preview.
     const batch = db.batch();
     for (const item of items) batch.set(db.doc(`bling_private_${kind}/${item.id}`), {...item, checkedAt});
-    batch.set(db.doc(`integrations_private/bling_last_${kind}`), {checkedAt, page, count: items.length});
+    batch.set(db.doc(`integrations_private/bling_last_${kind}`), {checkedAt, page, count: items.length,
+      ...(kind === 'invoices' ? {start:request.data.start,end:request.data.end,invoiceStatus:request.data.invoiceStatus ?? null} : {})});
     await batch.commit();
     return {kind, page, items, hasMore: items.length === 25, checkedAt, source: 'Bling'};
   };

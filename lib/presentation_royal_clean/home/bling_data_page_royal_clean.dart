@@ -11,10 +11,30 @@ class BlingDataPageRoyalClean extends StatefulWidget {
 
 class _BlingDataState extends State<BlingDataPageRoyalClean> {
   String _kind = 'products';
+  int _invoiceStatus = 0;
+  static const _invoiceStatuses = <int, String>{
+    0: 'Não canceladas',
+    1: 'Pendente',
+    2: 'Cancelada',
+    3: 'Aguardando recibo',
+    4: 'Rejeitada',
+    5: 'Autorizada',
+    6: 'Emitida DANFE',
+    7: 'Registrada',
+    8: 'Aguardando protocolo',
+    9: 'Denegada',
+    10: 'Consulta situação',
+    11: 'Bloqueada',
+  };
   int _page = 1;
   bool _busy = false;
   String? _error;
   Map<String, dynamic>? _result;
+  Map? _selectedInvoice;
+  Map<String, dynamic>? _invoiceDetails;
+  String? _detailError;
+  bool _loadingDetails = false;
+  int _detailRequest = 0;
   late DateTimeRange _range;
   String _date(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
@@ -45,10 +65,12 @@ class _BlingDataState extends State<BlingDataPageRoyalClean> {
       final input = <String, dynamic>{
         'kind': _kind,
         'page': _page,
-        if (_kind == 'sales') ...{
+        if (_kind != 'products') ...{
           'start': _date(_range.start),
           'end': _date(_range.end),
         },
+        if (_kind == 'invoices' && _invoiceStatus != 0)
+          'invoiceStatus': _invoiceStatus,
       };
       final Map<String, dynamic> result;
       if (widget.load != null) {
@@ -103,8 +125,169 @@ class _BlingDataState extends State<BlingDataPageRoyalClean> {
     await _refresh(page: 1);
   }
 
+  Future<void> _invoiceMenu(Map invoice) async {
+    final selected = await showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(16),
+        child: ListTile(
+          leading: const Icon(Icons.inventory_2_outlined),
+          title: const Text('Produtos'),
+          subtitle: Text('Ver itens da NF-e ${invoice['code']}'),
+          onTap: () => Navigator.pop(context, true),
+        ),
+      ),
+    );
+    if (selected == true && mounted) _loadInvoice(invoice);
+  }
+
+  Future<void> _loadInvoice(Map invoice) async {
+    final request = ++_detailRequest;
+    setState(() {
+      _selectedInvoice = invoice;
+      _invoiceDetails = null;
+      _detailError = null;
+      _loadingDetails = true;
+    });
+    try {
+      final input = <String, dynamic>{
+        'kind': 'invoiceItems',
+        'invoiceId': invoice['id'],
+      };
+      final Map<String, dynamic> result;
+      if (widget.load != null) {
+        result = await widget.load!(input);
+      } else {
+        final response =
+            await FirebaseFunctions.instanceFor(region: 'southamerica-east1')
+                .httpsCallable(
+                  'blingReadData',
+                  options: HttpsCallableOptions(
+                    timeout: const Duration(seconds: 55),
+                  ),
+                )
+                .call(input);
+        result = Map<String, dynamic>.from(response.data as Map);
+      }
+      if (mounted && request == _detailRequest) {
+        setState(() => _invoiceDetails = result);
+      }
+    } on FirebaseFunctionsException catch (e) {
+      if (mounted && request == _detailRequest) {
+        setState(
+          () => _detailError =
+              e.message ?? 'Não foi possível consultar os itens.',
+        );
+      }
+    } catch (_) {
+      if (mounted && request == _detailRequest) {
+        setState(
+          () => _detailError =
+              'Não foi possível consultar os itens. Tente novamente.',
+        );
+      }
+    } finally {
+      if (mounted && request == _detailRequest) {
+        setState(() => _loadingDetails = false);
+      }
+    }
+  }
+
+  void _closeInvoice() {
+    _detailRequest++;
+    setState(() => _selectedInvoice = null);
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_selectedInvoice != null) {
+      final lines = (_invoiceDetails?['items'] as List? ?? []).cast<Map>();
+      final note = _invoiceDetails?['invoice'] as Map?;
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop) _closeInvoice();
+        },
+        child: AccountLayoutRoyalClean(
+          title: 'Produtos da NF-e',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextButton.icon(
+                onPressed: _closeInvoice,
+                icon: const Icon(Icons.arrow_back),
+                label: const Text('Voltar às notas'),
+              ),
+              Text(
+                'NF-e ${_selectedInvoice!['code']}',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const Text(
+                'Itens registrados nesta nota fiscal, consultados diretamente no Bling.',
+              ),
+              if (_loadingDetails)
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: LinearProgressIndicator(),
+                ),
+              if (_detailError != null)
+                Text(
+                  _detailError!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              if (note != null) Text('Situação: ${note['statusLabel']}'),
+              TextButton.icon(
+                onPressed: _loadingDetails
+                    ? null
+                    : () => _loadInvoice(_selectedInvoice!),
+                icon: const Icon(Icons.refresh),
+                label: const Text('Atualizar itens'),
+              ),
+              if (_invoiceDetails != null) ...[
+                Text(
+                  '${lines.length} itens • Total da NF-e: ${_money(_invoiceDetails!['total'])}',
+                ),
+                Text('Frete informado: ${_money(_invoiceDetails!['freight'])}'),
+                const Text(
+                  'Valores da NF-e podem incluir frete, tributos e ajustes. Não representam confirmação de pagamento.',
+                ),
+                if (lines.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text('O Bling não retornou itens nesta nota.'),
+                  ),
+                ...lines.map(
+                  (line) => Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            line['description'] as String? ?? '',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          Text('Código: ${line['code']}'),
+                          Text(
+                            'Quantidade: ${line['quantity'] ?? 'Não informada'} ${line['unit']}',
+                          ),
+                          Text('Valor unitário: ${_money(line['unitPrice'])}'),
+                          Text('Total do item: ${_money(line['total'])}'),
+                          if (line['type'] == 'S')
+                            const Text('Item de serviço'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
     final items = (_result?['items'] as List? ?? []).cast<Map>();
     final queried = DateTime.tryParse(
       _result?['checkedAt'] as String? ?? '',
@@ -131,25 +314,56 @@ class _BlingDataState extends State<BlingDataPageRoyalClean> {
                     ? null
                     : (_) => _refresh(page: 1, kind: 'sales'),
               ),
+              ChoiceChip(
+                label: const Text('Notas de saída'),
+                selected: _kind == 'invoices',
+                onSelected: _busy
+                    ? null
+                    : (_) => _refresh(page: 1, kind: 'invoices'),
+              ),
             ],
           ),
           const SizedBox(height: 16),
           Text(
             _kind == 'products'
                 ? 'Catálogo real • preços cadastrados no Bling. Consulta administrativa; ainda não publicados na loja.'
+                : _kind == 'invoices'
+                ? 'NF-e de saída • período por data de emissão. Selecione Cancelada para consultar cancelamentos. A listagem do Bling não informa valores totais das notas.'
                 : 'Pedidos reais do período. Valores incluem as situações retornadas pelo Bling; não representam faturamento fiscal nem recebimentos.',
           ),
-          if (_kind == 'sales')
+          if (_kind != 'products')
             TextButton.icon(
               onPressed: _busy ? null : _period,
               icon: const Icon(Icons.date_range),
               label: Text('${_date(_range.start)} até ${_date(_range.end)}'),
+            ),
+          if (_kind == 'invoices')
+            DropdownButtonFormField<int>(
+              initialValue: _invoiceStatus,
+              isExpanded: true,
+              decoration: const InputDecoration(labelText: 'Situação da nota'),
+              items: _invoiceStatuses.entries
+                  .map(
+                    (e) => DropdownMenuItem(value: e.key, child: Text(e.value)),
+                  )
+                  .toList(),
+              onChanged: _busy
+                  ? null
+                  : (value) {
+                      if (value == null) return;
+                      _invoiceStatus = value;
+                      _refresh(page: 1);
+                    },
             ),
           TextButton.icon(
             onPressed: _busy ? null : () => _refresh(),
             icon: const Icon(Icons.sync),
             label: const Text('Atualizar do Bling'),
           ),
+          if (_kind == 'invoices')
+            const Text(
+              'Pressione e segure uma nota para ver Produtos. Você também pode usar o botão de opções da nota.',
+            ),
           if (_busy) const LinearProgressIndicator(),
           if (_error != null) ...[
             const SizedBox(height: 12),
@@ -180,43 +394,73 @@ class _BlingDataState extends State<BlingDataPageRoyalClean> {
             ),
           ...items.map(
             (item) => Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: _kind == 'products'
-                      ? [
-                          Text(
-                            item['name'] as String? ?? '',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          const SizedBox(height: 8),
-                          Text('Código: ${item['code']} • ${item['unit']}'),
-                          Text('Preço cadastrado: ${_money(item['price'])}'),
-                          Text(
-                            'Situação: ${item['status'] == 'A'
-                                ? 'Ativo'
-                                : item['status'] == 'I'
-                                ? 'Inativo'
-                                : item['status']}',
-                          ),
-                          Text(
-                            item['stock'] == null
-                                ? 'Saldo não informado nesta consulta'
-                                : 'Saldo virtual: ${item['stock']}',
-                          ),
-                        ]
-                      : [
-                          Text(
-                            'Pedido ${item['code']}',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          Text('Data: ${item['date']}'),
-                          Text('Valor: ${_money(item['total'])}'),
-                          Text(
-                            'Código da situação no Bling: ${item['status']}',
-                          ),
-                        ],
+              child: InkWell(
+                onLongPress: _kind == 'invoices'
+                    ? () => _invoiceMenu(item)
+                    : null,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: _kind == 'products'
+                        ? [
+                            Text(
+                              item['name'] as String? ?? '',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            Text('Código: ${item['code']} • ${item['unit']}'),
+                            Text('Preço cadastrado: ${_money(item['price'])}'),
+                            Text(
+                              'Situação: ${item['status'] == 'A'
+                                  ? 'Ativo'
+                                  : item['status'] == 'I'
+                                  ? 'Inativo'
+                                  : item['status']}',
+                            ),
+                            Text(
+                              item['stock'] == null
+                                  ? 'Saldo não informado nesta consulta'
+                                  : 'Saldo virtual: ${item['stock']}',
+                            ),
+                          ]
+                        : _kind == 'invoices'
+                        ? [
+                            Text(
+                              'NF-e ${item['code']}',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: IconButton(
+                                tooltip: 'Opções da NF-e ${item['code']}',
+                                icon: const Icon(Icons.more_horiz),
+                                onPressed: () => _invoiceMenu(item),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text('Emissão: ${item['date']}'),
+                            Text('Saída/operação: ${item['operationDate']}'),
+                            Text('Situação: ${item['statusLabel']}'),
+                            if ((item['accessKey'] as String? ?? '')
+                                .isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              const Text('Chave de acesso'),
+                              SelectableText(item['accessKey'] as String),
+                            ],
+                          ]
+                        : [
+                            Text(
+                              'Pedido ${item['code']}',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            Text('Data: ${item['date']}'),
+                            Text('Valor: ${_money(item['total'])}'),
+                            Text(
+                              'Código da situação no Bling: ${item['status']}',
+                            ),
+                          ],
+                  ),
                 ),
               ),
             ),

@@ -131,6 +131,26 @@ test('backend: unauthenticated and unverified registration rejected', async () =
   await assert.rejects(registerAccount.run(request('unverified',data())), {code:'failed-precondition'});
   assert.equal((await db.doc('users/unverified').get()).exists,false);
 });
+
+test('Outgoing invoice sync overwrites status by id and keeps copies private', async () => {
+  await db.doc('integrations_private/bling').set({accessToken:'valid-test-token',expiresAt:Timestamp.fromMillis(Date.now()+3600000)});
+  let status=5;
+  const handler=createBlingDataHandler({db, authenticated:async r=>{if(!r.auth) throw new Error('No auth');return {uid:r.auth.uid};},
+    requireAdmin:async u=>{if(u.uid!=='role-admin') throw new Error('Not admin');},rateLimit:async()=>{},
+    fetchImpl:async url=>{
+      assert.equal(new URL(url).searchParams.get('tipo'),'1');
+      return {ok:true,status:200,json:async()=>({data:[{id:987,tipo:1,numero:'10',situacao:status,contato:{nome:'Private'}}]})};
+    }});
+  const query={kind:'invoices',start:'2026-09-01',end:'2026-09-25',invoiceStatus:5};
+  await assert.rejects(handler(request('intruder',query)),/Not admin/);
+  await handler(request('role-admin',query));
+  status=2;
+  const result=await handler(request('role-admin',{...query,invoiceStatus:2}));
+  assert.equal(result.items[0].statusLabel,'Cancelada');
+  const mirror=(await db.doc('bling_private_invoices/987').get()).data();
+  assert.equal(mirror.status,'2');
+  assert.equal(mirror.contato,undefined);
+});
 test('backend: common registration stores immutable consent and ignores injected role/email', async () => {
   await registerAccount.run(request('new-one',data({role:'admin', email:'forged@example.test'})));
   const profile = (await db.doc('users/new-one').get()).data();
@@ -140,6 +160,21 @@ test('backend: common registration stores immutable consent and ignores injected
   assert.equal(profile.referral,null);
   assert.ok(profile.termsAcceptedAt instanceof Timestamp);
   await assert.rejects(registerAccount.run(request('new-one',data({inviteCode:'MABCDEFH'}))), {code:'failed-precondition'});
+});
+
+test('Invoice detail enforces admin and returns only items from the requested outgoing note', async () => {
+  await db.doc('integrations_private/bling').set({accessToken:'valid-test-token',expiresAt:Timestamp.fromMillis(Date.now()+3600000)});
+  let calls=0;
+  const handler=createBlingDataHandler({db, authenticated:async r=>{if(!r.auth) throw new Error('No auth');return {uid:r.auth.uid};},
+    requireAdmin:async u=>{if(u.uid!=='role-admin') throw new Error('Not admin');},rateLimit:async()=>{},
+    fetchImpl:async url=>{calls++;assert.equal(new URL(url).pathname,'/Api/v3/nfe/123');
+      return {ok:true,status:200,json:async()=>({data:{id:123,tipo:1,numero:'10',situacao:5,itens:[{descricao:'Item da NF',quantidade:2,valor:5,valorTotal:10}],contato:{nome:'private'}}})};}});
+  const input={kind:'invoiceItems',invoiceId:'123'};
+  await assert.rejects(handler(request('intruder',input)),/Not admin/);
+  assert.equal(calls,0);
+  const result=await handler(request('role-admin',input));
+  assert.equal(result.items[0].quantity,2);
+  assert.equal(JSON.stringify(result).includes('private'),false);
 });
 test('backend: Mestre invitation matches verified email and phone, is atomic and retry-safe', async () => {
   const id = 'BBBBBBBBBBBBBBBBBBBB';

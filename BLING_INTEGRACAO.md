@@ -144,6 +144,37 @@ com revisão administrativa e webhooks autenticados.
 Definir depósito e tabela de preços antes de publicar estoque/preço para clientes.
 Tokens OAuth do Bling não se confundem com os tokens comerciais do Royal Clean.
 
+## NF-e de saída
+
+Em Dados do Bling, a aba Notas de saída consulta GET /nfe com tipo=1 fixo,
+dataEmissaoInicial 00:00:00 e dataEmissaoFinal 23:59:59. Paginação de 25 notas.
+Filtro padrão Não canceladas: o Bling omite canceladas sem situacao. Para consultar
+cancelamentos, selecionar Cancelada (situacao=2). Nunca presumir exclusão por
+ausência numa página. Cada consulta atualiza os registros retornados por id em
+bling_private_invoices, sem acesso direto pelo cliente.
+Exibe número, emissão, data de operação, situação e chave de acesso válida.
+O contrato de listagem não contém o valor total; não inferir faturamento a partir
+da lista. Não inclui emissão/cancelamento de notas, download XML/DANFE, consulta
+de NFC-e/NFS-e ou atualização contínua por webhooks.
+
+Permissão necessária: Bling → aplicativo Royal Clean → Dados básicos → escopos →
+Notas Fiscais (visualização). Salvar e renovar autorização no aplicativo, mantendo
+os escopos anteriores. Não habilitar edição, emissão ou exclusão.
+Consulta real em 25/09/2026 retornou 403 insufficient_scope antes dessa liberação.
+
+Contrato conferido em https://developer.bling.com.br/referencia (GET /nfe,
+NotasFiscaisDadosBaseDTO), em 25/09/2026.
+
+Itens da NF-e: pressionar e segurar a nota → Produtos (ou botão de opções).
+Consulta GET /nfe/{idNotaFiscal} pelo backend, validando id e tipo=1.
+Exibe código, descrição, quantidade, unidade, valor unitário e total originais
+de cada item, além do valorNota e frete informados. Não substitui pelos preços
+do catálogo nem infere pagamento. Dados pessoais do destinatário, XML e links
+externos não são enviados ao cliente. Detalhes consultados sob demanda, sem
+persistir o payload completo. Retorno à lista mantém período, filtro e página.
+Consulta real confirmada em 25/09/2026: listagem e detalhe HTTP 200 após renovar
+a autorização; exemplo NF-e 000847, 1 item, 8 CX, R$ 77 unitário, R$ 616 no item.
+
 ## Referências
 
 - https://developer.bling.com.br/aplicativos
