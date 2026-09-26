@@ -251,7 +251,7 @@ class _BlingIntegrationState extends State<BlingIntegrationPageRoyalClean>
             ),
           if (authorized) ...[
             const Text(
-              'Consulte produtos e pedidos reais. A conexão é renovada automaticamente quando necessário durante as consultas.',
+              'Consulte produtos, notas e contatos reais. A sincronização automática ocorre a cada hora, mesmo com o aplicativo fechado.',
             ),
             FilledButton.icon(
               onPressed: () => Navigator.pushNamed(context, '/bling-data'),

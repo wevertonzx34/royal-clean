@@ -2,6 +2,10 @@ import {randomUUID} from 'node:crypto';
 import {Timestamp, FieldValue} from 'firebase-admin/firestore';
 import {HttpsError} from 'firebase-functions/v2/https';
 import {readBlingCredentials, validateBlingTokens} from './bling.js';
+import {validDashboardQuery, readDashboard} from './bling-dashboard.js';
+import {syncProductCatalog} from './bling-product-catalog.js';
+import {syncRecordCatalog} from './bling-record-catalog.js';
+import {enrichDashboard} from './bling-enrichment.js';
 
 const fail = (code, message) => { throw new HttpsError(code, message); };
 const text = (value, limit = 250) => typeof value === 'string' ? value.slice(0, limit) : '';
@@ -24,6 +28,10 @@ export function sanitizeBlingRecord(kind, item) {
   if (kind === 'products') return {id: String(item.id), name: text(item.nome),
     code: text(item.codigo, 100), price: number(item.preco), unit: text(item.unidade, 30),
     status: text(item.situacao, 30), stock: number(item.estoque?.saldoVirtualTotal)};
+  if (kind === 'contacts') return {id:String(item.id), name:text(item.nome),
+    code:text(item.codigo,100), status:text(item.situacao,10),
+    document:text(item.numeroDocumento,30), phone:text(item.telefone,50),
+    mobile:text(item.celular,50)};
   if (kind === 'invoices') {
     if (item.tipo !== 1) fail('data-loss', 'O Bling retornou uma nota que não é de saída.');
     const statuses = {1:'Pendente',2:'Cancelada',3:'Aguardando recibo',4:'Rejeitada',
@@ -43,16 +51,29 @@ export function sanitizeBlingRecord(kind, item) {
 
 export function validateBlingQuery(input = {}) {
   const kind = input.kind ?? 'products';
+  if(kind==='dashboard') {
+    if(!validDashboardQuery(input)) fail('invalid-argument','Indicador ou período inválido.');
+    return {kind,page:1,path:null};
+  }
   if (kind === 'invoiceItems') {
     if (typeof input.invoiceId !== 'string' || !/^[1-9]\d{0,15}$/.test(input.invoiceId) ||
         !Number.isSafeInteger(Number(input.invoiceId))) fail('invalid-argument', 'Nota fiscal inválida.');
     return {kind, page:1, path:`nfe/${input.invoiceId}`};
   }
   const page = input.page ?? 1;
-  if (!['products', 'sales', 'invoices'].includes(kind) || !Number.isSafeInteger(page) || page < 1 || page > 10000) {
+  if (!['products', 'sales', 'invoices', 'contacts'].includes(kind) || !Number.isSafeInteger(page) || page < 1 || page > 10000) {
     fail('invalid-argument', 'Consulta inválida.');
   }
   const query = new URLSearchParams({pagina: String(page), limite: '25'});
+  if(kind==='products') {query.set('criterio','5');query.set('tipo','T');}
+  if (kind === 'contacts') {
+    query.set('criterio','1'); // All contacts, not the provider's default latest additions.
+    if (input.search != null) {
+      if (typeof input.search !== 'string' || input.search.length > 120) fail('invalid-argument','Pesquisa de contato inválida.');
+      if (input.search.trim()) query.set('pesquisa',input.search.trim());
+    }
+    return {kind,page,path:`contatos?${query}`};
+  }
   if (kind === 'sales' || kind === 'invoices') {
     const validDate = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) &&
       Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
@@ -128,6 +149,67 @@ export function createBlingDataHandler({db, authenticated, requireAdmin, rateLim
     await requireAdmin(user);
     await rateLimit(user.uid, 'bling_data', 30);
     const {kind, page, path} = validateBlingQuery(request.data);
+    if(kind==='dashboard') {
+      let enrichment;
+      if(request.data.refreshDetails===true) {
+        const token=await accessToken();
+        let reservations=Promise.resolve();
+        const reserveSlots=async(count=1)=>{
+          // Coordinate the provider's account-wide quota across app and scheduled calls.
+          const quota=db.doc('integrations_private/bling_read_quota');
+          const reserve=()=>db.runTransaction(async tx=>{
+            const next=(await tx.get(quota)).data()?.nextAt??0;
+            const reserved=Math.max(Date.now(),next);
+            if(reserved-Date.now()>6000)throw new HttpsError('resource-exhausted','Consultas em andamento. Aguarde alguns instantes.');
+            tx.set(quota,{nextAt:reserved+450*count});return reserved;
+          });
+          const reservation=reservations.then(reserve,reserve);
+          reservations=reservation;
+          return reservation;
+        };
+        const get=async(path,startAt=null)=>{
+          startAt??=await reserveSlots();
+          await new Promise(resolve=>setTimeout(resolve,Math.max(0,startAt-Date.now())));
+          try {
+            const response=await fetchImpl(`https://api.bling.com.br/Api/v3/${path}`,{
+              headers:{Authorization:`Bearer ${token}`,Accept:'application/json','enable-jwt':'1'},
+              redirect:'error',signal:AbortSignal.timeout(8000)});
+            const payload=response.ok?await response.json():null;
+            return {ok:response.ok,status:response.status,data:payload?.data};
+          } catch (_) {return {ok:false,status:0};}
+        };
+        get.many=async paths=>{
+          if(!paths.length)return [];
+          const startAt=await reserveSlots(paths.length);
+          return Promise.all(paths.map((path,i)=>get(path,startAt+i*450)));
+        };
+        if(request.data.group==='products') {
+          enrichment=await syncProductCatalog({db,get,sanitize:item=>sanitizeBlingRecord('products',item),recheck:async()=>requireAdmin(await authenticated(request)),force:request.data.syncLatest===true});
+        } else if(['contacts','invoices'].includes(request.data.group)) {
+          enrichment=await syncRecordCatalog({db,group:request.data.group,get,sanitize:item=>sanitizeBlingRecord(request.data.group,item),recheck:async()=>requireAdmin(await authenticated(request)),force:request.data.syncLatest===true});
+        } else {
+        if(request.data.syncLatest===true) {
+          const today=new Date().toISOString().slice(0,10);
+          const group=request.data.group;
+          const query=validateBlingQuery({kind:group,start:`${today.slice(0,4)}-01-01`,end:today});
+          const latest=await get(query.path.replace('limite=25','limite=100'));
+          if(!latest.ok) fail(latest.status===403?'permission-denied':'unavailable','Não foi possível atualizar a listagem no Bling. Verifique a conexão e os escopos.');
+          if(!Array.isArray(latest.data)||latest.data.length>100) fail('data-loss','Listagem inesperada do Bling.');
+          const items=latest.data.map(item=>sanitizeBlingRecord(group,item));
+          await requireAdmin(await authenticated(request));
+          const batch=db.batch();
+          const checkedAt=new Date().toISOString();
+          for(const item of items) batch.set(db.doc(`bling_private_${group}/${item.id}`),{...item,checkedAt},{merge:true});
+          await batch.commit();
+        }
+        enrichment=await enrichDashboard({db,group:request.data.group,refreshSince:request.data.refreshSince??null,
+          recheck:async()=>requireAdmin(await authenticated(request)),get});
+        }
+      }
+      const result=await readDashboard(db,request.data);
+      await requireAdmin(await authenticated(request));
+      return {...result,...(enrichment?{enrichment}:{})};
+    }
     const token = await accessToken();
     let response;
     try {
@@ -140,6 +222,8 @@ export function createBlingDataHandler({db, authenticated, requireAdmin, rateLim
       ? 'Habilite Notas Fiscais — visualização no Bling e renove a autorização na tela de integração.'
       : kind === 'sales'
       ? 'Habilite a visualização de Pedidos de Venda no Bling e renove a autorização na tela de integração.'
+      : kind === 'contacts'
+      ? 'Habilite Clientes e Fornecedores — visualização no Bling e renove a autorização na tela de integração.'
       : 'Habilite a visualização de Produtos no Bling e renove a autorização.');
     if (response.status === 401) {
       // Do not overwrite a newer authorization or renewal.
@@ -155,13 +239,15 @@ export function createBlingDataHandler({db, authenticated, requireAdmin, rateLim
     if (kind === 'invoiceItems') {
       const result = sanitizeInvoiceItems(payload.data, request.data.invoiceId);
       await requireAdmin(await authenticated(request));
+      await db.doc(`bling_private_invoices/${result.invoice.id}`).set({...result.invoice,total:result.total,
+        detailsCheckedAt:new Date().toISOString(),checkedAt:new Date().toISOString()},{merge:true});
       return {...result, checkedAt:new Date().toISOString(), source:'Bling'};
     }
     if (!Array.isArray(payload.data)) fail('data-loss', 'Resposta inesperada do Bling.');
     const items = payload.data.map(item => sanitizeBlingRecord(kind, item));
     await requireAdmin(await authenticated(request));
     const checkedAt = new Date().toISOString();
-    // Private mirror only. Never expose sales or unreviewed prices in the public preview.
+    // Private mirror only. Contacts never create users or public partner publications.
     const batch = db.batch();
     for (const item of items) batch.set(db.doc(`bling_private_${kind}/${item.id}`), {...item, checkedAt});
     batch.set(db.doc(`integrations_private/bling_last_${kind}`), {checkedAt, page, count: items.length,

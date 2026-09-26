@@ -175,7 +175,75 @@ persistir o payload completo. Retorno à lista mantém período, filtro e págin
 Consulta real confirmada em 25/09/2026: listagem e detalhe HTTP 200 após renovar
 a autorização; exemplo NF-e 000847, 1 item, 8 CX, R$ 77 unitário, R$ 616 no item.
 
-## Referências
+## Clientes e fornecedores
+
+Na tela Dados do Bling, a opção Clientes e fornecedores consulta GET /contatos
+com criterio=1 (Todos), pagina e limite=25. A pesquisa usa o parâmetro pesquisa
+para nome, CPF/CNPJ, fantasia, e-mail ou código. Não aplica período de emissão.
+Próxima/Anterior percorrem os cadastros; Atualizar do Bling consulta a página
+atual novamente. Não existe sincronização contínua nesta etapa.
+
+Somente administradores autenticados e verificados consultam essa opção pelo
+backend com App Check. Os registros retornados contêm id, nome, código,
+situação, documento e telefones; campos extras são descartados. A cópia em
+bling_private_contacts é privada e atualizada por id apenas nas páginas lidas.
+Nenhum contato cria usuário, valida posse de CNPJ ou publica em public_partners.
+A futura publicação de lojas depende do fluxo de cadastro e validação no app.
+O retorno de listagem não identifica a classificação cliente/fornecedor;
+não inferir essa classificação a partir do documento ou nome.
+
+Escopo necessário: Clientes e Fornecedores — visualização. Em caso de 403,
+habilitar esse escopo no aplicativo Bling e renovar a autorização pela tela
+Integração Bling. Não são necessárias permissões de edição ou exclusão.
+
+Contrato: https://developer.bling.com.br/referencia, GET /contatos,
+ContatosDadosBaseDTO. Os testes usam contatos fictícios.
+
+## Visão geral administrativa
+
+O painel usa `blingReadData` com kind=dashboard, validando administrador e
+App Check como as demais consultas. Os cálculos ocorrem no servidor sobre as
+coleções privadas, com projeção só dos campos necessários; nenhum documento,
+nome de contato ou telefone é retornado nos gráficos.
+
+- Produtos/Contatos: quantidade por situação da última versão consultada de
+  cada id. Sem datas históricas de cadastro ou movimentos, mostram posição atual.
+- Pedidos: quantidade por data do pedido; valor = soma dos totais disponíveis,
+  arredondados em centavos, em todas as situações. Não representa recebimentos
+  ou faturamento fiscal. Valores ausentes são sinalizados.
+- Notas: quantidade por emissão e faturamento nominal de NF autorizadas (5/6), usando valorNota obtido no
+  detalhe da NF-e. Autorizadas (5/6) e canceladas (2) continuam disponíveis.
+- Diário: semana atual; semanal: mês atual; mensal: trimestre atual;
+  trimestral: semestre atual; semestral: ano atual; anual: ano atual mais
+  valores de registros com datas futuras, separados e sem projeções.
+  O intervalo atual termina hoje no calendário America/Sao_Paulo.
+- Contatos: Clientes e Fornecedores vêm de tiposContato do detalhe, resolvido
+  com /contatos/tipos. Ausência de tipo aparece como Sem classificação.
+- Pedidos: Entrada = Em aberto, Em andamento ou Verificado; Saída = Atendido
+  ou Entregue; Atrasado = Entrada com dataPrevista anterior a hoje;
+  Cancelado = situação Cancelado; Retornos = Devolvido, Retornado ou Em devolução.
+  Saída não comprova entrega física. Quantidade e valor permanecem juntos.
+  Situações personalizadas desconhecidas não são classificadas automaticamente.
+- Leitura /situacoes/{id} retornou 403 em 26/09/2026. Liberar leitura de
+  Situações / Gerenciador de transições e renovar OAuth para habilitar a
+  classificação real dos pedidos. O painel sinaliza essa pendência.
+
+Detalhes são enriquecidos em lotes de até 10, com cache de uma hora,
+limite de duração e até 6 lotes por atualização de categoria. Somente campos
+necessários são persistidos; nenhum XML, CPF ou payload integral é armazenado
+nesse enriquecimento. Valores ausentes são sinalizados e nunca estimados.
+A base é sempre identificada como parcial: somente páginas já consultadas.
+O espelho substitui cada registro por id, evitando contagem duplicada após
+reconsultas. O resumo lê no máximo 5.000 registros por categoria e sinaliza
+truncamento se ultrapassado. Não comprova cobertura integral da conta Bling nem
+remove registros por ausência numa página. Canceladas entram quando consultadas.
+Após uma consulta bem-sucedida no app, o painel recalcula automaticamente a base;
+o botão Atualizar resumo também completa detalhes pendentes. Abra Dados do Bling para renovar
+dados na origem. A data exibida é a consulta mais recente; os registros podem
+ter sido atualizados em momentos diferentes. A tag stable-2026-09-26 continua
+preservando a versão anterior e não foi movida.
+
+## Referências da API
 
 - https://developer.bling.com.br/aplicativos
 - https://developer.bling.com.br/migracao-jwt
@@ -193,3 +261,124 @@ confirmadas para a identidade real das funções.
 Os testes usam emuladores locais e credenciais fictícias. Aprovação desses testes
 não significa que a conta real do Bling foi conectada. Essa confirmação depende
 das credenciais, permissões do Secret Manager e autorização do proprietário.
+
+26/09/2026 — atualização de valores e filtros da Visão geral:
+62 testes Flutter, 19 unitários e 71 de backend/regras aprovados; análise sem
+problemas. blingReadData publicado e APK instalado/executado no Moto G32.
+Validação na tela: 27 notas consultadas, R$ 21.968,24 no trimestre corrente.
+Esse total refere-se à base parcial consultada, não a toda a conta do Bling.
+Situações dos pedidos ainda dependem da permissão descrita acima.
+26/09/2026 — categorias fiscais e posição do resumo:
+Notas: Faturamento, Quantidade, Autorizadas, Canceladas, Enviadas, Pagas,
+Pendentes. Faturamento soma valorNota apenas nas situações 5/6; não representa
+receita líquida nem recebimento. Quantidade considera todas as notas. Autorizadas
+inclui DANFE emitida (6). Enviadas representa situações de transmissão SEFAZ
+3/4/5/6/8/9/10/11, sem comprovar envio por e-mail. Pendentes é situação fiscal 1.
+Pagas é apresentada como indisponível, sem gráfico zero: ainda não há conciliação
+implementada por NF. A leitura financeira real retornou HTTP 200, cinco contas
+em aberto vinculadas a vendas; isso não prova a quitação de nenhuma NF.
+O resumo financeiro foi movido abaixo de Última consulta em Notas/Pedidos,
+para todos os períodos e estilos. Base parcial e valores ausentes permanecem
+explícitos. A aprovação de testes não atesta cobertura integral da conta Bling.
+
+26/09/2026 — Enviadas renomeada para Entregues por solicitação do usuário.
+Os cálculos fiscais anteriores foram preservados. A tela e a ajuda esclarecem
+que o indicador ainda representa situações da SEFAZ, sem confirmação logística
+de entrega ao cliente. Análise limpa e testes existentes do painel aprovados.
+
+26/09/2026 — controles e atualização horária:
+No topo: relógio, estilo e atualizar, nessa ordem. Ajuda permanece junto da
+legenda do gráfico. Respostas por categoria/período/filtro são reutilizadas
+em memória durante a sessão do painel, sem nova consulta ao trocar de estilo
+ou revisitar uma combinação já carregada.
+O painel ativo inicia um ciclo automático a cada hora. O mesmo ciclo roda ao
+retomar o aplicativo se venceu uma hora; o Android não garante execução com
+processo suspenso/encerrado. Não foi criado agendamento em nuvem.
+Atualizar resumo inicia imediatamente as quatro categorias em sequência,
+preservando a visualização atual. A primeira chamada busca até 100 itens da
+listagem (pedidos/notas do ano corrente); os detalhes privados já conhecidos
+são atualizados em até seis lotes de 10 por categoria, com duração limitada.
+Registros adicionais exigem continuação pelas listas/atualização; a base segue
+parcial e pendências são indicadas. O ciclo não exclui documentos por ausência
+numa página e não altera registros na conta Bling.
+refreshSince define o início do ciclo e ignora a validade de uma hora do cache
+para o botão manual, sem repetir o mesmo lote. Produtos também atualizam sua
+situação diretamente no Bling. Falhas preservam o snapshot anterior, com aviso.
+Testados timer de uma hora, cache, ordem dos controles, atualização manual,
+falha preservando os dados, permissões administrativas e espelho privado.
+26/09/2026 — catálogo completo de produtos:
+Produtos agora usa GET /produtos com criterio=5 (Todos), tipo=T, limite=100 e
+pagina crescente até a página final. A lista administrativa também usa Todos,
+com situação Ativo/Inativo/Excluído explícita. Pedidos/Notas/Contatos mantêm o
+escopo anterior; esta atualização não anuncia cobertura integral desses grupos.
+IDs Bling e códigos SKU originais são preservados. Nenhum produto é criado ou
+alterado na conta Bling. O espelho privado guarda nome, código, preço, unidade,
+situação e saldo disponível na listagem, para futura auditoria autorizada.
+Duas áreas privadas bling_catalog_snapshots/a|b/products alternam as gerações.
+A referência integrations_private/bling_product_catalog.complete e os contadores
+só mudam após terminar todas as páginas. Auditorias futuras devem usar o slot
+completo e filtrar catalogRun pelo runId ativo; o espelho legado pode conter
+histórico. Excluídos permanecem arquivados, fora do total de catálogo atual.
+Cada lote possui lease e conferência de administrador; falhas retomam pela
+página persistida, sem duplicar IDs nem publicar total incompleto. Ciclos grandes
+continuam em chamadas limitadas por duração; pendência nunca é anunciada como
+completa. O total de produtos usa contadores do catálogo, sem corte de 5.000.
+Novos cadastros entram na atualização manual/horária já implementada enquanto
+o painel está ativo ou na retomada vencida. Não há webhook nem job em nuvem.
+Consulta real da API: 6 páginas, 539 IDs únicos — 426 ativos, 1 inativo e 112
+excluídos. Catálogo atual: 427; barra Ativos: 426, correspondente ao filtro da
+imagem enviada. A comparação entre telas deve considerar os mesmos filtros.
+Validação: 73 testes backend/regras, 20 unitários e testes Flutter direcionados
+aprovados, incluindo retomada após falha, SKU com zeros iniciais e proteção das
+subcoleções contra leitura/escrita direta por qualquer cliente.
+26/09/2026 — sincronização automática no servidor e três indicadores:
+Visão geral mantém Produtos, Notas e Contatos. Pedidos foi retirado desse painel;
+a consulta administrativa e os dados históricos de pedidos foram preservados.
+blingScheduledSync usa Cloud Scheduler a cada 60 minutos, com autenticação IAM,
+lease contra sobreposição, validação do administrador que conectou o Bling e
+renovação OAuth no servidor. Continua funcionando com o aplicativo fechado.
+Atualizar resumo continua disponível, sem exigir espera pelo próximo agendamento.
+Produtos usa paginação completa; contatos usam criterio=1 e detalhes de tipos;
+notas de saída usam todas as páginas sem restrição anual na importação e uma
+segunda passagem com situacao=2, pois o Bling omite canceladas por padrão.
+Notas e contatos também usam duas gerações privadas, publicadas somente após
+a conclusão. Os gráficos leem a geração completa; falhas preservam a anterior.
+As novas notas passam a compor quantidade e, quando fiscalmente autorizadas,
+o faturamento pelo valorNota original. Pedidos sem NF não entram em Notas.
+Cada grupo tem orçamento de execução; catálogos grandes retomam a paginação
+persistida no próximo ciclo. Não há promessa de atualização instantânea nem
+publicação de resultados incompletos como completos. Pagamento e entrega física
+continuam dependendo de integração específica, sem inferência pelo status fiscal.
+O processamento de notas e contatos usa páginas de 100, detalhes em lotes de 6,
+cursor persistido dentro da página e deduplicação por ID. A API foi observada
+retornando 102 linhas em uma página solicitada com limite 100; o cursor tolera
+esse comportamento e não confunde linhas repetidas com novos registros.
+Chamadas dos gráficos compartilham um reservador privado de cota com intervalos
+de 450 ms; falhas temporárias são retomadas pelo job, sem reiniciar o catálogo.
+Consulta de referência em produção: 724 notas únicas, incluindo 16 canceladas;
+110 contatos. Os valores fiscais continuam sendo obtidos no detalhe de cada NF.
+Validação final: ciclo em produção concluído para os três grupos; 427 produtos
+atuais (426 A + 1 I), 112 excluídos separados, 724 notas únicas e 110 contatos.
+Notas: 16 canceladas e nenhum valor ausente entre as NF elegíveis ao faturamento.
+No Moto G32, confirmado “Bling • 724 registros • base completa”.
+Abertura/troca de gráfico e atualização horária do cliente apenas leem o resumo
+já sincronizado. Somente o botão manual solicita nova importação; o job em nuvem
+mantém a importação horária mesmo com o app fechado. Durante uma importação,
+a categoria visível consulta o resumo a cada 15 s, sem esconder o gráfico nem
+reiniciar a importação. Ao concluir, essa consulta temporária para automaticamente.
+Validação: 76 testes de backend/regras, 20 unitários, suíte Flutter completa
+anterior com 66 testes e 12 testes direcionados finais das telas aprovados;
+flutter analyze sem problemas. APK instalado e executado no Moto G32.
+
+## Validação da instalação de teste e barra de status (26/09/2026)
+
+- AndroidX core-splashscreen atualizado para 1.2.0 para preservar o contraste
+  definido pelo Flutter ao sair da tela de abertura. Hora, bateria e notificações
+  conferidas no Preview e nas telas escuras do Moto G32.
+- Sete testes de barra de status/navegação aprovados; flutter analyze sem problemas.
+- A instalação de desenvolvimento do Moto G32 foi autorizada no Firebase App Check.
+  Validação aceita e gráficos conferidos no aparelho: 427 produtos, 724 notas e
+  110 contatos. A exigência de App Check no servidor permanece ativa.
+- Tokens de depuração, credenciais e dados privados não fazem parte deste backup.
+  Após desinstalar o APK de desenvolvimento, pode ser necessário cadastrar o novo
+  token da instalação no App Check. A configuração fica no Firebase, não no Git.

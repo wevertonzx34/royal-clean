@@ -1,323 +1,664 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
+import '../../core_royal_clean/services/bling_sync_events_royal_clean.dart';
 import 'dashboard_data_royal_clean.dart';
+import 'dashboard_filters_royal_clean.dart';
 
 enum DashboardChartStyleRoyalClean { bars, line, area }
 
 class DashboardChartRoyalClean extends StatefulWidget {
   final double availableHeight;
-  const DashboardChartRoyalClean({super.key, this.availableHeight = 720});
+  final Future<Map<String, dynamic>> Function(Map<String, dynamic>)? load;
+  const DashboardChartRoyalClean({
+    super.key,
+    this.availableHeight = 720,
+    this.load,
+  });
   @override
   State<DashboardChartRoyalClean> createState() => _DashboardChartState();
 }
 
-class _DashboardChartState extends State<DashboardChartRoyalClean> {
+class _DashboardChartState extends State<DashboardChartRoyalClean>
+    with WidgetsBindingObserver {
+  static const _groups = {
+    'Produtos': 'products',
+    'Notas': 'invoices',
+    'Contatos': 'contacts',
+  };
   String _group = 'Produtos';
-  int _metric = 0, _month = 5;
+  String? _contactRole;
+  int _metric = 0, _selected = 0, _request = 0;
   DashboardPeriodRoyalClean _period = DashboardPeriodRoyalClean.monthly;
-  DashboardChartStyleRoyalClean _style = DashboardChartStyleRoyalClean.area;
+  DashboardChartStyleRoyalClean _style = DashboardChartStyleRoyalClean.bars;
+  Map<String, dynamic>? _data;
+  String? _error;
+  bool _busy = false;
+  Timer? _debounce, _hourly, _pendingPoll;
+  final _cache = <String, Map<String, dynamic>>{};
+  bool _refreshingAll = false;
+  DateTime _lastCycle = DateTime.now();
+  bool _foreground = true;
   static const _text = Color(0xFFF5F7FA);
   static const _muted = Color(0xFFA9C3D3);
   static const _accent = Color(0xFF4D8DFF);
+  bool get _position => _group == 'Produtos' || _group == 'Contatos';
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    blingSyncRevisionRoyalClean.addListener(_synced);
+    _scheduleHourly();
+    _reload();
+  }
+
+  void _scheduleHourly() {
+    _hourly?.cancel();
+    _hourly = Timer(const Duration(hours: 1), () {
+      if (_foreground) _refreshAll(syncBling: false);
+    });
+  }
+
+  void _synced() {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      _cache.clear();
+      _reload();
+    });
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _hourly?.cancel();
+    _pendingPoll?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    blingSyncRevisionRoyalClean.removeListener(_synced);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _foreground = state == AppLifecycleState.resumed;
+    if (_foreground) _watchPending();
+    if (_foreground &&
+        DateTime.now().difference(_lastCycle) >= const Duration(hours: 1)) {
+      _refreshAll(syncBling: false);
+    }
+  }
+
+  Map<String, dynamic> _query(String group) => {
+    'kind': 'dashboard',
+    'group': _groups[group],
+    'period': _period.name,
+    if (group == 'Contatos' && _contactRole != null)
+      'contactRole': _contactRole,
+  };
+
+  Future<Map<String, dynamic>> _fetch(Map<String, dynamic> input) async {
+    if (widget.load != null) return widget.load!(input);
+    final callable = FirebaseFunctions.instanceFor(region: 'southamerica-east1')
+        .httpsCallable(
+          'blingReadData',
+          options: HttpsCallableOptions(timeout: const Duration(seconds: 55)),
+        );
+    Map<String, dynamic>? result;
+    var previousRemaining = 5001;
+    for (var batch = 0; batch < 6; batch++) {
+      if (!mounted) throw StateError('Painel fechado');
+      final response = await callable.call({
+        ...input,
+        if (input['refreshSince'] != null) 'syncLatest': batch == 0,
+      });
+      result = Map<String, dynamic>.from(response.data as Map);
+      final enrichment = result['enrichment'] as Map?;
+      final remaining = (enrichment?['remaining'] as num? ?? 0).toInt();
+      if (input['refreshDetails'] != true ||
+          remaining <= 0 ||
+          (remaining >= previousRemaining &&
+              enrichment?['catalogPending'] != true)) {
+        break;
+      }
+      previousRemaining = remaining;
+    }
+    return result!;
+  }
+
+  void _show(Map<String, dynamic> result) {
+    _data = result;
+    final metrics = result['metrics'] as List;
+    final moneyIndex = metrics.indexWhere((m) => (m as Map)['money'] == true);
+    _metric = moneyIndex < 0 ? 0 : moneyIndex;
+    _selected = (result['labels'] as List).length - 1;
+    _watchPending();
+  }
+
+  void _watchPending() {
+    _pendingPoll?.cancel();
+    if (!mounted || _data?['catalogPending'] != true || _refreshingAll) return;
+    _pendingPoll = Timer(const Duration(seconds: 15), () async {
+      if (!_foreground) {
+        _watchPending();
+        return;
+      }
+      final request = _request;
+      final query = _query(_group);
+      final key = jsonEncode(query);
+      try {
+        // Read the server snapshot only; never start another Bling import here.
+        final result = await _fetch(query);
+        if (!mounted ||
+            request != _request ||
+            key != jsonEncode(_query(_group))) {
+          return;
+        }
+        _cache[key] = result;
+        setState(() {
+          _data = result;
+          _metric = _metric.clamp(
+            0,
+            math.max(0, (result['metrics'] as List).length - 1),
+          );
+          _selected = _selected.clamp(
+            0,
+            math.max(0, (result['labels'] as List).length - 1),
+          );
+        });
+      } catch (_) {
+        // Keep the visible snapshot and retry while the server is still working.
+      } finally {
+        if (mounted && request == _request) _watchPending();
+      }
+    });
+  }
+
+  Future<void> _refreshAll({bool syncBling = true}) async {
+    if (_refreshingAll || !mounted) return;
+    setState(() {
+      ++_request;
+      _busy = false;
+      _refreshingAll = true;
+      _error = null;
+    });
+    _lastCycle = DateTime.now();
+    _scheduleHourly();
+    final since = _lastCycle.toUtc().toIso8601String();
+    final failures = <String>[];
+    // Sequential batches avoid bursts against Bling and preserve the visible chart.
+    for (final group in _groups.keys) {
+      if (!mounted) return;
+      final query = _query(group);
+      final key = jsonEncode(query);
+      try {
+        final result = await _fetch({
+          ...query,
+          if (syncBling) 'refreshDetails': true,
+          if (syncBling) 'refreshSince': since,
+        });
+        if (!mounted) return;
+        _cache.removeWhere(
+          (key, _) => (jsonDecode(key) as Map)['group'] == query['group'],
+        );
+        _cache[key] = result;
+        if (key == jsonEncode(_query(_group))) {
+          ++_request;
+          setState(() {
+            _show(result);
+            _busy = false;
+          });
+        }
+      } catch (_) {
+        failures.add(group);
+      }
+    }
+    if (!mounted) return;
+    setState(() {
+      _refreshingAll = false;
+      if (failures.isNotEmpty) {
+        _error =
+            'Não foi possível atualizar ${failures.join(', ')}. Os dados anteriores foram mantidos; tente o botão Atualizar.';
+      }
+    });
+    _watchPending();
+  }
+
+  Future<void> _reload() async {
+    final request = ++_request;
+    final query = _query(_group);
+    final key = jsonEncode(query);
+    final cached = _cache[key];
+    if (cached != null) {
+      setState(() {
+        _show(cached);
+        _busy = false;
+        _error = null;
+      });
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+      _data = null;
+    });
+    try {
+      final result = await _fetch(query);
+      if (!mounted || request != _request) return;
+      _cache[key] = result;
+      setState(() => _show(result));
+    } on FirebaseFunctionsException catch (e) {
+      if (mounted && request == _request) {
+        setState(
+          () => _error = e.message ?? 'Resumo indisponível. Tente atualizar.',
+        );
+      }
+    } catch (_) {
+      if (mounted && request == _request) {
+        setState(
+          () => _error = 'Não foi possível carregar o resumo. Tente atualizar.',
+        );
+      }
+    } finally {
+      if (mounted && request == _request) setState(() => _busy = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final metrics = dashboardMetricsRoyalClean[_group]!;
-    final metric = metrics[_metric];
-    final series = dashboardSeriesRoyalClean(metric, _period);
+    final metrics = (_data?['metrics'] as List? ?? [])
+        .map((m) => DashboardMetricRoyalClean(m as Map))
+        .toList();
+    final metric = metrics.isEmpty ? null : metrics[_metric];
+    final labels = (_data?['labels'] as List? ?? []).cast<String>();
+    final details = (_data?['details'] as List? ?? []).cast<String>();
+    final hasRecords =
+        (_data?['baseRecords'] as num? ?? _data?['records'] as num? ?? 0) > 0;
+    final summary = _data?['summary'] as Map?;
+    final moneyMetric = metrics.where((m) => m.money).firstOrNull;
+    final enrichment = _data?['enrichment'] as Map?;
+    final checked = DateTime.tryParse(
+      _data?['checkedAt'] as String? ?? '',
+    )?.toLocal();
     return Container(
       key: const ValueKey('admin-dashboard-chart'),
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: const Color(0xFF102B3D),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFF25485F)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 12,
-            runSpacing: 8,
+          Row(
             children: [
-              Text(
-                'Visão geral',
-                style: TextStyle(
-                  color: _text,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
+              const Expanded(
+                child: Text(
+                  'Visão geral',
+                  style: TextStyle(
+                    color: _text,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
-              Chip(
-                avatar: Icon(Icons.science_outlined, size: 16, color: _muted),
-                label: Text(
-                  'Demonstrativo',
-                  style: TextStyle(color: _muted, fontSize: 12),
-                ),
-                backgroundColor: Color(0xFF18394D),
+              PopupMenuButton<DashboardPeriodRoyalClean>(
+                key: const ValueKey('dashboard-period'),
+                tooltip: 'Período do gráfico',
+                icon: const Icon(Icons.schedule_outlined, color: _accent),
+                onSelected: (period) {
+                  if (period == _period) return;
+                  _period = period;
+                  _reload();
+                },
+                itemBuilder: (_) => [
+                  if (_position) ...[
+                    const PopupMenuItem<DashboardPeriodRoyalClean>(
+                      enabled: false,
+                      child: Text(
+                        'Sem histórico por data nesta categoria. O gráfico mantém a posição atual.',
+                      ),
+                    ),
+                    const PopupMenuDivider(),
+                  ],
+                  for (final period in DashboardPeriodRoyalClean.values)
+                    CheckedPopupMenuItem<DashboardPeriodRoyalClean>(
+                      value: period,
+                      checked: period == _period,
+                      child: Text(period.label),
+                    ),
+                ],
+              ),
+              PopupMenuButton<DashboardChartStyleRoyalClean>(
+                tooltip: 'Estilo do gráfico',
+                initialValue: _style,
+                icon: const Icon(Icons.bar_chart, color: _accent),
+                onSelected: (style) => setState(() => _style = style),
+                itemBuilder: (_) => [
+                  for (final item in const {
+                    DashboardChartStyleRoyalClean.bars: 'Barras',
+                    DashboardChartStyleRoyalClean.line: 'Linha',
+                    DashboardChartStyleRoyalClean.area: 'Área',
+                  }.entries)
+                    PopupMenuItem(value: item.key, child: Text(item.value)),
+                ],
+              ),
+              IconButton(
+                tooltip: 'Atualizar resumo',
+                onPressed: _refreshingAll ? null : _refreshAll,
+                icon: const Icon(Icons.refresh, color: _accent),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Dados simulados • ${series.range}',
-            style: const TextStyle(color: _muted, fontSize: 12),
-          ),
-          const SizedBox(height: 20),
           Row(
             children: [
-              for (final group in dashboardMetricsRoyalClean.keys)
+              for (final group in _groups.keys)
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 2),
                     child: TextButton(
-                      onPressed: () => setState(() {
+                      onPressed: () {
                         _group = group;
-                        _metric = 0;
-                        _month =
-                            dashboardSeriesRoyalClean(
-                              dashboardMetricsRoyalClean[_group]![_metric],
-                              _period,
-                            ).values.length -
-                            1;
-                      }),
+                        _reload();
+                      },
                       style: TextButton.styleFrom(
                         foregroundColor: _text,
                         backgroundColor: group == _group
                             ? const Color(0xFF17628B)
                             : const Color(0xFF19394D),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 14,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
                       ),
                       child: FittedBox(
                         fit: BoxFit.scaleDown,
-                        child: Text(
-                          group,
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
+                        child: Text(group),
                       ),
                     ),
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
+          if (_group == 'Contatos')
+            SizedBox(
+              height: 56,
+              child: DashboardFiltersRoyalClean(
+                key: ValueKey('filters-$_group'),
+                selected: _contactRole,
+                options: const {
+                  'customer': 'Clientes',
+                  'supplier': 'Fornecedores',
+                  'unclassified': 'Sem classificação',
+                },
+                onSelected: (value) {
+                  _contactRole = value;
+                  _reload();
+                },
+              ),
+            ),
+          if (_busy || _refreshingAll)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: LinearProgressIndicator(),
+            ),
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Text(_error!, style: const TextStyle(color: _text)),
+            ),
+          if (_data != null && !hasRecords)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Text(
+                'Ainda não há registros consultados nesta categoria. Abra Ver produtos e movimentações para atualizar a base.',
+                style: TextStyle(color: _muted),
+              ),
+            ),
+          if (hasRecords && metric != null && labels.isNotEmpty) ...[
+            if (metrics.length > 1)
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    for (var i = 0; i < metrics.length; i++)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: ChoiceChip(
+                          label: Text(metrics[i].label),
+                          selected: i == _metric,
+                          onSelected: (_) => setState(() => _metric = i),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 6),
+            if (summary == null)
+              Text(
+                metric.format(metric.summary),
+                key: const ValueKey('dashboard-total'),
+                style: const TextStyle(
+                  color: _text,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            Text(
+              'Bling • ${_data!['records']} registros • ${_data!['partial'] == false ? (_group == 'Produtos' ? 'catálogo completo' : 'base completa') : 'base parcial'}',
+              style: const TextStyle(color: _muted, fontSize: 12),
+            ),
+            if ((_data?['excluded'] as num? ?? 0) > 0)
+              Text(
+                '${_data!['excluded']} excluídos no Bling, fora do catálogo atual.',
+                style: const TextStyle(color: _muted, fontSize: 11),
+              ),
+            if ((_data?['unclassified'] as num? ?? 0) > 0)
+              Text(
+                '${_data!['unclassified']} registros sem classificação confirmada.',
+                style: const TextStyle(color: _muted, fontSize: 11),
+              ),
+            if ((_data?['missingStatuses'] as num? ?? 0) > 0)
+              const Text(
+                'Classificação de pedidos pendente. Confira a permissão de Situações no Bling e atualize os detalhes.',
+                style: TextStyle(color: _muted, fontSize: 11),
+              ),
+            if (summary != null &&
+                (summary['futureMissing'] as num? ?? 0) > 0 &&
+                _period == DashboardPeriodRoyalClean.yearly)
+              Text(
+                '${summary['futureMissing']} registros futuros sem valor. Total futuro incompleto.',
+                style: const TextStyle(color: _muted, fontSize: 11),
+              ),
+          ],
+          if (enrichment?['warning'] != null)
+            Text(
+              enrichment!['warning'] as String,
+              style: const TextStyle(color: _muted, fontSize: 11),
+            ),
+          if ((enrichment?['remaining'] as num? ?? 0) > 0)
+            Text(
+              '${enrichment!['remaining']} detalhes pendentes. Toque em Atualizar resumo para continuar.',
+              style: const TextStyle(color: _muted, fontSize: 11),
+            ),
           Row(
             children: [
               Expanded(
-                child: SingleChildScrollView(
-                  key: ValueKey(_group),
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      for (var index = 0; index < metrics.length; index++)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            label: Text(metrics[index].label),
-                            selected: index == _metric,
-                            selectedColor: const Color(0xFF244E73),
-                            backgroundColor: const Color(0xFF102B3D),
-                            labelStyle: const TextStyle(color: _text),
-                            onSelected: (_) => setState(() {
-                              _metric = index;
-                              _month =
-                                  dashboardSeriesRoyalClean(
-                                    dashboardMetricsRoyalClean[_group]![_metric],
-                                    _period,
-                                  ).values.length -
-                                  1;
-                            }),
-                          ),
-                        ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _position
+                          ? 'Posição atual • por situação'
+                          : _period.label,
+                      style: const TextStyle(color: _muted, fontSize: 12),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Toque no gráfico para consultar',
+                      style: TextStyle(color: _muted, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: 'Sobre os dados do gráfico',
+                icon: const Icon(Icons.info_outline, color: _muted, size: 20),
+                onPressed: () => showDialog<void>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Dados do Bling'),
+                    content: Text(
+                      'Produtos, notas e contatos são sincronizados automaticamente no servidor a cada hora. Use Atualizar para consultar antes. O último resultado completo é preservado durante a sincronização. Produtos excluídos ficam fora do total atual.\n\n${_group == 'Notas' ? 'Faturamento soma o valor nominal das notas Autorizadas e Emitida DANFE; exclui as demais situações. Não representa receita líquida ou recebimento. Quantidade considera as notas no período selecionado. Entregues é o novo título do indicador fiscal anterior; seus dados ainda representam transmissão à SEFAZ, não confirmação de entrega ao cliente. Pendentes corresponde à situação fiscal Pendente. Pagas exige conciliação das contas a receber vinculadas à NF. Valor futuro considera apenas registros futuros, sem estimativa.' : 'Cadastros por situação atual. Contatos são classificados conforme os tipos Cliente e Fornecedor do Bling; um contato pode pertencer aos dois grupos. Sem histórico por data.'}',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Entendi'),
+                      ),
                     ],
                   ),
                 ),
               ),
-              const Tooltip(
-                message: 'Deslize os indicadores para ver mais',
-                child: Icon(Icons.swipe_rounded, size: 20, color: _muted),
-              ),
             ],
           ),
-          const SizedBox(height: 24),
-          Text(
-            '$_group • ${metric.label}',
-            style: const TextStyle(
-              color: _text,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            metric.format(series.summary(metric.cumulative)),
-            key: const ValueKey('dashboard-total'),
-            style: const TextStyle(
-              color: _text,
-              fontSize: 30,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          Text(
-            metric.cumulative
-                ? 'Total no período exibido'
-                : 'Posição no último intervalo',
-            style: const TextStyle(color: _muted, fontSize: 12),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
+          if (hasRecords && metric != null && labels.isNotEmpty) ...[
+            if (_group == 'Notas' && metric.label == 'Entregues')
               const Text(
-                'Toque no gráfico para consultar',
+                'Indicador fiscal da SEFAZ. Entrega ao cliente ainda não confirmada.',
                 style: TextStyle(color: _muted, fontSize: 12),
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (final entry
-                      in <DashboardChartStyleRoyalClean, (IconData, String)>{
-                        DashboardChartStyleRoyalClean.bars: (
-                          Icons.bar_chart_rounded,
-                          'Barras',
-                        ),
-                        DashboardChartStyleRoyalClean.line: (
-                          Icons.show_chart_rounded,
-                          'Linha',
-                        ),
-                        DashboardChartStyleRoyalClean.area: (
-                          Icons.area_chart_outlined,
-                          'Área',
-                        ),
-                      }.entries)
-                    IconButton(
-                      tooltip: entry.value.$2,
-                      isSelected: _style == entry.key,
-                      style: IconButton.styleFrom(
-                        foregroundColor: _muted,
-                        highlightColor: _accent,
+            if (metric.unavailable != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(
+                  metric.unavailable!,
+                  style: const TextStyle(color: _muted),
+                ),
+              )
+            else ...[
+              SizedBox(
+                height: (widget.availableHeight * .22).clamp(120.0, 170.0),
+                child: LayoutBuilder(
+                  builder: (context, viewport) => SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SizedBox(
+                      width: math.max(
+                        viewport.maxWidth,
+                        labels.length * (metric.money ? 92.0 : 52.0) + 60,
                       ),
-                      selectedIcon: Icon(entry.value.$1, color: _accent),
-                      icon: Icon(entry.value.$1),
-                      onPressed: () => setState(() => _style = entry.key),
-                    ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<DashboardPeriodRoyalClean>(
-            key: const ValueKey('dashboard-period'),
-            initialValue: _period,
-            isExpanded: true,
-            decoration: const InputDecoration(
-              labelText: 'Período do gráfico',
-              prefixIcon: Icon(Icons.calendar_month_outlined),
-            ),
-            items: [
-              for (final period in DashboardPeriodRoyalClean.values)
-                DropdownMenuItem(value: period, child: Text(period.label)),
-            ],
-            onChanged: (period) {
-              if (period == null) return;
-              setState(() {
-                _period = period;
-                _month =
-                    dashboardSeriesRoyalClean(metric, period).values.length - 1;
-              });
-            },
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            height: (widget.availableHeight - 420).clamp(220.0, 520.0),
-            child: LayoutBuilder(
-              builder: (context, constraints) => Semantics(
-                label:
-                    '${metric.label}, ${series.details[_month]}: ${metric.format(series.values[_month])}',
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTapDown: (details) {
-                    final fraction =
-                        ((details.localPosition.dx - 48) /
-                                (constraints.maxWidth - 60))
-                            .clamp(0.0, 1.0);
-                    setState(
-                      () => _month = math.min(
-                        series.values.length - 1,
-                        (fraction * series.values.length).floor(),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) => Semantics(
+                          label:
+                              '${metric.label}, ${details[_selected]}: ${metric.format(metric.values[_selected])}',
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTapDown: (event) {
+                              final fraction =
+                                  ((event.localPosition.dx - 48) /
+                                          (constraints.maxWidth - 60))
+                                      .clamp(0.0, 1.0);
+                              setState(
+                                () => _selected = math.min(
+                                  labels.length - 1,
+                                  (fraction * labels.length).floor(),
+                                ),
+                              );
+                            },
+                            child: CustomPaint(
+                              painter: _DashboardPainter(
+                                metric.values,
+                                labels,
+                                _selected,
+                                _style,
+                                metric.money,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                    );
-                  },
-                  child: CustomPaint(
-                    painter: _DashboardPainter(
-                      series.values,
-                      series.labels,
-                      _month,
-                      _style,
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 12,
-            children: [
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                spacing: 8,
+                children: [
+                  Text(
+                    details[_selected],
+                    style: const TextStyle(color: _muted, fontSize: 11),
+                  ),
+                  Text(
+                    metric.format(metric.values[_selected]),
+                    key: const ValueKey('dashboard-month-value'),
+                    style: const TextStyle(
+                      color: _text,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 6),
+            if (checked != null)
               Text(
-                series.details[_month],
-                style: const TextStyle(color: _muted),
+                'Última consulta: ${checked.day.toString().padLeft(2, '0')}/${checked.month.toString().padLeft(2, '0')} ${TimeOfDay.fromDateTime(checked).format(context)}',
+                style: const TextStyle(color: _muted, fontSize: 11),
+              ),
+            if (summary != null && moneyMetric != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                '${summary['label']} • ${summary['start']} a ${summary['end']}',
+                style: const TextStyle(color: _muted, fontSize: 12),
               ),
               Text(
-                metric.format(series.values[_month]),
-                key: const ValueKey('dashboard-month-value'),
+                ((summary['financialCount'] as num? ??
+                                summary['count'] as num? ??
+                                0) >
+                            0 &&
+                        summary['missingAmounts'] ==
+                            (summary['financialCount'] ?? summary['count'])
+                    ? 'Valor pendente'
+                    : moneyMetric.format((summary['value'] as num).toDouble())),
+                key: const ValueKey('dashboard-total'),
                 style: const TextStyle(
                   color: _text,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 17,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              IconButton(
-                tooltip: _period == DashboardPeriodRoyalClean.monthly
-                    ? 'Mês anterior'
-                    : 'Intervalo anterior',
-                onPressed: _month > 0 ? () => setState(() => _month--) : null,
-                icon: const Icon(Icons.chevron_left, color: _muted),
+              Text(
+                '${summary['count']} notas no período',
+                style: const TextStyle(color: _text, fontSize: 13),
               ),
-              IconButton(
-                tooltip: _period == DashboardPeriodRoyalClean.monthly
-                    ? 'Próximo mês'
-                    : 'Próximo intervalo',
-                onPressed: _month < series.values.length - 1
-                    ? () => setState(() => _month++)
-                    : null,
-                icon: const Icon(Icons.chevron_right, color: _muted),
-              ),
+              if (_period == DashboardPeriodRoyalClean.yearly)
+                Text(
+                  'Valor futuro registrado: ${moneyMetric.format((summary['futureValue'] as num).toDouble())} • ${summary['futureCount']} registros',
+                  style: const TextStyle(color: _muted, fontSize: 12),
+                ),
+              if (_group == 'Notas')
+                const Text(
+                  'Total nominal de NF autorizadas, incluindo DANFE emitida. Não comprova recebimento ou receita líquida.',
+                  style: TextStyle(color: _muted, fontSize: 11),
+                ),
             ],
-          ),
-          Text(
-            _group == 'Produtos' && metric.label == 'Fluxos'
-                ? 'Fluxos: entradas menos saídas em cada intervalo. Exemplo sem vínculo com o estoque real.'
-                : 'Prévia de estrutura. Os valores serão sincronizados com os módulos correspondentes.',
-            style: const TextStyle(color: _muted, fontSize: 12, height: 1.4),
-          ),
+            if ((_data!['invalidDates'] as num? ?? 0) > 0)
+              Text(
+                '${_data!['invalidDates']} registros sem data válida, fora do gráfico.',
+                style: const TextStyle(color: _muted, fontSize: 11),
+              ),
+            if ((_data!['missingAmounts'] as num? ?? 0) > 0)
+              Text(
+                '${_data!['missingAmounts']} registros sem valor informado; soma incompleta.',
+                style: const TextStyle(color: _muted, fontSize: 11),
+              ),
+            if (_data!['truncated'] == true)
+              const Text(
+                'Limite de 5.000 registros no resumo. Base incompleta.',
+                style: TextStyle(color: _muted, fontSize: 11),
+              ),
+          ],
         ],
       ),
     );
@@ -329,7 +670,14 @@ class _DashboardPainter extends CustomPainter {
   final List<String> labels;
   final int selected;
   final DashboardChartStyleRoyalClean style;
-  _DashboardPainter(this.values, this.labels, this.selected, this.style);
+  final bool money;
+  _DashboardPainter(
+    this.values,
+    this.labels,
+    this.selected,
+    this.style,
+    this.money,
+  );
   static const _blue = Color(0xFF4D8DFF);
   void _label(
     Canvas canvas,
@@ -353,7 +701,7 @@ class _DashboardPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final plot = Rect.fromLTRB(48, 14, size.width - 12, size.height - 30);
+    final plot = Rect.fromLTRB(48, 26, size.width - 12, size.height - 30);
     final maximum = math.max(1.0, values.reduce(math.max) * 1.2);
     final step = plot.width / values.length;
     final grid = Paint()
@@ -406,6 +754,18 @@ class _DashboardPainter extends CustomPainter {
               ],
             ).createShader(rect),
         );
+        final value = values[i];
+        final compact = value.abs() >= 1000000
+            ? '${(value / 1000000).toStringAsFixed(1)} mi'
+            : value.abs() >= 1000
+            ? '${(value / 1000).toStringAsFixed(1)} mil'
+            : value.toStringAsFixed(money ? 2 : 0);
+        _label(
+          canvas,
+          '${money ? 'R\$ ' : ''}${compact.replaceAll('.', ',')}',
+          Offset(plot.left + step * i, points[i].dy - 20),
+          step,
+        );
       }
     } else {
       final line = Path()..moveTo(points.first.dx, points.first.dy);
@@ -456,5 +816,6 @@ class _DashboardPainter extends CustomPainter {
       oldDelegate.values != values ||
       oldDelegate.labels != labels ||
       oldDelegate.selected != selected ||
-      oldDelegate.style != style;
+      oldDelegate.style != style ||
+      oldDelegate.money != money;
 }

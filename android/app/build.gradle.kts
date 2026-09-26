@@ -42,7 +42,8 @@ android {
 }
 
 dependencies {
-    implementation("androidx.core:core-splashscreen:1.0.1")
+    // Preserve Flutter's status-bar contrast when the Android splash screen exits.
+    implementation("androidx.core:core-splashscreen:1.2.0")
 }
 
 flutter {

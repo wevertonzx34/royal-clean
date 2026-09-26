@@ -2,6 +2,8 @@ import {initializeApp} from 'firebase-admin/app';
 import {getAuth} from 'firebase-admin/auth';
 import {getFirestore, FieldValue, Timestamp} from 'firebase-admin/firestore';
 import {onCall, onRequest, HttpsError} from 'firebase-functions/v2/https';
+import {onSchedule} from 'firebase-functions/v2/scheduler';
+import {createScheduledBlingSync} from './bling-scheduled-sync.js';
 import {createBlingHandlers} from './bling.js';
 import {createBlingDataHandler} from './bling-data.js';
 import {LEGAL_VERSION, ROLES, validName, validDocument, normalizeDocument, inviteProblem, normalizePhone} from './validation.js';
@@ -16,6 +18,9 @@ export const blingConnectionStatus = onCall(blingOptions, bling.status);
 export const blingBeginAuthorization = onCall(blingOptions, bling.begin);
 export const blingReadData = onCall(blingOptions,
   createBlingDataHandler({db, authenticated, requireAdmin, rateLimit}));
+export const blingScheduledSync = onSchedule({region:'southamerica-east1',schedule:'every 60 minutes',
+  timeZone:'America/Sao_Paulo',timeoutSeconds:1800,maxInstances:1,retryCount:1},
+  createScheduledBlingSync({db,read:createBlingDataHandler({db,authenticated,requireAdmin,rateLimit:async()=>{}})}));
 export const blingCallback = onRequest({region: 'southamerica-east1', maxInstances: 2,
   concurrency: 20, timeoutSeconds: 60, invoker: 'public'}, bling.callback);
 const fail = (message, code = 'invalid-argument') => { throw new HttpsError(code, message); };

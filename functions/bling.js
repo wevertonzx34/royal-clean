@@ -90,7 +90,7 @@ export function createBlingHandlers({db, auth, authenticated, requireAdmin, rate
       const data = (await connection.get()).data();
       if (data) return {status: 'authorized', callbackUrl: BLING_CALLBACK_URL,
         connectedAt: data.connectedAt?.toDate().toISOString() ?? null,
-        synchronizationEnabled: false, reauthorizationRequired: data.reauthorizationRequired === true};
+        synchronizationEnabled: true, reauthorizationRequired: data.reauthorizationRequired === true};
       try {
         await readCredentials();
         return {status: 'ready', callbackUrl: BLING_CALLBACK_URL, synchronizationEnabled: false};
@@ -172,7 +172,7 @@ export function createBlingHandlers({db, auth, authenticated, requireAdmin, rate
           if ((existing.data()?.connectedAt?.toMillis() ?? null) !== (initial.previousConnection ?? null)) throw new Error('Connection changed');
           tx.set(connection, {accessToken: tokens.accessToken, refreshToken: tokens.refreshToken,
             expiresAt: Timestamp.fromMillis(Date.now() + tokens.expiresIn * 1000), scope: tokens.scope,
-            connectedBy: initial.uid, connectedAt: FieldValue.serverTimestamp(), synchronizationEnabled: false});
+            connectedBy: initial.uid, connectedAt: FieldValue.serverTimestamp(), synchronizationEnabled: true});
         });
         return res.redirect(303, `${BLING_CALLBACK_URL}?result=received`);
       } catch (_) {

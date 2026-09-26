@@ -1,6 +1,7 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import '../auth/account_ui_royal_clean.dart';
+import '../../core_royal_clean/services/bling_sync_events_royal_clean.dart';
 
 class BlingDataPageRoyalClean extends StatefulWidget {
   final Future<Map<String, dynamic>> Function(Map<String, dynamic>)? load;
@@ -35,6 +36,21 @@ class _BlingDataState extends State<BlingDataPageRoyalClean> {
   String? _detailError;
   bool _loadingDetails = false;
   int _detailRequest = 0;
+  final _contactSearchController = TextEditingController();
+  String _contactSearch = '';
+  bool get _hasPeriod => _kind == 'sales' || _kind == 'invoices';
+  @override
+  void dispose() {
+    _contactSearchController.dispose();
+    super.dispose();
+  }
+
+  void _searchContacts() {
+    if (_busy) return;
+    _contactSearch = _contactSearchController.text.trim();
+    _refresh(page: 1);
+  }
+
   late DateTimeRange _range;
   String _date(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
@@ -65,12 +81,14 @@ class _BlingDataState extends State<BlingDataPageRoyalClean> {
       final input = <String, dynamic>{
         'kind': _kind,
         'page': _page,
-        if (_kind != 'products') ...{
+        if (_hasPeriod) ...{
           'start': _date(_range.start),
           'end': _date(_range.end),
         },
         if (_kind == 'invoices' && _invoiceStatus != 0)
           'invoiceStatus': _invoiceStatus,
+        if (_kind == 'contacts' && _contactSearch.isNotEmpty)
+          'search': _contactSearch,
       };
       final Map<String, dynamic> result;
       if (widget.load != null) {
@@ -88,6 +106,7 @@ class _BlingDataState extends State<BlingDataPageRoyalClean> {
         result = Map<String, dynamic>.from(response.data as Map);
       }
       if (mounted) setState(() => _result = result);
+      blingSyncRevisionRoyalClean.value++;
     } on FirebaseFunctionsException catch (e) {
       if (mounted) {
         setState(
@@ -125,20 +144,33 @@ class _BlingDataState extends State<BlingDataPageRoyalClean> {
     await _refresh(page: 1);
   }
 
-  Future<void> _invoiceMenu(Map invoice) async {
-    final selected = await showModalBottomSheet<bool>(
+  Future<void> _invoiceMenu(Map invoice, BuildContext cardContext) async {
+    final card = cardContext.findRenderObject() as RenderBox?;
+    final overlay =
+        Navigator.of(context).overlay?.context.findRenderObject() as RenderBox?;
+    if (card == null || overlay == null || !card.hasSize) return;
+    final origin = card.localToGlobal(Offset.zero, ancestor: overlay);
+    final selected = await showMenu<bool>(
       context: context,
-      showDragHandle: true,
-      useSafeArea: true,
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: ListTile(
-          leading: const Icon(Icons.inventory_2_outlined),
-          title: const Text('Produtos'),
-          subtitle: Text('Ver itens da NF-e ${invoice['code']}'),
-          onTap: () => Navigator.pop(context, true),
-        ),
+      position: RelativeRect.fromRect(
+        Rect.fromLTWH(origin.dx + card.size.width - 16, origin.dy + 12, 0, 0),
+        Offset.zero & overlay.size,
       ),
+      semanticLabel: 'Opções da NF-e ${invoice['code']}',
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      items: const [
+        PopupMenuItem<bool>(
+          value: true,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.inventory_2_outlined, size: 20),
+              SizedBox(width: 12),
+              Text('Produtos'),
+            ],
+          ),
+        ),
+      ],
     );
     if (selected == true && mounted) _loadInvoice(invoice);
   }
@@ -321,6 +353,13 @@ class _BlingDataState extends State<BlingDataPageRoyalClean> {
                     ? null
                     : (_) => _refresh(page: 1, kind: 'invoices'),
               ),
+              ChoiceChip(
+                label: const Text('Clientes e fornecedores'),
+                selected: _kind == 'contacts',
+                onSelected: _busy
+                    ? null
+                    : (_) => _refresh(page: 1, kind: 'contacts'),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -329,9 +368,45 @@ class _BlingDataState extends State<BlingDataPageRoyalClean> {
                 ? 'Catálogo real • preços cadastrados no Bling. Consulta administrativa; ainda não publicados na loja.'
                 : _kind == 'invoices'
                 ? 'NF-e de saída • período por data de emissão. Selecione Cancelada para consultar cancelamentos. A listagem do Bling não informa valores totais das notas.'
+                : _kind == 'contacts'
+                ? 'Cadastros do Bling • consulta administrativa. Estar nesta lista não cria uma conta no aplicativo nem publica uma loja em Nossa Parceria.'
                 : 'Pedidos reais do período. Valores incluem as situações retornadas pelo Bling; não representam faturamento fiscal nem recebimentos.',
           ),
-          if (_kind != 'products')
+          if (_kind == 'contacts') ...[
+            const SizedBox(height: 12),
+            TextField(
+              controller: _contactSearchController,
+              enabled: !_busy,
+              maxLength: 120,
+              textInputAction: TextInputAction.search,
+              onSubmitted: (_) => _searchContacts(),
+              decoration: InputDecoration(
+                labelText: 'Pesquisar clientes e fornecedores',
+                hintText: 'Nome, CPF/CNPJ, e-mail ou código',
+                counterText: '',
+                prefixIcon: IconButton(
+                  tooltip: 'Pesquisar contatos',
+                  onPressed: _busy ? null : _searchContacts,
+                  icon: const Icon(Icons.search),
+                ),
+                suffixIcon: IconButton(
+                  tooltip: 'Limpar pesquisa de contatos',
+                  onPressed: _busy
+                      ? null
+                      : () {
+                          _contactSearchController.clear();
+                          _searchContacts();
+                        },
+                  icon: const Icon(Icons.close),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Use Próxima para consultar os demais cadastros. Cada página é obtida diretamente do Bling.',
+            ),
+          ],
+          if (_hasPeriod)
             TextButton.icon(
               onPressed: _busy ? null : _period,
               icon: const Icon(Icons.date_range),
@@ -393,73 +468,101 @@ class _BlingDataState extends State<BlingDataPageRoyalClean> {
               ),
             ),
           ...items.map(
-            (item) => Card(
-              child: InkWell(
-                onLongPress: _kind == 'invoices'
-                    ? () => _invoiceMenu(item)
-                    : null,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: _kind == 'products'
-                        ? [
-                            Text(
-                              item['name'] as String? ?? '',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            const SizedBox(height: 8),
-                            Text('Código: ${item['code']} • ${item['unit']}'),
-                            Text('Preço cadastrado: ${_money(item['price'])}'),
-                            Text(
-                              'Situação: ${item['status'] == 'A'
-                                  ? 'Ativo'
-                                  : item['status'] == 'I'
-                                  ? 'Inativo'
-                                  : item['status']}',
-                            ),
-                            Text(
-                              item['stock'] == null
-                                  ? 'Saldo não informado nesta consulta'
-                                  : 'Saldo virtual: ${item['stock']}',
-                            ),
-                          ]
-                        : _kind == 'invoices'
-                        ? [
-                            Text(
-                              'NF-e ${item['code']}',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: IconButton(
-                                tooltip: 'Opções da NF-e ${item['code']}',
-                                icon: const Icon(Icons.more_horiz),
-                                onPressed: () => _invoiceMenu(item),
+            (item) => Builder(
+              builder: (cardContext) => Card(
+                child: InkWell(
+                  onLongPress: _kind == 'invoices'
+                      ? () => _invoiceMenu(item, cardContext)
+                      : null,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: _kind == 'products'
+                          ? [
+                              Text(
+                                item['name'] as String? ?? '',
+                                style: Theme.of(context).textTheme.titleMedium,
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text('Emissão: ${item['date']}'),
-                            Text('Saída/operação: ${item['operationDate']}'),
-                            Text('Situação: ${item['statusLabel']}'),
-                            if ((item['accessKey'] as String? ?? '')
-                                .isNotEmpty) ...[
                               const SizedBox(height: 8),
-                              const Text('Chave de acesso'),
-                              SelectableText(item['accessKey'] as String),
+                              Text('Código: ${item['code']} • ${item['unit']}'),
+                              Text(
+                                'Preço cadastrado: ${_money(item['price'])}',
+                              ),
+                              Text(
+                                'Situação: ${item['status'] == 'A'
+                                    ? 'Ativo'
+                                    : item['status'] == 'I'
+                                    ? 'Inativo'
+                                    : item['status'] == 'E'
+                                    ? 'Excluído'
+                                    : item['status']}',
+                              ),
+                              Text(
+                                item['stock'] == null
+                                    ? 'Saldo não informado nesta consulta'
+                                    : 'Saldo virtual: ${item['stock']}',
+                              ),
+                            ]
+                          : _kind == 'contacts'
+                          ? [
+                              Text(
+                                item['name'] as String? ?? '',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Código: ${item['code'] == '' ? 'Não informado' : item['code']}',
+                              ),
+                              Text(
+                                'Situação: ${const {'A': 'Ativo', 'I': 'Inativo', 'E': 'Excluído', 'S': 'Sem movimentação'}[item['status']] ?? 'Não informada'}',
+                              ),
+                              if ((item['document'] as String? ?? '')
+                                  .isNotEmpty)
+                                Text('CPF/CNPJ: ${item['document']}'),
+                              if ((item['phone'] as String? ?? '').isNotEmpty)
+                                Text('Telefone: ${item['phone']}'),
+                              if ((item['mobile'] as String? ?? '').isNotEmpty)
+                                Text('Celular: ${item['mobile']}'),
+                            ]
+                          : _kind == 'invoices'
+                          ? [
+                              Text(
+                                'NF-e ${item['code']}',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: IconButton(
+                                  tooltip: 'Opções da NF-e ${item['code']}',
+                                  icon: const Icon(Icons.more_horiz),
+                                  onPressed: () =>
+                                      _invoiceMenu(item, cardContext),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text('Emissão: ${item['date']}'),
+                              Text('Saída/operação: ${item['operationDate']}'),
+                              Text('Situação: ${item['statusLabel']}'),
+                              if ((item['accessKey'] as String? ?? '')
+                                  .isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                const Text('Chave de acesso'),
+                                SelectableText(item['accessKey'] as String),
+                              ],
+                            ]
+                          : [
+                              Text(
+                                'Pedido ${item['code']}',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              Text('Data: ${item['date']}'),
+                              Text('Valor: ${_money(item['total'])}'),
+                              Text(
+                                'Código da situação no Bling: ${item['status']}',
+                              ),
                             ],
-                          ]
-                        : [
-                            Text(
-                              'Pedido ${item['code']}',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            Text('Data: ${item['date']}'),
-                            Text('Valor: ${_money(item['total'])}'),
-                            Text(
-                              'Código da situação no Bling: ${item['status']}',
-                            ),
-                          ],
+                    ),
                   ),
                 ),
               ),

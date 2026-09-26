@@ -25,14 +25,14 @@ class HomePageRoyalClean extends StatelessWidget {
               child: SingleChildScrollView(
                 padding: EdgeInsets.symmetric(
                   horizontal: isSmall ? 16 : 24,
-                  vertical: 24,
+                  vertical: 12,
                 ),
                 child: Column(
                   children: [
                     DashboardChartRoyalClean(
                       availableHeight: constraints.maxHeight,
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 720),
                       child: HomeFormRoyalClean(

@@ -2,6 +2,18 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {sanitizeBlingRecord, validateBlingQuery, sanitizeInvoiceItems} from '../bling-data.js';
 
+test('Contacts query all pages safely and whitelist only administrative fields', () => {
+  const url = new URL(`https://test/${validateBlingQuery({kind:'contacts',page:2,search:' Loja & Cia '}).path}`);
+  assert.equal(url.pathname,'/contatos');
+  assert.equal(url.searchParams.get('criterio'),'1');
+  assert.equal(url.searchParams.get('pagina'),'2');
+  assert.equal(url.searchParams.get('limite'),'25');
+  assert.equal(url.searchParams.get('pesquisa'),'Loja & Cia');
+  for (const search of [false,{},'x'.repeat(121)]) assert.throws(()=>validateBlingQuery({kind:'contacts',search}));
+  assert.equal(sanitizeBlingRecord('contacts',{id:1,nome:'Loja',situacao:'A',numeroDocumento:'123',financeiro:{secret:'hidden'}}).document,'123');
+  assert.equal(JSON.stringify(sanitizeBlingRecord('contacts',{id:1,nome:'Loja',financeiro:{secret:'hidden'}})).includes('hidden'),false);
+});
+
 test('Bling queries restrict endpoints, pagination and valid calendar ranges', () => {
   assert.match(validateBlingQuery({kind:'sales',start:'2026-09-01',end:'2026-09-25'}).path, /^pedidos\/vendas\?/);
   for (const q of [{kind:'secrets'}, {page:0}, {page:1.5},

@@ -4,6 +4,58 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:royal_clean/presentation_royal_clean/home/bling_data_page_royal_clean.dart';
 
 void main() {
+  testWidgets('Contacts paginate, search and refresh without date filters', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final queries = <Map<String, dynamic>>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: BlingDataPageRoyalClean(
+          load: (input) async {
+            queries.add(input);
+            return {
+              'items': input['kind'] == 'contacts'
+                  ? [
+                      {
+                        'name': 'Loja ${input['page']}',
+                        'code': 'C1',
+                        'status': 'A',
+                        'document': '00000000000100',
+                      },
+                    ]
+                  : [],
+              'hasMore': true,
+            };
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Clientes e fornecedores'));
+    await tester.pumpAndSettle();
+    expect(queries.last, {'kind': 'contacts', 'page': 1});
+    expect(find.text('Loja 1'), findsOneWidget);
+    await tester.ensureVisible(find.text('Próxima'));
+    await tester.tap(find.text('Próxima'));
+    await tester.pumpAndSettle();
+    expect(queries.last['page'], 2);
+    await tester.ensureVisible(find.byType(TextField));
+    await tester.enterText(find.byType(TextField), 'Loja');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle();
+    expect(queries.last, {'kind': 'contacts', 'page': 1, 'search': 'Loja'});
+    await tester.tap(find.byTooltip('Limpar pesquisa de contatos'));
+    await tester.pumpAndSettle();
+    expect(queries.last, {'kind': 'contacts', 'page': 1});
+    await tester.tap(find.text('Atualizar do Bling'));
+    await tester.pumpAndSettle();
+    expect(queries.last, {'kind': 'contacts', 'page': 1});
+    expect(tester.takeException(), isNull);
+  });
   testWidgets(
     'Long press opens Products for the selected invoice and returns to list',
     (tester) async {
@@ -54,6 +106,21 @@ void main() {
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('NF-e 10'));
       await tester.longPress(find.text('NF-e 10'));
+      await tester.pumpAndSettle();
+      final card = find.ancestor(
+        of: find.text('NF-e 10'),
+        matching: find.byType(Card),
+      );
+      final action = find.byType(PopupMenuItem<bool>);
+      expect(action, findsOneWidget);
+      expect(tester.getRect(card).overlaps(tester.getRect(action)), isTrue);
+      expect(find.byType(BottomSheet), findsNothing);
+      // Dismiss without fetching details, then reopen using the accessible menu.
+      await tester.tapAt(const Offset(8, 100));
+      await tester.pumpAndSettle();
+      expect(action, findsNothing);
+      expect(queries.where((q) => q['kind'] == 'invoiceItems'), isEmpty);
+      await tester.tap(find.byTooltip('Opções da NF-e 10'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Produtos').last);
       await tester.pumpAndSettle();

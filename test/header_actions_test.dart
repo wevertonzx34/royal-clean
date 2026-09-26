@@ -23,6 +23,7 @@ void main() {
   testWidgets(
     'Access control contains users action and shared shortcuts at 320px',
     (tester) async {
+      addTearDown(() => tester.pumpWidget(const SizedBox.shrink()));
       tester.view.physicalSize = const Size(320, 800);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
@@ -48,6 +49,7 @@ void main() {
   testWidgets(
     'Account pages keep notifications and do not stack My data on itself',
     (tester) async {
+      addTearDown(() => tester.pumpWidget(const SizedBox.shrink()));
       await tester.pumpWidget(
         MaterialApp(
           initialRoute: '/my-data',
