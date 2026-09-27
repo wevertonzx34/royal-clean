@@ -1,6 +1,7 @@
 import 'image_action_royal_clean.dart';
 import 'package:flutter/material.dart';
 import 'neon_image_royal_clean.dart';
+import 'wall_light_royal_clean.dart';
 
 /// Preserves the dashboard state while its panel is closed.
 class OverviewShortcutRoyalClean extends StatefulWidget {
@@ -57,6 +58,7 @@ class _OverviewShortcutState extends State<OverviewShortcutRoyalClean> {
                 ),
               ),
             ),
+            WallLightRoyalClean(openState: _state),
             if (!open && widget.foreground != null) widget.foreground!,
             Visibility(
               key: const ValueKey('overview-panel'),

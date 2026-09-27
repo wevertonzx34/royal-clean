@@ -104,6 +104,58 @@ void main() {
   );
 
   testWidgets(
+    'Door replays three flashes after returning without reopening route',
+    (tester) async {
+      var flash = 0.0;
+      final returnFrames = <double>[];
+      var visits = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: ImageActionRoyalClean(
+                pulses: 3,
+                duration: const Duration(milliseconds: 900),
+                replayAfterActivation: true,
+                onActivate: () async {
+                  visits++;
+                  final route = MaterialPageRoute<void>(
+                    builder: (_) => const Scaffold(body: Text('Stock')),
+                  );
+                  await Navigator.of(context).push(route);
+                  await route.completed;
+                },
+                builder: (_, value) {
+                  flash = value;
+                  returnFrames.add(value);
+                  return const SizedBox(width: 200, height: 200);
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.byType(ImageActionRoyalClean));
+      await tester.pumpAndSettle();
+      expect(find.text('Stock'), findsOneWidget);
+      returnFrames.clear();
+      Navigator.of(tester.element(find.text('Stock'))).pop();
+      await tester.pumpAndSettle(const Duration(milliseconds: 50));
+      var peaks = 0;
+      var bright = false;
+      for (final frame in returnFrames) {
+        if (frame > .8 && !bright) peaks++;
+        bright = frame > .8;
+      }
+      expect(peaks, 3);
+      expect(flash, closeTo(0, .001));
+      expect(visits, 1);
+      expect(find.text('Stock'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
     'Reduced motion activates immediately and disposed animation never navigates',
     (tester) async {
       var actions = 0;

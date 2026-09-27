@@ -42,20 +42,21 @@ class _HomePageState extends State<HomePageRoyalClean> {
     try {
       await _imagesReady;
       if (!context.mounted) return;
-      await Navigator.of(context).push(
-        PageRouteBuilder<void>(
-          transitionDuration: const Duration(milliseconds: 150),
-          reverseTransitionDuration: const Duration(milliseconds: 150),
-          transitionsBuilder: (_, animation, secondaryAnimation, child) =>
-              FadeTransition(opacity: animation, child: child),
-          pageBuilder: (_, animation, secondaryAnimation) =>
-              AdminRouteGuardRoyalClean(
-                pendingBackground: const StockBackgroundRoyalClean(),
-                firebaseInitialization: Future<void>.value(),
-                builder: (_) => const StockFunctionsPageRoyalClean(),
-              ),
-        ),
+      final route = PageRouteBuilder<void>(
+        transitionDuration: const Duration(milliseconds: 150),
+        reverseTransitionDuration: const Duration(milliseconds: 150),
+        transitionsBuilder: (_, animation, secondaryAnimation, child) =>
+            FadeTransition(opacity: animation, child: child),
+        pageBuilder: (_, animation, secondaryAnimation) =>
+            AdminRouteGuardRoyalClean(
+              pendingBackground: const StockBackgroundRoyalClean(),
+              firebaseInitialization: Future<void>.value(),
+              builder: (_) => const StockFunctionsPageRoyalClean(),
+            ),
       );
+      await Navigator.of(context).push(route);
+      // Replay the door lights only after the return transition finishes.
+      await route.completed;
     } finally {
       _openingStock = false;
     }
@@ -107,7 +108,8 @@ class _HomePageState extends State<HomePageRoyalClean> {
                             height: constraints.maxHeight * .97,
                             openState: _overviewOpen,
                             overlayTopInset: math.max(
-                              64,
+                              // Keep the panel below the relocated 48px actions.
+                              64 + constraints.maxHeight * .065,
                               8 + constraints.maxHeight * .10,
                             ),
                             foreground: Positioned(
@@ -135,6 +137,7 @@ class _HomePageState extends State<HomePageRoyalClean> {
                                           'stock-door-shortcut',
                                         ),
                                         pulses: 3,
+                                        replayAfterActivation: true,
                                         duration: const Duration(
                                           milliseconds: 900,
                                         ),
@@ -206,13 +209,14 @@ class _HomePageState extends State<HomePageRoyalClean> {
                           ),
                         ),
                       ),
-                    const Positioned(
-                      top: 8,
+                    Positioned(
+                      top: 8 + constraints.maxHeight * .08,
                       right: 14,
-                      child: Material(
-                        color: Color(0xE60A303F),
-                        borderRadius: BorderRadius.all(Radius.circular(24)),
-                        child: HeaderActionsRoyalClean(color: Colors.white),
+                      child: const Material(
+                        type: MaterialType.transparency,
+                        child: HeaderActionsRoyalClean(
+                          color: Color(0xFFF5F7FA),
+                        ),
                       ),
                     ),
                   ],

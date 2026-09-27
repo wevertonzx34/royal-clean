@@ -10,6 +10,7 @@ class ImageActionRoyalClean extends StatefulWidget {
   final int pulses;
   final Duration duration;
   final double scaleDepth;
+  final bool replayAfterActivation;
   const ImageActionRoyalClean({
     super.key,
     required this.onActivate,
@@ -17,6 +18,7 @@ class ImageActionRoyalClean extends StatefulWidget {
     this.pulses = 1,
     this.duration = const Duration(milliseconds: 160),
     this.scaleDepth = .006,
+    this.replayAfterActivation = false,
   });
 
   @override
@@ -40,6 +42,17 @@ class _ImageActionState extends State<ImageActionRoyalClean>
       }
       if (!mounted) return;
       await widget.onActivate();
+      if (mounted && widget.replayAfterActivation) {
+        // The returning route re-enables TickerMode on the next frame.
+        await WidgetsBinding.instance.endOfFrame;
+      }
+      if (mounted &&
+          widget.replayAfterActivation &&
+          !MediaQuery.disableAnimationsOf(context) &&
+          TickerMode.valuesOf(context).enabled) {
+        _animation.duration = widget.duration;
+        await _animation.forward(from: 0).orCancel;
+      }
     } on TickerCanceled {
       // A disposed shortcut must not open a route after it leaves the screen.
     } finally {
