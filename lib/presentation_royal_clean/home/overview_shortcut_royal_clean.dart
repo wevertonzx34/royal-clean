@@ -7,6 +7,7 @@ class OverviewShortcutRoyalClean extends StatefulWidget {
   final Widget child;
   final double? height;
   final double overlayBottomInset;
+  final double overlayTopInset;
   final ValueNotifier<bool>? openState;
   final Widget? foreground;
   const OverviewShortcutRoyalClean({
@@ -14,6 +15,7 @@ class OverviewShortcutRoyalClean extends StatefulWidget {
     required this.child,
     this.height,
     this.overlayBottomInset = 16,
+    this.overlayTopInset = 8,
     this.openState,
     this.foreground,
   });
@@ -60,16 +62,19 @@ class _OverviewShortcutState extends State<OverviewShortcutRoyalClean> {
               key: const ValueKey('overview-panel'),
               visible: open,
               maintainState: true,
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(
-                    8,
-                    8,
-                    8,
-                    widget.overlayBottomInset,
+              child: Padding(
+                padding: EdgeInsets.only(top: widget.overlayTopInset),
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(
+                      8,
+                      0,
+                      8,
+                      widget.overlayBottomInset,
+                    ),
+                    child: Column(children: [widget.child]),
                   ),
-                  child: Column(children: [widget.child]),
                 ),
               ),
             ),

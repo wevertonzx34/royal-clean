@@ -106,6 +106,10 @@ class _HomePageState extends State<HomePageRoyalClean> {
                           child: OverviewShortcutRoyalClean(
                             height: constraints.maxHeight * .97,
                             openState: _overviewOpen,
+                            overlayTopInset: math.max(
+                              64,
+                              8 + constraints.maxHeight * .10,
+                            ),
                             foreground: Positioned(
                               left: 14 + constraints.maxWidth * .105,
                               bottom: 12 + constraints.maxHeight * .145,
@@ -202,6 +206,15 @@ class _HomePageState extends State<HomePageRoyalClean> {
                           ),
                         ),
                       ),
+                    const Positioned(
+                      top: 8,
+                      right: 14,
+                      child: Material(
+                        color: Color(0xE60A303F),
+                        borderRadius: BorderRadius.all(Radius.circular(24)),
+                        child: HeaderActionsRoyalClean(color: Colors.white),
+                      ),
+                    ),
                   ],
                 );
               },
