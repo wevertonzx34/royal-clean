@@ -1,3 +1,4 @@
+import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core_royal_clean/services/active_contacts_cache_royal_clean.dart';
@@ -105,12 +106,16 @@ class _InvoiceBarState extends State<InvoiceBarPageRoyalClean> {
     final shown = rows.take(_visible).toList();
     return Scaffold(
       appBar: AppBar(
-        leading: BackButton(onPressed: () => Navigator.of(context).pop()),
+        leading: BackButton(
+          onPressed: tactileTapRoyalClean(() => Navigator.of(context).pop()),
+        ),
         title: const Text('Notas do período'),
         actions: [
           IconButton(
             tooltip: 'Atualizar lista',
-            onPressed: _cache.busy ? null : () => _cache.refresh(force: true),
+            onPressed: tactileTapRoyalClean(
+              _cache.busy ? null : () => _cache.refresh(force: true),
+            ),
             icon: const Icon(Icons.refresh),
           ),
           const HeaderActionsRoyalClean(),
@@ -175,9 +180,9 @@ class _InvoiceBarState extends State<InvoiceBarPageRoyalClean> {
                           : 'A lista ainda não está disponível. Aguarde a sincronização e tente novamente.',
                     ),
                     TextButton(
-                      onPressed: _cache.busy
-                          ? null
-                          : () => _cache.refresh(force: true),
+                      onPressed: tactileTapRoyalClean(
+                        _cache.busy ? null : () => _cache.refresh(force: true),
+                      ),
                       child: const Text('Tentar novamente'),
                     ),
                   ],
@@ -197,7 +202,9 @@ class _InvoiceBarState extends State<InvoiceBarPageRoyalClean> {
                       itemBuilder: (context, index) {
                         if (index == shown.length) {
                           return OutlinedButton(
-                            onPressed: () => setState(() => _visible += 50),
+                            onPressed: tactileTapRoyalClean(
+                              () => setState(() => _visible += 50),
+                            ),
                             child: const Text('Mostrar mais notas'),
                           );
                         }
@@ -210,8 +217,11 @@ class _InvoiceBarState extends State<InvoiceBarPageRoyalClean> {
                           key: ValueKey('invoice-${row['id']}'),
                           margin: EdgeInsets.zero,
                           child: InkWell(
+                            enableFeedback: false,
                             borderRadius: BorderRadius.circular(12),
-                            onLongPress: () => _products(row),
+                            onLongPress: tactileTapRoyalClean(
+                              () => _products(row),
+                            ),
                             child: Padding(
                               padding: const EdgeInsets.all(18),
                               child: Column(
@@ -235,7 +245,9 @@ class _InvoiceBarState extends State<InvoiceBarPageRoyalClean> {
                                       IconButton(
                                         tooltip:
                                             'Produtos da NF-e ${text('code')}',
-                                        onPressed: () => _products(row),
+                                        onPressed: tactileTapRoyalClean(
+                                          () => _products(row),
+                                        ),
                                         icon: const Icon(
                                           Icons.inventory_2_outlined,
                                         ),

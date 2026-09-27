@@ -1,3 +1,4 @@
+import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../core_royal_clean/services/account_service_royal_clean.dart';
@@ -90,13 +91,17 @@ class _UserManagementState extends State<UserManagementPageRoyalClean> {
                         ),
                       )
                       .toList(),
-                  onChanged: (v) => update(() => role = v ?? role),
+                  onChanged: tactileValueRoyalClean(
+                    (v) => update(() => role = v ?? role),
+                  ),
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Acesso ativo'),
                   value: active,
-                  onChanged: (v) => update(() => active = v),
+                  onChanged: tactileValueRoyalClean(
+                    (v) => update(() => active = v),
+                  ),
                 ),
                 const Text(
                   'Mestre é liberado no cadastro por convite válido. Alterar outros perfis não concede acesso administrativo.',
@@ -106,11 +111,15 @@ class _UserManagementState extends State<UserManagementPageRoyalClean> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context, false),
+              onPressed: tactileTapRoyalClean(
+                () => Navigator.pop(context, false),
+              ),
               child: const Text('Cancelar'),
             ),
             FilledButton(
-              onPressed: () => Navigator.pop(context, true),
+              onPressed: tactileTapRoyalClean(
+                () => Navigator.pop(context, true),
+              ),
               child: const Text('Salvar acesso'),
             ),
           ],
@@ -150,6 +159,7 @@ class _UserManagementState extends State<UserManagementPageRoyalClean> {
         ),
         const SizedBox(height: 16),
         TextField(
+          onTap: TouchFeedbackRoyalClean.pulse,
           controller: _search,
           keyboardType: TextInputType.emailAddress,
           decoration: const InputDecoration(
@@ -157,7 +167,9 @@ class _UserManagementState extends State<UserManagementPageRoyalClean> {
           ),
         ),
         TextButton(
-          onPressed: _busy ? null : () => _load(reset: true),
+          onPressed: tactileTapRoyalClean(
+            _busy ? null : () => _load(reset: true),
+          ),
           child: const Text('Buscar / atualizar'),
         ),
         if (_error != null) Text(_error!),
@@ -171,7 +183,9 @@ class _UserManagementState extends State<UserManagementPageRoyalClean> {
               ),
               trailing: IconButton(
                 tooltip: 'Definir acesso',
-                onPressed: _busy ? null : () => _edit(doc),
+                onPressed: tactileTapRoyalClean(
+                  _busy ? null : () => _edit(doc),
+                ),
                 icon: const Icon(Icons.manage_accounts),
               ),
             ),
@@ -180,7 +194,10 @@ class _UserManagementState extends State<UserManagementPageRoyalClean> {
           const Text('Nenhum cadastro encontrado.'),
         if (_busy) const Center(child: CircularProgressIndicator()),
         if (_more && !_busy && _users.isNotEmpty)
-          TextButton(onPressed: _load, child: const Text('Carregar mais')),
+          TextButton(
+            onPressed: tactileTapRoyalClean(_load),
+            child: const Text('Carregar mais'),
+          ),
       ],
     ),
   );

@@ -1,3 +1,4 @@
+import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'package:flutter/material.dart';
 import '../shared/header_actions_royal_clean.dart';
 import '../../core_royal_clean/services/biometric_access_royal_clean.dart';
@@ -82,25 +83,29 @@ class _BiometricGateState extends State<BiometricGateRoyalClean> {
                   if (_error != null)
                     Text(_error!, textAlign: TextAlign.center),
                   FilledButton.icon(
-                    onPressed: _busy ? null : _unlock,
+                    onPressed: tactileTapRoyalClean(_busy ? null : _unlock),
                     icon: const Icon(Icons.fingerprint),
                     label: Text(
                       _busy ? 'Confirmando…' : 'Desbloquear aparelho',
                     ),
                   ),
                   TextButton(
-                    onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      '/login',
-                      (_) => false,
+                    onPressed: tactileTapRoyalClean(
+                      () => Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        '/login',
+                        (_) => false,
+                      ),
                     ),
                     child: const Text('Entrar com outra conta'),
                   ),
                   TextButton(
-                    onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      '/preview',
-                      (_) => false,
+                    onPressed: tactileTapRoyalClean(
+                      () => Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        '/preview',
+                        (_) => false,
+                      ),
                     ),
                     child: const Text('Voltar à loja'),
                   ),

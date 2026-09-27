@@ -1,3 +1,4 @@
+import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'package:flutter/material.dart';
 import '../../core_royal_clean/constants/app_routes_royal_clean.dart';
 import 'home_background_royal_clean.dart';
@@ -28,7 +29,9 @@ class AccessControlPageRoyalClean extends StatelessWidget {
                   child: Row(
                     children: [
                       IconButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: tactileTapRoyalClean(
+                          () => Navigator.pop(context),
+                        ),
                         icon: const Icon(Icons.arrow_back_ios_new_rounded),
                       ),
                       Expanded(
@@ -74,8 +77,9 @@ class AccessControlPageRoyalClean extends StatelessWidget {
                               subtitle:
                                   'Consulte usuários e gerencie os perfis de acesso.',
                               icon: Icons.manage_accounts,
-                              onPressed: () =>
-                                  Navigator.pushNamed(context, '/users'),
+                              onPressed: tactileActionRoyalClean(
+                                () => Navigator.pushNamed(context, '/users'),
+                              ),
                             ),
                             const SizedBox(height: 14),
                             HomePrimaryButtonRoyalClean(
@@ -83,12 +87,12 @@ class AccessControlPageRoyalClean extends StatelessWidget {
                               subtitle:
                                   'Liberar cadastro como Mestre. Uso único e validade de 30 dias.',
                               icon: Icons.person_add_alt_1_rounded,
-                              onPressed: () {
+                              onPressed: tactileActionRoyalClean(() {
                                 Navigator.pushNamed(
                                   context,
                                   AppRoutesRoyalClean.createInvite,
                                 );
-                              },
+                              }),
                             ),
                             const SizedBox(height: 14),
                             HomePrimaryButtonRoyalClean(
@@ -96,12 +100,12 @@ class AccessControlPageRoyalClean extends StatelessWidget {
                               subtitle:
                                   'Consultar convites emitidos e seus estados.',
                               icon: Icons.assignment_turned_in_rounded,
-                              onPressed: () {
+                              onPressed: tactileActionRoyalClean(() {
                                 Navigator.pushNamed(
                                   context,
                                   AppRoutesRoyalClean.inviteStatus,
                                 );
-                              },
+                              }),
                             ),
                           ],
                         ),

@@ -1,3 +1,4 @@
+import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
@@ -137,7 +138,9 @@ class _ProductCategoriesRoyalCleanState
     final enabled = left ? _canLeft : _canRight;
     return IconButton(
       tooltip: left ? 'Categorias à esquerda' : 'Categorias à direita',
-      onPressed: enabled ? () => _move(left ? -1 : 1) : null,
+      onPressed: tactileTapRoyalClean(
+        enabled ? () => _move(left ? -1 : 1) : null,
+      ),
       color: const Color(0xFF007F9F),
       disabledColor: const Color(0xFFCBD6DC),
       icon: TweenAnimationBuilder<double>(
@@ -209,8 +212,9 @@ class _ProductCategoriesRoyalCleanState
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
-                  onSelected: (_) =>
-                      widget.onSelected(active ? null : category.id),
+                  onSelected: tactileValueRoyalClean(
+                    (_) => widget.onSelected(active ? null : category.id),
+                  ),
                 ),
               );
             },

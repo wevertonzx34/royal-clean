@@ -1,3 +1,4 @@
+import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core_royal_clean/services/active_contacts_cache_royal_clean.dart';
@@ -92,7 +93,9 @@ class _ProductBarState extends State<ProductBarPageRoyalClean> {
         actions: [
           IconButton(
             tooltip: 'Atualizar lista',
-            onPressed: _cache.busy ? null : () => _cache.refresh(force: true),
+            onPressed: tactileTapRoyalClean(
+              _cache.busy ? null : () => _cache.refresh(force: true),
+            ),
             icon: const Icon(Icons.refresh),
           ),
           const HeaderActionsRoyalClean(),
@@ -148,9 +151,9 @@ class _ProductBarState extends State<ProductBarPageRoyalClean> {
                           : 'Não foi possível carregar o catálogo. Tente novamente.',
                     ),
                     TextButton(
-                      onPressed: _cache.busy
-                          ? null
-                          : () => _cache.refresh(force: true),
+                      onPressed: tactileTapRoyalClean(
+                        _cache.busy ? null : () => _cache.refresh(force: true),
+                      ),
                       child: const Text('Tentar novamente'),
                     ),
                   ],

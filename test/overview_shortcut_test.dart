@@ -6,13 +6,15 @@ void main() {
   testWidgets('Image opens and closes dashboard without resetting its state', (
     tester,
   ) async {
+    await tester.binding.setSurfaceSize(const Size(400, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       MaterialApp(
         home: MediaQuery(
           data: const MediaQueryData(disableAnimations: true),
           child: Scaffold(
             body: SingleChildScrollView(
-              child: OverviewShortcutRoyalClean(child: _Counter()),
+              child: OverviewShortcutRoyalClean(foreground: const Positioned(bottom: 0, left: 0, child: Text('Porta')), child: _Counter()),
             ),
           ),
         ),
@@ -20,11 +22,17 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Consulta 0'), findsNothing);
+    expect(find.text('Porta'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('overview-image-shortcut')));
     await tester.pumpAndSettle();
+    expect(find.text('Porta'), findsNothing);
+    await tester.ensureVisible(find.text('Consulta 0'));
     await tester.tap(find.text('Consulta 0'));
     await tester.pump();
     expect(find.text('Consulta 1'), findsOneWidget);
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('overview-image-shortcut')),
+    );
     await tester.tap(find.byKey(const ValueKey('overview-image-shortcut')));
     await tester.pumpAndSettle();
     expect(find.text('Consulta 1'), findsNothing);

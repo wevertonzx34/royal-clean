@@ -40,6 +40,43 @@ Widget host(
 );
 void main() {
   testWidgets(
+    'Sync keeps the previous chart visible while the new snapshot loads',
+    (tester) async {
+      addTearDown(() => tester.pumpWidget(const SizedBox.shrink()));
+      final pending = Completer<Map<String, dynamic>>();
+      var calls = 0;
+      await tester.pumpWidget(
+        host((q) {
+          calls++;
+          return calls == 1 ? Future.value(sample(q)) : pending.future;
+        }),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('3 registros'), findsOneWidget);
+      blingSyncRevisionRoyalClean.value++;
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pump();
+      expect(calls, 2);
+      expect(find.text('3 registros'), findsOneWidget);
+      expect(find.byType(LinearProgressIndicator), findsNothing);
+      pending.complete({
+        ...sample({}),
+        'records': 4,
+        'metrics': [
+          {
+            'label': 'Quantidade',
+            'unit': 'registros',
+            'money': false,
+            'values': [2, 2],
+          },
+        ],
+      });
+      await tester.pumpAndSettle();
+      expect(find.text('4 registros'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
     'Pending imports refresh the visible snapshot without starting Bling reads or hiding the chart',
     (tester) async {
       addTearDown(() => tester.pumpWidget(const SizedBox.shrink()));

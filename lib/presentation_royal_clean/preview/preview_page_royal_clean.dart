@@ -1,3 +1,5 @@
+import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
+import '../home/profile_images_royal_clean.dart';
 import '../shared/header_actions_royal_clean.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -46,6 +48,13 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
   bool _signedIn = false;
   late final _session = widget.authenticated ?? Stream<bool>.value(false);
 
+  Future<void>? _imagesReady;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _imagesReady ??= precacheProfileImagesRoyalClean(context);
+  }
+
   Future<void> _openAccount(bool signedIn) async {
     if (_openingAccount) return;
     if (!signedIn) {
@@ -55,6 +64,7 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
     setState(() => _openingAccount = true);
     try {
       await widget.prepareAccount?.call();
+      await _imagesReady;
       if (mounted && _signedIn) Navigator.pushNamed(context, '/account');
     } on BiometricCancelledRoyalClean {
       if (mounted) {
@@ -80,7 +90,7 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
         content: Text(message),
         action: SnackBarAction(
           label: deviceUnlock ? 'PIN do aparelho' : 'Tentar novamente',
-          onPressed: () => _openAccount(_signedIn),
+          onPressed: tactileActionRoyalClean(() => _openAccount(_signedIn)),
         ),
       ),
     );
@@ -111,7 +121,7 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
   }
 
   Widget _menuButton(String title, VoidCallback? onPressed) => TextButton(
-    onPressed: onPressed,
+    onPressed: tactileTapRoyalClean(onPressed),
     style: TextButton.styleFrom(
       minimumSize: const Size(0, 48),
       padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -151,7 +161,7 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
                 const Spacer(),
                 IconButton(
                   tooltip: 'Fechar',
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: tactileTapRoyalClean(() => Navigator.pop(context)),
                   icon: const Icon(Icons.close_rounded, color: _navy),
                 ),
               ],
@@ -279,9 +289,9 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
                 child: SizedBox(
                   width: _accountColumnWidth,
                   child: FilledButton.icon(
-                    onPressed: _openingAccount
-                        ? null
-                        : () => _openAccount(signedIn),
+                    onPressed: tactileTapRoyalClean(
+                      _openingAccount ? null : () => _openAccount(signedIn),
+                    ),
                     icon: _openingAccount
                         ? const SizedBox(
                             width: 18,
@@ -410,10 +420,10 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
                   height: 32 + MediaQuery.textScalerOf(context).scale(24),
                   child: ProductCategoriesRoyalClean(
                     selected: _generalCategory,
-                    onSelected: (value) {
+                    onSelected: tactileSelectionRoyalClean((value) {
                       setState(() => _generalCategory = value);
                       _goTo(_productsKey);
-                    },
+                    }),
                   ),
                 ),
               ),
@@ -451,13 +461,15 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
                                 final product = _visibleProducts[index];
                                 return _ProductCard(
                                   product: product,
-                                  onTap: () => _openStory(
-                                    context,
-                                    title: product.name,
-                                    label: 'PRODUTO DEMONSTRATIVO',
-                                    image: product.image,
-                                    body:
-                                        '${product.description}\n\nCódigo demonstrativo: ${product.code}\nTags: ${product.tags.join(', ')}',
+                                  onTap: tactileActionRoyalClean(
+                                    () => _openStory(
+                                      context,
+                                      title: product.name,
+                                      label: 'PRODUTO DEMONSTRATIVO',
+                                      image: product.image,
+                                      body:
+                                          '${product.description}\n\nCódigo demonstrativo: ${product.code}\nTags: ${product.tags.join(', ')}',
+                                    ),
                                   ),
                                 );
                               },
@@ -485,12 +497,15 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
                                   padding: const EdgeInsets.only(bottom: 14),
                                   child: _NewsCard(
                                     news: news,
-                                    onTap: () => _openStory(
-                                      context,
-                                      title: news.title,
-                                      label: '${news.category} · DEMONSTRAÇÃO',
-                                      image: news.image,
-                                      body: news.body,
+                                    onTap: tactileActionRoyalClean(
+                                      () => _openStory(
+                                        context,
+                                        title: news.title,
+                                        label:
+                                            '${news.category} · DEMONSTRAÇÃO',
+                                        image: news.image,
+                                        body: news.body,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -533,9 +548,11 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
                                     ),
                                     const SizedBox(height: 20),
                                     FilledButton.icon(
-                                      onPressed: _openingAccount
-                                          ? null
-                                          : () => _openAccount(signedIn),
+                                      onPressed: tactileTapRoyalClean(
+                                        _openingAccount
+                                            ? null
+                                            : () => _openAccount(signedIn),
+                                      ),
                                       icon: const Icon(
                                         Icons.arrow_forward_rounded,
                                         size: 18,
@@ -658,7 +675,7 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
                   ),
                   const SizedBox(height: 20),
                   FilledButton.icon(
-                    onPressed: () => _goTo(_productsKey),
+                    onPressed: tactileTapRoyalClean(() => _goTo(_productsKey)),
                     label: const Text('Explorar produtos'),
                     icon: const Icon(Icons.arrow_forward_rounded, size: 17),
                     style: FilledButton.styleFrom(
@@ -781,7 +798,7 @@ class _ProductCard extends StatelessWidget {
         side: const BorderSide(color: Color(0xFFE3EBEF)),
       ),
       child: InkWell(
-        onTap: onTap,
+        onTap: tactileTapRoyalClean(onTap),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -876,7 +893,7 @@ class _NewsCard extends StatelessWidget {
       side: const BorderSide(color: Color(0xFFE3EBEF)),
     ),
     child: InkWell(
-      onTap: onTap,
+      onTap: tactileTapRoyalClean(onTap),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

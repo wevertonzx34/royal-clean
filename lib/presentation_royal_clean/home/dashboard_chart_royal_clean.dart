@@ -1,3 +1,4 @@
+import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import '../../core_royal_clean/services/invoice_list_cache_royal_clean.dart';
 import 'invoice_bar_page_royal_clean.dart';
 import 'product_bar_page_royal_clean.dart';
@@ -19,12 +20,14 @@ class DashboardChartRoyalClean extends StatefulWidget {
   final Future<Map<String, dynamic>> Function(Map<String, dynamic>)? load;
   final ActiveContactsCacheRoyalClean? invoiceCache;
   final ActiveContactsCacheRoyalClean? productCache;
+  final bool overlaySurface;
   const DashboardChartRoyalClean({
     super.key,
     this.availableHeight = 720,
     this.load,
     this.invoiceCache,
     this.productCache,
+    this.overlaySurface = false,
   });
   @override
   State<DashboardChartRoyalClean> createState() => _DashboardChartState();
@@ -77,7 +80,7 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
       _cache.clear();
-      _reload();
+      _reload(background: true);
     });
   }
 
@@ -157,12 +160,18 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
     return result!;
   }
 
-  void _show(Map<String, dynamic> result) {
+  void _show(Map<String, dynamic> result, {bool preserveSelection = false}) {
+    final keepSelection = preserveSelection && _data != null;
     _data = result;
     final metrics = result['metrics'] as List;
     final moneyIndex = metrics.indexWhere((m) => (m as Map)['money'] == true);
-    _metric = moneyIndex < 0 ? 0 : moneyIndex;
-    _selected = (result['labels'] as List).length - 1;
+    _metric = keepSelection
+        ? _metric.clamp(0, math.max(0, metrics.length - 1))
+        : moneyIndex < 0
+        ? 0
+        : moneyIndex;
+    final last = (result['labels'] as List).length - 1;
+    _selected = keepSelection ? _selected.clamp(0, math.max(0, last)) : last;
     _watchPending();
   }
 
@@ -236,7 +245,7 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
         if (key == jsonEncode(_query(_group))) {
           ++_request;
           setState(() {
-            _show(result);
+            _show(result, preserveSelection: true);
             _busy = false;
           });
         }
@@ -255,7 +264,7 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
     _watchPending();
   }
 
-  Future<void> _reload() async {
+  Future<void> _reload({bool background = false}) async {
     final request = ++_request;
     final query = _query(_group);
     final key = jsonEncode(query);
@@ -271,13 +280,13 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
     setState(() {
       _busy = true;
       _error = null;
-      _data = null;
+      if (!background) _data = null;
     });
     try {
       final result = await _fetch(query);
       if (!mounted || request != _request) return;
       _cache[key] = result;
-      setState(() => _show(result));
+      setState(() => _show(result, preserveSelection: background));
     } on FirebaseFunctionsException catch (e) {
       if (mounted && request == _request) {
         setState(
@@ -324,9 +333,15 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF102B3D),
+        color: widget.overlaySurface
+            ? const Color(0xE6102B3D)
+            : const Color(0xFF102B3D),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF25485F)),
+        border: Border.all(
+          color: widget.overlaySurface
+              ? const Color(0xAA5CE7EC)
+              : const Color(0xFF25485F),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -347,11 +362,11 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
                 key: const ValueKey('dashboard-period'),
                 tooltip: 'Período do gráfico',
                 icon: const Icon(Icons.schedule_outlined, color: _accent),
-                onSelected: (period) {
+                onSelected: tactileValueRoyalClean((period) {
                   if (period == _period) return;
                   _period = period;
                   _reload();
-                },
+                }),
                 itemBuilder: (_) => [
                   if (_position) ...[
                     const PopupMenuItem<DashboardPeriodRoyalClean>(
@@ -374,7 +389,9 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
                 tooltip: 'Estilo do gráfico',
                 initialValue: _style,
                 icon: const Icon(Icons.bar_chart, color: _accent),
-                onSelected: (style) => setState(() => _style = style),
+                onSelected: tactileValueRoyalClean(
+                  (style) => setState(() => _style = style),
+                ),
                 itemBuilder: (_) => [
                   for (final item in const {
                     DashboardChartStyleRoyalClean.bars: 'Barras',
@@ -386,7 +403,9 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
               ),
               IconButton(
                 tooltip: 'Atualizar resumo',
-                onPressed: _refreshingAll ? null : _refreshAll,
+                onPressed: tactileTapRoyalClean(
+                  _refreshingAll ? null : _refreshAll,
+                ),
                 icon: const Icon(Icons.refresh, color: _accent),
               ),
             ],
@@ -398,10 +417,10 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 2),
                     child: TextButton(
-                      onPressed: () {
+                      onPressed: tactileTapRoyalClean(() {
                         _group = group;
                         _reload();
-                      },
+                      }),
                       style: TextButton.styleFrom(
                         foregroundColor: _text,
                         backgroundColor: group == _group
@@ -436,17 +455,17 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
                       child: ChoiceChip(
                         label: Text(category.value),
                         selected: _contactRole == category.key,
-                        onSelected: (_) {
+                        onSelected: tactileValueRoyalClean((_) {
                           if (_contactRole == category.key) return;
                           _contactRole = category.key;
                           _reload();
-                        },
+                        }),
                       ),
                     ),
                 ],
               ),
             ),
-          if (_busy || _refreshingAll)
+          if ((_busy || _refreshingAll) && _data == null)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
               child: LinearProgressIndicator(),
@@ -476,7 +495,9 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
                         child: ChoiceChip(
                           label: Text(metrics[i].label),
                           selected: i == _metric,
-                          onSelected: (_) => setState(() => _metric = i),
+                          onSelected: tactileValueRoyalClean(
+                            (_) => setState(() => _metric = i),
+                          ),
                         ),
                       ),
                   ],
@@ -553,19 +574,23 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
               IconButton(
                 tooltip: 'Sobre os dados do gráfico',
                 icon: const Icon(Icons.info_outline, color: _muted, size: 20),
-                onPressed: () => showDialog<void>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Dados do Bling'),
-                    content: Text(
-                      'Produtos, notas e contatos são sincronizados automaticamente no servidor a cada hora. Use Atualizar para consultar antes. O último resultado completo é preservado durante a sincronização. Produtos excluídos ficam fora do total atual.\n\n${_group == 'Notas' ? 'Faturamento soma o valor nominal das notas Autorizadas e Emitida DANFE; exclui as demais situações. Não representa receita líquida ou recebimento. Quantidade considera as notas no período selecionado. Entregues é o novo título do indicador fiscal anterior; seus dados ainda representam transmissão à SEFAZ, não confirmação de entrega ao cliente. Pendentes corresponde à situação fiscal Pendente. Pagas exige conciliação das contas a receber vinculadas à NF. Valor futuro considera apenas registros futuros, sem estimativa.' : 'Cadastros por situação atual. Contatos são classificados conforme os tipos Cliente e Fornecedor do Bling; um contato pode pertencer aos dois grupos. Sem histórico por data.'}',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Entendi'),
+                onPressed: tactileTapRoyalClean(
+                  () => showDialog<void>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Dados do Bling'),
+                      content: Text(
+                        'Produtos, notas e contatos são sincronizados automaticamente no servidor a cada hora. Use Atualizar para consultar antes. O último resultado completo é preservado durante a sincronização. Produtos excluídos ficam fora do total atual.\n\n${_group == 'Notas' ? 'Faturamento soma o valor nominal das notas Autorizadas e Emitida DANFE; exclui as demais situações. Não representa receita líquida ou recebimento. Quantidade considera as notas no período selecionado. Entregues é o novo título do indicador fiscal anterior; seus dados ainda representam transmissão à SEFAZ, não confirmação de entrega ao cliente. Pendentes corresponde à situação fiscal Pendente. Pagas exige conciliação das contas a receber vinculadas à NF. Valor futuro considera apenas registros futuros, sem estimativa.' : 'Cadastros por situação atual. Contatos são classificados conforme os tipos Cliente e Fornecedor do Bling; um contato pode pertencer aos dois grupos. Sem histórico por data.'}',
                       ),
-                    ],
+                      actions: [
+                        TextButton(
+                          onPressed: tactileTapRoyalClean(
+                            () => Navigator.pop(context),
+                          ),
+                          child: const Text('Entendi'),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -604,6 +629,7 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
                             behavior: HitTestBehavior.opaque,
                             key: const ValueKey('dashboard-plot'),
                             onTapUp: (event) {
+                              TouchFeedbackRoyalClean.pulse();
                               final fraction =
                                   ((event.localPosition.dx - 48) /
                                           (constraints.maxWidth - 60))

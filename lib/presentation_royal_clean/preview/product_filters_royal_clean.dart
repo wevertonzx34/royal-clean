@@ -1,3 +1,4 @@
+import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
@@ -105,7 +106,7 @@ class _ProductFiltersRoyalCleanState extends State<ProductFiltersRoyalClean> {
     children: [
       IconButton(
         tooltip: 'Pesquisar produtos',
-        onPressed: _onSearchIcon,
+        onPressed: tactileTapRoyalClean(_onSearchIcon),
         icon: const Icon(Icons.search_rounded),
         color: const Color(0xFF092F43),
       ),
@@ -113,10 +114,11 @@ class _ProductFiltersRoyalCleanState extends State<ProductFiltersRoyalClean> {
       Expanded(
         child: _search
             ? TextField(
+                onTap: TouchFeedbackRoyalClean.pulse,
                 controller: _controller,
                 focusNode: _focus,
                 textInputAction: TextInputAction.search,
-                onSubmitted: (_) => _submitSearch(),
+                onSubmitted: tactileValueRoyalClean((_) => _submitSearch()),
                 style: const TextStyle(color: Color(0xFF092F43), fontSize: 14),
                 decoration: InputDecoration(
                   hintText: 'Nome, código ou tags',
@@ -136,7 +138,7 @@ class _ProductFiltersRoyalCleanState extends State<ProductFiltersRoyalClean> {
                   suffixIcon: IconButton(
                     tooltip: 'Fechar pesquisa',
                     icon: const Icon(Icons.close, size: 18),
-                    onPressed: _toggleSearch,
+                    onPressed: tactileTapRoyalClean(_toggleSearch),
                   ),
                 ),
               )
@@ -149,7 +151,7 @@ class _ProductFiltersRoyalCleanState extends State<ProductFiltersRoyalClean> {
                 ),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(12),
-                  onTap: _toggleSearch,
+                  onTap: tactileTapRoyalClean(_toggleSearch),
                   child: const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 10, vertical: 14),
                     child: Text(
@@ -182,10 +184,10 @@ class _ProductFiltersRoyalCleanState extends State<ProductFiltersRoyalClean> {
                                   ? Colors.white
                                   : const Color(0xFF607783),
                             ),
-                            onSelected: (_) {
+                            onSelected: tactileValueRoyalClean((_) {
                               setState(() => _selected = niche);
                               widget.onCategory(niche);
-                            },
+                            }),
                           ),
                         ),
                     ],
@@ -196,7 +198,7 @@ class _ProductFiltersRoyalCleanState extends State<ProductFiltersRoyalClean> {
       if (_expanded && !_search)
         IconButton(
           tooltip: 'Rolar a lista de nichos',
-          onPressed: _scrollNiches,
+          onPressed: tactileTapRoyalClean(_scrollNiches),
           icon: TweenAnimationBuilder<double>(
             tween: Tween(begin: 0, end: 1),
             duration: Duration(
@@ -220,7 +222,9 @@ class _ProductFiltersRoyalCleanState extends State<ProductFiltersRoyalClean> {
             _expanded ? Icons.expand_less : Icons.expand_more,
             size: 18,
           ),
-          onPressed: () => setState(() => _expanded = !_expanded),
+          onPressed: tactileTapRoyalClean(
+            () => setState(() => _expanded = !_expanded),
+          ),
         ),
       ],
     ],

@@ -1,3 +1,4 @@
+import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../core_royal_clean/services/account_access_royal_clean.dart';
@@ -172,7 +173,9 @@ class RoleAreaRoyalClean extends StatelessWidget {
               title: const Text('Meus dados'),
               subtitle: const Text('Nome, CPF/CNPJ opcional e preferências'),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.pushNamed(context, '/my-data'),
+              onTap: tactileTapRoyalClean(
+                () => Navigator.pushNamed(context, '/my-data'),
+              ),
             ),
           ),
           Card(
@@ -181,7 +184,9 @@ class RoleAreaRoyalClean extends StatelessWidget {
               title: const Text('Produtos e notícias'),
               subtitle: const Text('Explorar a prévia pública'),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.pushNamed(context, '/preview'),
+              onTap: tactileTapRoyalClean(
+                () => Navigator.pushNamed(context, '/preview'),
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -197,7 +202,9 @@ class RoleAreaRoyalClean extends StatelessWidget {
             ),
           const SizedBox(height: 24),
           OutlinedButton(
-            onPressed: () => logoutToPreviewRoyalClean(context),
+            onPressed: tactileTapRoyalClean(
+              () => logoutToPreviewRoyalClean(context),
+            ),
             child: const Text('Sair'),
           ),
         ],
@@ -218,18 +225,22 @@ class _AccessMessage extends StatelessWidget {
         Text(message),
         const SizedBox(height: 24),
         FilledButton(
-          onPressed: () => Navigator.pushNamedAndRemoveUntil(
-            context,
-            '/login',
-            (_) => false,
+          onPressed: tactileTapRoyalClean(
+            () => Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/login',
+              (_) => false,
+            ),
           ),
           child: const Text('Ir para login'),
         ),
         TextButton(
-          onPressed: () => Navigator.pushNamedAndRemoveUntil(
-            context,
-            '/preview',
-            (_) => false,
+          onPressed: tactileTapRoyalClean(
+            () => Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/preview',
+              (_) => false,
+            ),
           ),
           child: const Text('Voltar à prévia pública'),
         ),

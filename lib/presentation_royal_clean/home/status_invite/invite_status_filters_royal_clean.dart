@@ -1,3 +1,4 @@
+import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'package:flutter/material.dart';
 
 class InviteStatusFiltersRoyalClean extends StatelessWidget {
@@ -21,6 +22,7 @@ class InviteStatusFiltersRoyalClean extends StatelessWidget {
     return Column(
       children: [
         TextField(
+          onTap: TouchFeedbackRoyalClean.pulse,
           controller: searchController,
           decoration: const InputDecoration(
             labelText: 'Buscar convite',
@@ -42,10 +44,10 @@ class InviteStatusFiltersRoyalClean extends StatelessWidget {
             DropdownMenuItem(value: 'Colaborador', child: Text('Colaborador')),
             DropdownMenuItem(value: 'Promotor', child: Text('Promotor')),
           ],
-          onChanged: (value) {
+          onChanged: tactileValueRoyalClean((value) {
             if (value == null) return;
             onProfileChanged(value);
-          },
+          }),
         ),
         const SizedBox(height: 14),
         DropdownButtonFormField<String>(
@@ -60,10 +62,10 @@ class InviteStatusFiltersRoyalClean extends StatelessWidget {
             DropdownMenuItem(value: 'Usado', child: Text('Usado')),
             DropdownMenuItem(value: 'Processing', child: Text('Processing')),
           ],
-          onChanged: (value) {
+          onChanged: tactileValueRoyalClean((value) {
             if (value == null) return;
             onStatusChanged(value);
-          },
+          }),
         ),
       ],
     );

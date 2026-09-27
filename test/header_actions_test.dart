@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:royal_clean/presentation_royal_clean/home/home_page_royal_clean.dart';
+import 'package:royal_clean/presentation_royal_clean/home/stock_functions_page_royal_clean.dart';
 import 'package:royal_clean/presentation_royal_clean/home/access_control_page_royal_clean.dart';
 import 'package:royal_clean/presentation_royal_clean/auth/account_ui_royal_clean.dart';
 
 void main() {
-  testWidgets('Admin opens notifications without leaving the panel', (
+  testWidgets('Stock page opens notifications without leaving the page', (
     tester,
   ) async {
-    await tester.pumpWidget(const MaterialApp(home: HomePageRoyalClean()));
+    await tester.pumpWidget(
+      const MaterialApp(home: StockFunctionsPageRoyalClean()),
+    );
     expect(find.byIcon(Icons.manage_accounts), findsNothing);
     expect(find.byTooltip('Meus dados'), findsOneWidget);
     await tester.tap(find.byTooltip('Notificações'));
@@ -16,7 +18,7 @@ void main() {
     expect(find.text('Nenhuma notificação por aqui.'), findsOneWidget);
     await tester.tap(find.byTooltip('Fechar notificações'));
     await tester.pumpAndSettle();
-    expect(find.byType(HomePageRoyalClean), findsOneWidget);
+    expect(find.byType(StockFunctionsPageRoyalClean), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

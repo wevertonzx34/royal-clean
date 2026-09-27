@@ -1,61 +1,244 @@
+import 'image_action_royal_clean.dart';
+import '../home/profile_images_royal_clean.dart';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../core_royal_clean/constants/app_routes_royal_clean.dart';
 import 'home_background_royal_clean.dart';
 import '../auth/logout_royal_clean.dart';
+import '../auth/admin_route_guard_royal_clean.dart';
 import 'home_form_royal_clean.dart';
 import '../shared/header_actions_royal_clean.dart';
 import 'dashboard_chart_royal_clean.dart';
 import 'overview_shortcut_royal_clean.dart';
+import 'neon_image_royal_clean.dart';
+import 'stock_functions_page_royal_clean.dart';
+import 'door_light_royal_clean.dart';
 
-class HomePageRoyalClean extends StatelessWidget {
+class HomePageRoyalClean extends StatefulWidget {
   const HomePageRoyalClean({super.key});
+  @override
+  State<HomePageRoyalClean> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePageRoyalClean> {
+  final _overviewOpen = ValueNotifier<bool>(false);
+  Future<void>? _imagesReady;
+  bool _openingStock = false;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _imagesReady ??= precacheProfileImagesRoyalClean(context);
+  }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Painel administrativo'),
-        actions: const [HeaderActionsRoyalClean()],
-      ),
-      body: HomeBackgroundRoyalClean(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final bool isSmall = constraints.maxWidth < 700;
+  void dispose() {
+    _overviewOpen.dispose();
+    super.dispose();
+  }
 
-            return Center(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(
-                  horizontal: isSmall ? 16 : 24,
-                  vertical: 12,
-                ),
-                child: Column(
-                  children: [
-                    OverviewShortcutRoyalClean(
-                      child: DashboardChartRoyalClean(
-                        availableHeight: constraints.maxHeight,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 720),
-                      child: HomeFormRoyalClean(
-                        onAccessControlPressed: () {
-                          Navigator.pushNamed(
-                            context,
-                            AppRoutesRoyalClean.accessControl,
-                          );
-                        },
-                        onLogoutPressed: () =>
-                            logoutToPreviewRoyalClean(context),
-                      ),
-                    ),
-                  ],
-                ),
+  Future<void> _openStock(BuildContext context) async {
+    if (_openingStock) return;
+    _openingStock = true;
+    try {
+      await _imagesReady;
+      if (!context.mounted) return;
+      await Navigator.of(context).push(
+        PageRouteBuilder<void>(
+          transitionDuration: const Duration(milliseconds: 150),
+          reverseTransitionDuration: const Duration(milliseconds: 150),
+          transitionsBuilder: (_, animation, secondaryAnimation, child) =>
+              FadeTransition(opacity: animation, child: child),
+          pageBuilder: (_, animation, secondaryAnimation) =>
+              AdminRouteGuardRoyalClean(
+                pendingBackground: const StockBackgroundRoyalClean(),
+                firebaseInitialization: Future<void>.value(),
+                builder: (_) => const StockFunctionsPageRoyalClean(),
               ),
-            );
-          },
+        ),
+      );
+    } finally {
+      _openingStock = false;
+    }
+  }
+
+  Future<void> _openActions(BuildContext context) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AdminRouteGuardRoyalClean(
+          firebaseInitialization: Future<void>.value(),
+          builder: (_) => const _AdminActionsPage(),
         ),
       ),
     );
   }
+
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder<bool>(
+    valueListenable: _overviewOpen,
+    builder: (context, overviewOpen, _) => PopScope(
+      canPop: !overviewOpen,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && overviewOpen) _overviewOpen.value = false;
+      },
+      child: Scaffold(
+        body: HomeBackgroundRoyalClean(
+          child: SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // 70% maior, preservando a proporção 282 x 603 e a posição.
+                const avatarScale = 1.7;
+                final avatarHeight =
+                    avatarScale *
+                    math.min(
+                      603.0,
+                      math.min(
+                        constraints.maxHeight * .28,
+                        constraints.maxWidth * .25 * 603 / 282,
+                      ),
+                    );
+                return Stack(
+                  children: [
+                    Positioned.fill(
+                      child: Center(
+                        child: SizedBox(
+                          width: constraints.maxWidth * .97,
+                          height: constraints.maxHeight * .97,
+                          child: OverviewShortcutRoyalClean(
+                            height: constraints.maxHeight * .97,
+                            openState: _overviewOpen,
+                            foreground: Positioned(
+                              left: 14 + constraints.maxWidth * .105,
+                              bottom: 12 + constraints.maxHeight * .145,
+                              child: SizedBox(
+                                height: avatarHeight * 1.1 * 1.05 * .7 * .97,
+                                width:
+                                    avatarHeight *
+                                    1.1 *
+                                    1.05 *
+                                    .7 *
+                                    .97 *
+                                    1397 /
+                                    2272,
+                                child: Tooltip(
+                                  message: 'Abrir funções de estoque',
+                                  child: Semantics(
+                                    button: true,
+                                    label: 'Abrir funções de estoque',
+                                    child: Material(
+                                      type: MaterialType.transparency,
+                                      child: ImageActionRoyalClean(
+                                        key: const ValueKey(
+                                          'stock-door-shortcut',
+                                        ),
+                                        pulses: 3,
+                                        duration: const Duration(
+                                          milliseconds: 900,
+                                        ),
+                                        scaleDepth: .018,
+                                        onActivate: () async {
+                                          _overviewOpen.value = false;
+                                          await _openStock(context);
+                                        },
+                                        builder: (_, flash) => Stack(
+                                          fit: StackFit.expand,
+                                          clipBehavior: Clip.none,
+                                          children: [
+                                            Image.asset(
+                                              'assets/preview/royal-store/royal-porta.webp',
+                                              fit: BoxFit.contain,
+                                              cacheWidth: 900,
+                                            ),
+                                            DoorLightRoyalClean(
+                                              activation: flash,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            child: DashboardChartRoyalClean(
+                              availableHeight: constraints.maxHeight,
+                              overlaySurface: true,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (!overviewOpen)
+                      Positioned(
+                        right: 14,
+                        bottom: 12 + constraints.maxHeight * .07,
+                        child: SizedBox(
+                          width: avatarHeight * 282 / 603,
+                          child: Tooltip(
+                            message: 'Abrir funções administrativas',
+                            child: Semantics(
+                              button: true,
+                              label: 'Abrir funções administrativas',
+                              child: Material(
+                                type: MaterialType.transparency,
+                                child: ImageActionRoyalClean(
+                                  key: const ValueKey('admin-avatar-shortcut'),
+                                  pulses: 2,
+                                  duration: const Duration(milliseconds: 600),
+                                  scaleDepth: .018,
+                                  onActivate: () async {
+                                    _overviewOpen.value = false;
+                                    await _openActions(context);
+                                  },
+                                  builder: (_, flash) => NeonImageRoyalClean(
+                                    activation: flash,
+                                    asset:
+                                        'assets/preview/royal-store/royal-avatar.webp',
+                                    aspectRatio: 282 / 603,
+                                    glow: const Color(0xFF5CE7EC),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class _AdminActionsPage extends StatelessWidget {
+  const _AdminActionsPage();
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      title: const Text('Painel administrativo'),
+      actions: const [HeaderActionsRoyalClean()],
+    ),
+    body: HomeBackgroundRoyalClean(
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 720),
+              child: HomeFormRoyalClean(
+                onAccessControlPressed: () => Navigator.pushNamed(
+                  context,
+                  AppRoutesRoyalClean.accessControl,
+                ),
+                onLogoutPressed: () => logoutToPreviewRoyalClean(context),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
 }

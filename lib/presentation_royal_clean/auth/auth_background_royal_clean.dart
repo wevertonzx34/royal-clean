@@ -67,7 +67,9 @@ class AuthBackgroundRoyalClean extends StatelessWidget {
                   },
                 ),
               ),
-              Container(decoration: const BoxDecoration(gradient: overlayGradient)),
+              Container(
+                decoration: const BoxDecoration(gradient: overlayGradient),
+              ),
               SafeArea(child: child),
             ],
           ),

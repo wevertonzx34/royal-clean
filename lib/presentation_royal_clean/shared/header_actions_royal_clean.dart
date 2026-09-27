@@ -1,3 +1,4 @@
+import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import '../../core_royal_clean/services/intercom_royal_clean.dart';
 import 'notifications_panel_royal_clean.dart';
 import 'package:flutter/material.dart';
@@ -25,7 +26,9 @@ class NotificationButtonRoyalClean extends StatelessWidget {
       final count = IntercomRoyalClean.instance.unreadCount;
       return IconButton(
         tooltip: 'Notificações',
-        onPressed: () => showNotificationsRoyalClean(context),
+        onPressed: tactileTapRoyalClean(
+          () => showNotificationsRoyalClean(context),
+        ),
         icon: Badge(
           isLabelVisible: count > 0,
           label: Text(count > 99 ? '99+' : '$count'),
@@ -43,19 +46,21 @@ class MyDataButtonRoyalClean extends StatelessWidget {
   Widget build(BuildContext context) => IconButton(
     tooltip: 'Meus dados',
     icon: Icon(Icons.person_outline, color: color),
-    onPressed: ModalRoute.of(context)?.settings.name == '/my-data'
-        ? null
-        : () {
-            final status = AccountAccessRoyalClean.instance.value.status;
-            final route =
-                status == AccountAccessStatus.admin ||
-                    status == AccountAccessStatus.profile
-                ? '/my-data'
-                : AppRoutesRoyalClean.login;
-            if (ModalRoute.of(context)?.settings.name != route) {
-              Navigator.pushNamed(context, route);
-            }
-          },
+    onPressed: tactileTapRoyalClean(
+      ModalRoute.of(context)?.settings.name == '/my-data'
+          ? null
+          : () {
+              final status = AccountAccessRoyalClean.instance.value.status;
+              final route =
+                  status == AccountAccessStatus.admin ||
+                      status == AccountAccessStatus.profile
+                  ? '/my-data'
+                  : AppRoutesRoyalClean.login;
+              if (ModalRoute.of(context)?.settings.name != route) {
+                Navigator.pushNamed(context, route);
+              }
+            },
+    ),
   );
 }
 

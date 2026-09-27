@@ -1,3 +1,4 @@
+import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'package:flutter/material.dart';
 import '../shared/header_actions_royal_clean.dart';
 import 'package:flutter/services.dart';
@@ -208,14 +209,14 @@ class _CreateInvitePageRoyalCleanState
                 DropdownMenuItem<String>(value: profile, child: Text(profile)),
           )
           .toList(),
-      onChanged: (value) {
+      onChanged: tactileValueRoyalClean((value) {
         if (value == null) return;
         setState(() {
           _selectedProfile = value;
           _preview = null;
           _inviteSaved = false;
         });
-      },
+      }),
     );
   }
 
@@ -246,7 +247,9 @@ class _CreateInvitePageRoyalCleanState
           SizedBox(
             height: 50,
             child: ElevatedButton.icon(
-              onPressed: (_isSaving || _inviteSaved) ? null : _saveInvite,
+              onPressed: tactileTapRoyalClean(
+                (_isSaving || _inviteSaved) ? null : _saveInvite,
+              ),
               icon: _isSaving
                   ? const SizedBox(
                       width: 18,
@@ -271,7 +274,7 @@ class _CreateInvitePageRoyalCleanState
             SizedBox(
               height: 50,
               child: OutlinedButton.icon(
-                onPressed: _copyInviteMessage,
+                onPressed: tactileTapRoyalClean(_copyInviteMessage),
                 icon: const Icon(Icons.copy_rounded),
                 label: const Text('Copiar mensagem'),
               ),
@@ -280,7 +283,7 @@ class _CreateInvitePageRoyalCleanState
             SizedBox(
               height: 50,
               child: ElevatedButton.icon(
-                onPressed: _openWhatsapp,
+                onPressed: tactileTapRoyalClean(_openWhatsapp),
                 icon: const Icon(Icons.share_rounded),
                 label: const Text('Compartilhar'),
               ),
@@ -312,7 +315,9 @@ class _CreateInvitePageRoyalCleanState
                   child: Row(
                     children: [
                       IconButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: tactileTapRoyalClean(
+                          () => Navigator.pop(context),
+                        ),
                         icon: const Icon(Icons.arrow_back_ios_new_rounded),
                       ),
                       Expanded(
@@ -360,6 +365,7 @@ class _CreateInvitePageRoyalCleanState
                                   ),
                                   const SizedBox(height: 24),
                                   TextFormField(
+                                    onTap: TouchFeedbackRoyalClean.pulse,
                                     controller: _nameController,
                                     textCapitalization:
                                         TextCapitalization.words,
@@ -374,6 +380,7 @@ class _CreateInvitePageRoyalCleanState
                                   ),
                                   const SizedBox(height: 16),
                                   TextFormField(
+                                    onTap: TouchFeedbackRoyalClean.pulse,
                                     controller: _whatsappController,
                                     keyboardType: TextInputType.phone,
                                     inputFormatters: [
@@ -393,6 +400,7 @@ class _CreateInvitePageRoyalCleanState
                                   ),
                                   const SizedBox(height: 16),
                                   TextFormField(
+                                    onTap: TouchFeedbackRoyalClean.pulse,
                                     controller: _emailController,
                                     keyboardType: TextInputType.emailAddress,
                                     autocorrect: false,
@@ -407,9 +415,9 @@ class _CreateInvitePageRoyalCleanState
 
                                   const SizedBox(height: 22),
                                   ElevatedButton(
-                                    onPressed: _isGenerating
-                                        ? null
-                                        : _generatePreview,
+                                    onPressed: tactileTapRoyalClean(
+                                      _isGenerating ? null : _generatePreview,
+                                    ),
                                     child: _isGenerating
                                         ? const SizedBox(
                                             width: 22,

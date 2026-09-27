@@ -1,3 +1,4 @@
+import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -108,6 +109,7 @@ class _MyDataState extends State<MyDataPageRoyalClean> {
             Text('E-mail: ${widget.user.email ?? ''}'),
           const SizedBox(height: 16),
           TextFormField(
+            onTap: TouchFeedbackRoyalClean.pulse,
             controller: _name,
             enabled: !_busy && _loaded,
             decoration: const InputDecoration(labelText: 'Nome'),
@@ -129,16 +131,19 @@ class _MyDataState extends State<MyDataPageRoyalClean> {
               DropdownMenuItem(value: 'cpf', child: Text('CPF')),
               DropdownMenuItem(value: 'cnpj', child: Text('CNPJ')),
             ],
-            onChanged: _busy || !_loaded
-                ? null
-                : (v) => setState(() {
-                    _kind = v ?? '';
-                    _document.clear();
-                  }),
+            onChanged: tactileValueRoyalClean(
+              _busy || !_loaded
+                  ? null
+                  : (v) => setState(() {
+                      _kind = v ?? '';
+                      _document.clear();
+                    }),
+            ),
           ),
           if (_kind.isNotEmpty) ...[
             const SizedBox(height: 16),
             TextFormField(
+              onTap: TouchFeedbackRoyalClean.pulse,
               controller: _document,
               enabled: !_busy,
               textCapitalization: TextCapitalization.characters,
@@ -159,9 +164,11 @@ class _MyDataState extends State<MyDataPageRoyalClean> {
             contentPadding: EdgeInsets.zero,
             value: _offers,
             controlAffinity: ListTileControlAffinity.leading,
-            onChanged: _busy || !_loaded
-                ? null
-                : (v) => setState(() => _offers = v ?? false),
+            onChanged: tactileValueRoyalClean(
+              _busy || !_loaded
+                  ? null
+                  : (v) => setState(() => _offers = v ?? false),
+            ),
             title: const Text('Receber ofertas (opcional)'),
           ),
           if (_error != null)
@@ -173,18 +180,18 @@ class _MyDataState extends State<MyDataPageRoyalClean> {
               ),
             ),
           FilledButton(
-            onPressed: _busy || !_loaded ? null : _save,
+            onPressed: tactileTapRoyalClean(_busy || !_loaded ? null : _save),
             child: Text(_busy ? 'Aguarde…' : 'Salvar dados'),
           ),
           if (!_loaded && !_busy)
             TextButton(
-              onPressed: () {
+              onPressed: tactileTapRoyalClean(() {
                 setState(() {
                   _busy = true;
                   _error = null;
                 });
                 _load();
-              },
+              }),
               child: const Text('Tentar carregar novamente'),
             ),
           const SizedBox(height: 16),
@@ -192,10 +199,12 @@ class _MyDataState extends State<MyDataPageRoyalClean> {
             'Convites só podem ser informados no cadastro inicial. Seu perfil de acesso é administrado pela Royal Clean.',
           ),
           TextButton(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute<void>(
-                builder: (_) => const LegalPageRoyalClean(privacy: true),
+            onPressed: tactileTapRoyalClean(
+              () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => const LegalPageRoyalClean(privacy: true),
+                ),
               ),
             ),
             child: const Text('Aviso de privacidade'),

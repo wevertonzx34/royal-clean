@@ -1,3 +1,4 @@
+import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../core_royal_clean/services/account_service_royal_clean.dart';
@@ -164,6 +165,7 @@ class _RegistrationState extends State<RegistrationPageRoyalClean> {
   }) => Padding(
     padding: const EdgeInsets.only(bottom: 16),
     child: TextFormField(
+      onTap: TouchFeedbackRoyalClean.pulse,
       controller: controller,
       enabled: !_busy,
       validator: validator,
@@ -180,7 +182,9 @@ class _RegistrationState extends State<RegistrationPageRoyalClean> {
         suffixIcon: password
             ? IconButton(
                 tooltip: _obscure ? 'Mostrar senha' : 'Ocultar senha',
-                onPressed: () => setState(() => _obscure = !_obscure),
+                onPressed: tactileTapRoyalClean(
+                  () => setState(() => _obscure = !_obscure),
+                ),
                 icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
               )
             : null,
@@ -257,7 +261,9 @@ class _RegistrationState extends State<RegistrationPageRoyalClean> {
                   'Verifique seu e-mail antes de concluir. O convite ainda não foi utilizado.',
                 ),
                 TextButton(
-                  onPressed: _busy ? null : _sendVerification,
+                  onPressed: tactileTapRoyalClean(
+                    _busy ? null : _sendVerification,
+                  ),
                   child: const Text('Reenviar verificação de e-mail'),
                 ),
               ],
@@ -273,6 +279,7 @@ class _RegistrationState extends State<RegistrationPageRoyalClean> {
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
+                  onTap: TouchFeedbackRoyalClean.pulse,
                   controller: _invite,
                   enabled: !_busy,
                   maxLength: 8,
@@ -283,6 +290,7 @@ class _RegistrationState extends State<RegistrationPageRoyalClean> {
                   ),
                 ),
                 TextFormField(
+                  onTap: TouchFeedbackRoyalClean.pulse,
                   controller: _phone,
                   enabled: !_busy,
                   keyboardType: TextInputType.phone,
@@ -303,13 +311,15 @@ class _RegistrationState extends State<RegistrationPageRoyalClean> {
                   },
                 ),
                 TextButton(
-                  onPressed: _busy
-                      ? null
-                      : () => setState(() {
-                          _invite.clear();
-                          _phone.clear();
-                          _error = null;
-                        }),
+                  onPressed: tactileTapRoyalClean(
+                    _busy
+                        ? null
+                        : () => setState(() {
+                            _invite.clear();
+                            _phone.clear();
+                            _error = null;
+                          }),
+                  ),
                   child: const Text(
                     'Remover código e continuar com conta comum',
                   ),
@@ -321,19 +331,25 @@ class _RegistrationState extends State<RegistrationPageRoyalClean> {
               spacing: 8,
               children: [
                 TextButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => const LegalPageRoyalClean(privacy: false),
+                  onPressed: tactileTapRoyalClean(
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) =>
+                            const LegalPageRoyalClean(privacy: false),
+                      ),
                     ),
                   ),
                   child: const Text('Ler Termos de Uso'),
                 ),
                 TextButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => const LegalPageRoyalClean(privacy: true),
+                  onPressed: tactileTapRoyalClean(
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) =>
+                            const LegalPageRoyalClean(privacy: true),
+                      ),
                     ),
                   ),
                   child: const Text('Ler Aviso de Privacidade'),
@@ -344,9 +360,9 @@ class _RegistrationState extends State<RegistrationPageRoyalClean> {
               contentPadding: EdgeInsets.zero,
               value: _terms,
               controlAffinity: ListTileControlAffinity.leading,
-              onChanged: _busy
-                  ? null
-                  : (v) => setState(() => _terms = v ?? false),
+              onChanged: tactileValueRoyalClean(
+                _busy ? null : (v) => setState(() => _terms = v ?? false),
+              ),
               title: const Text(
                 'Aceito os Termos de Uso e li o Aviso de Privacidade.',
               ),
@@ -355,9 +371,9 @@ class _RegistrationState extends State<RegistrationPageRoyalClean> {
               contentPadding: EdgeInsets.zero,
               value: _offers,
               controlAffinity: ListTileControlAffinity.leading,
-              onChanged: _busy
-                  ? null
-                  : (v) => setState(() => _offers = v ?? false),
+              onChanged: tactileValueRoyalClean(
+                _busy ? null : (v) => setState(() => _offers = v ?? false),
+              ),
               title: const Text(
                 'Quero receber ofertas da Royal Clean (opcional).',
               ),
@@ -377,7 +393,7 @@ class _RegistrationState extends State<RegistrationPageRoyalClean> {
               ),
             const SizedBox(height: 16),
             FilledButton(
-              onPressed: _busy ? null : _submit,
+              onPressed: tactileTapRoyalClean(_busy ? null : _submit),
               child: Text(
                 _busy
                     ? 'Aguarde…'
@@ -387,21 +403,23 @@ class _RegistrationState extends State<RegistrationPageRoyalClean> {
               ),
             ),
             TextButton(
-              onPressed: _busy
-                  ? null
-                  : () async {
-                      if (_user != null) {
-                        await logoutToPreviewRoyalClean(context);
-                        return;
-                      }
-                      if (context.mounted) {
-                        Navigator.pushNamedAndRemoveUntil(
-                          context,
-                          '/login',
-                          (route) => route.isFirst,
-                        );
-                      }
-                    },
+              onPressed: tactileTapRoyalClean(
+                _busy
+                    ? null
+                    : () async {
+                        if (_user != null) {
+                          await logoutToPreviewRoyalClean(context);
+                          return;
+                        }
+                        if (context.mounted) {
+                          Navigator.pushNamedAndRemoveUntil(
+                            context,
+                            '/login',
+                            (route) => route.isFirst,
+                          );
+                        }
+                      },
+              ),
               child: Text(
                 _user == null
                     ? 'Já tenho conta / voltar ao login'

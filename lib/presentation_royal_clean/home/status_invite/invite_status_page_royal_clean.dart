@@ -1,3 +1,4 @@
+import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'package:flutter/material.dart';
 import '../../shared/header_actions_royal_clean.dart';
 import 'package:flutter/services.dart';
@@ -175,7 +176,9 @@ class _InviteStatusPageRoyalCleanState
                   child: Row(
                     children: [
                       IconButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: tactileTapRoyalClean(
+                          () => Navigator.pop(context),
+                        ),
                         icon: const Icon(Icons.arrow_back_ios_new_rounded),
                       ),
                       Expanded(

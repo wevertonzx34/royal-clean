@@ -1,3 +1,4 @@
+import 'core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'dart:async';
 import 'core_royal_clean/services/intercom_royal_clean.dart';
 import 'presentation_royal_clean/home/intercom_page_royal_clean.dart';
@@ -128,6 +129,7 @@ class RoyalCleanApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Royal Clean',
+      navigatorObservers: [TouchNavigationObserverRoyalClean()],
       debugShowCheckedModeBanner: false,
       theme: AppThemeRoyalClean.theme,
       builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(

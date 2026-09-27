@@ -1,3 +1,4 @@
+import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'dart:async';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -153,11 +154,13 @@ class _BlingIntegrationState extends State<BlingIntegrationPageRoyalClean>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: tactileTapRoyalClean(
+              () => Navigator.pop(context, false),
+            ),
             child: const Text('Cancelar'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: tactileTapRoyalClean(() => Navigator.pop(context, true)),
             child: const Text('Continuar'),
           ),
         ],
@@ -231,7 +234,9 @@ class _BlingIntegrationState extends State<BlingIntegrationPageRoyalClean>
                 'E-mail de verificação enviado. Confira também a pasta de spam.',
               ),
             TextButton.icon(
-              onPressed: _busy || _verificationSent ? null : _sendVerification,
+              onPressed: tactileTapRoyalClean(
+                _busy || _verificationSent ? null : _sendVerification,
+              ),
               icon: const Icon(Icons.mark_email_read_outlined),
               label: Text(
                 _verificationSent
@@ -254,7 +259,9 @@ class _BlingIntegrationState extends State<BlingIntegrationPageRoyalClean>
               'Consulte produtos, notas e contatos reais. A sincronização automática ocorre a cada hora, mesmo com o aplicativo fechado.',
             ),
             FilledButton.icon(
-              onPressed: () => Navigator.pushNamed(context, '/bling-data'),
+              onPressed: tactileTapRoyalClean(
+                () => Navigator.pushNamed(context, '/bling-data'),
+              ),
               icon: const Icon(Icons.inventory_2_outlined),
               label: const Text('Ver produtos e movimentações'),
             ),
@@ -263,7 +270,7 @@ class _BlingIntegrationState extends State<BlingIntegrationPageRoyalClean>
                 'A autorização precisa ser renovada antes de consultar os dados.',
               ),
             TextButton.icon(
-              onPressed: _busy ? null : _confirmReconnect,
+              onPressed: tactileTapRoyalClean(_busy ? null : _confirmReconnect),
               icon: const Icon(Icons.link),
               label: const Text('Renovar autorização'),
             ),
@@ -276,25 +283,27 @@ class _BlingIntegrationState extends State<BlingIntegrationPageRoyalClean>
             TextButton.icon(
               icon: const Icon(Icons.copy_rounded),
               label: const Text('Copiar endereço'),
-              onPressed: () async {
+              onPressed: tactileTapRoyalClean(() async {
                 await Clipboard.setData(
                   ClipboardData(text: _status!['callbackUrl'] as String),
                 );
                 if (context.mounted) {
                   showAccountMessageRoyalClean(context, 'Endereço copiado.');
                 }
-              },
+              }),
             ),
           ],
           const SizedBox(height: 20),
           if (!authorized && !_needsVerification)
             FilledButton.icon(
-              onPressed: !_busy && status == 'ready' ? _connect : null,
+              onPressed: tactileTapRoyalClean(
+                !_busy && status == 'ready' ? _connect : null,
+              ),
               icon: const Icon(Icons.open_in_browser_rounded),
               label: const Text('Conectar ao Bling'),
             ),
           TextButton.icon(
-            onPressed: _busy ? null : _refresh,
+            onPressed: tactileTapRoyalClean(_busy ? null : _refresh),
             icon: const Icon(Icons.refresh_rounded),
             label: Text(
               _busy

@@ -1,3 +1,4 @@
+import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'package:flutter/material.dart';
 
 class HomePrimaryButtonRoyalClean extends StatelessWidget {
@@ -20,7 +21,7 @@ class HomePrimaryButtonRoyalClean extends StatelessWidget {
 
     return InkWell(
       borderRadius: BorderRadius.circular(22),
-      onTap: onPressed,
+      onTap: tactileTapRoyalClean(onPressed),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(20),

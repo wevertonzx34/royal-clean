@@ -1,3 +1,4 @@
+import 'package:royal_clean/presentation_royal_clean/home/profile_images_royal_clean.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -89,6 +90,11 @@ void main() {
       session.add(true);
       await tester.pumpAndSettle();
       expect(find.text('Login'), findsNothing);
+      await tester.runAsync(
+        () => precacheProfileImagesRoyalClean(
+          tester.element(find.byType(PreviewPageRoyalClean)),
+        ),
+      );
       await tester.tap(find.text('Perfil'));
       await tester.pumpAndSettle();
       expect(find.text('Conta protegida'), findsOneWidget);

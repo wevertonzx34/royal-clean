@@ -1,3 +1,4 @@
+import '../home/profile_images_royal_clean.dart';
 import 'package:flutter/material.dart';
 import '../../core_royal_clean/constants/app_routes_royal_clean.dart';
 
@@ -11,6 +12,13 @@ class SplashPageRoyalClean extends StatefulWidget {
 }
 
 class _SplashPageRoyalCleanState extends State<SplashPageRoyalClean> {
+  Future<void>? _imagesReady;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _imagesReady ??= precacheProfileImagesRoyalClean(context);
+  }
+
   @override
   void initState() {
     super.initState();

@@ -1,3 +1,4 @@
+import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'dart:async';
 import '../../core_royal_clean/services/active_contacts_cache_royal_clean.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -190,12 +191,16 @@ class _ActiveContactsState extends State<ActiveContactsPageRoyalClean> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      leading: BackButton(onPressed: () => Navigator.of(context).pop()),
+      leading: BackButton(
+        onPressed: tactileTapRoyalClean(() => Navigator.of(context).pop()),
+      ),
       title: const Text('Contatos ativos'),
       actions: [
         IconButton(
           tooltip: 'Atualizar lista',
-          onPressed: _busy ? null : () => _fetch(reset: true),
+          onPressed: tactileTapRoyalClean(
+            _busy ? null : () => _fetch(reset: true),
+          ),
           icon: const Icon(Icons.refresh),
         ),
         const HeaderActionsRoyalClean(),
@@ -244,7 +249,7 @@ class _ActiveContactsState extends State<ActiveContactsPageRoyalClean> {
                 children: [
                   Text(_error!),
                   TextButton(
-                    onPressed: () => _fetch(reset: true),
+                    onPressed: tactileTapRoyalClean(() => _fetch(reset: true)),
                     child: const Text('Tentar novamente'),
                   ),
                 ],
@@ -263,7 +268,9 @@ class _ActiveContactsState extends State<ActiveContactsPageRoyalClean> {
                     itemBuilder: (context, index) {
                       if (index == _items.length) {
                         return OutlinedButton(
-                          onPressed: _busy ? null : () => _fetch(),
+                          onPressed: tactileTapRoyalClean(
+                            _busy ? null : () => _fetch(),
+                          ),
                           child: const Text('Carregar mais contatos'),
                         );
                       }
@@ -274,6 +281,7 @@ class _ActiveContactsState extends State<ActiveContactsPageRoyalClean> {
                         margin: EdgeInsets.zero,
                         clipBehavior: Clip.antiAlias,
                         child: ListTile(
+                          enableFeedback: false,
                           key: ValueKey('contact-${item['id']}'),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -303,9 +311,13 @@ class _ActiveContactsState extends State<ActiveContactsPageRoyalClean> {
                           trailing: IconButton(
                             tooltip: 'Ver cadastro',
                             icon: const Icon(Icons.chevron_right_rounded),
-                            onPressed: () => _details(item),
+                            onPressed: tactileTapRoyalClean(
+                              () => _details(item),
+                            ),
                           ),
-                          onLongPress: () => _details(item),
+                          onLongPress: tactileTapRoyalClean(
+                            () => _details(item),
+                          ),
                         ),
                       );
                     },
@@ -392,7 +404,7 @@ class _ContactDetailsState extends State<ContactDetailsPageRoyalClean> {
           if (_error != null) ...[
             Text(_error!),
             TextButton(
-              onPressed: _fetch,
+              onPressed: tactileTapRoyalClean(_fetch),
               child: const Text('Tentar novamente'),
             ),
           ],

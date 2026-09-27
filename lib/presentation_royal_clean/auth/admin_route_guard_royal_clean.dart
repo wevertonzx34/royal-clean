@@ -1,3 +1,4 @@
+import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import '../preview/preview_page_royal_clean.dart';
 import 'package:flutter/material.dart';
 import '../../core_royal_clean/constants/app_routes_royal_clean.dart';
@@ -8,11 +9,15 @@ class AdminRouteGuardRoyalClean extends StatefulWidget {
   final WidgetBuilder builder;
   final Stream<AdminAccessRoyalClean> Function() accessStream;
 
+  /// Decorative, public artwork only. Never place protected content here.
+  final Widget? pendingBackground;
+
   const AdminRouteGuardRoyalClean({
     super.key,
     required this.firebaseInitialization,
     required this.builder,
     this.accessStream = watchAdminAccessRoyalClean,
+    this.pendingBackground,
   });
 
   @override
@@ -63,53 +68,69 @@ class _AdminRouteGuardRoyalCleanState extends State<AdminRouteGuardRoyalClean> {
     },
   );
 
-  Widget _blocked(AdminAccessRoyalClean state) => Scaffold(
-    body: SafeArea(
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 440),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (state == AdminAccessRoyalClean.checking)
-                  const CircularProgressIndicator()
-                else
-                  const Icon(Icons.lock_outline_rounded, size: 40),
-                const SizedBox(height: 20),
-                Text(switch (state) {
-                  AdminAccessRoyalClean.checking =>
-                    'Verificando acesso administrativo...',
-                  AdminAccessRoyalClean.signedOut =>
-                    'Entre com uma conta administrativa para continuar.',
-                  AdminAccessRoyalClean.unavailable =>
-                    'Não foi possível confirmar sua permissão. Verifique a conexão e tente entrar novamente.',
-                  _ => 'Acesso restrito a administradores ativos.',
-                }, textAlign: TextAlign.center),
-                const SizedBox(height: 24),
-                if (state != AdminAccessRoyalClean.checking)
-                  ElevatedButton(
-                    onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      AppRoutesRoyalClean.login,
-                      (_) => false,
-                    ),
-                    child: const Text('Ir para login'),
+  Widget _blocked(AdminAccessRoyalClean state) {
+    if (state == AdminAccessRoyalClean.checking &&
+        widget.pendingBackground != null) {
+      return Scaffold(body: widget.pendingBackground);
+    }
+    return Scaffold(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (widget.pendingBackground != null) widget.pendingBackground!,
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 440),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (state == AdminAccessRoyalClean.checking)
+                        const CircularProgressIndicator()
+                      else
+                        const Icon(Icons.lock_outline_rounded, size: 40),
+                      const SizedBox(height: 20),
+                      Text(switch (state) {
+                        AdminAccessRoyalClean.checking =>
+                          'Verificando acesso administrativo...',
+                        AdminAccessRoyalClean.signedOut =>
+                          'Entre com uma conta administrativa para continuar.',
+                        AdminAccessRoyalClean.unavailable =>
+                          'Não foi possível confirmar sua permissão. Verifique a conexão e tente entrar novamente.',
+                        _ => 'Acesso restrito a administradores ativos.',
+                      }, textAlign: TextAlign.center),
+                      const SizedBox(height: 24),
+                      if (state != AdminAccessRoyalClean.checking)
+                        ElevatedButton(
+                          onPressed: tactileTapRoyalClean(
+                            () => Navigator.pushNamedAndRemoveUntil(
+                              context,
+                              AppRoutesRoyalClean.login,
+                              (_) => false,
+                            ),
+                          ),
+                          child: const Text('Ir para login'),
+                        ),
+                      TextButton(
+                        onPressed: tactileTapRoyalClean(
+                          () => Navigator.pushNamedAndRemoveUntil(
+                            context,
+                            AppRoutesRoyalClean.preview,
+                            (_) => false,
+                          ),
+                        ),
+                        child: const Text('Voltar à prévia'),
+                      ),
+                    ],
                   ),
-                TextButton(
-                  onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    AppRoutesRoyalClean.preview,
-                    (_) => false,
-                  ),
-                  child: const Text('Voltar à prévia'),
                 ),
-              ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
-    ),
-  );
+    );
+  }
 }

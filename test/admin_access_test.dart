@@ -9,6 +9,45 @@ import 'package:royal_clean/presentation_royal_clean/preview/preview_page_royal_
 import 'package:royal_clean/presentation_royal_clean/home/home_form_royal_clean.dart';
 
 void main() {
+  testWidgets(
+    'Public background is visible while checking without building protected content',
+    (tester) async {
+      final access = StreamController<AdminAccessRoyalClean>();
+      addTearDown(access.close);
+      var builds = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AdminRouteGuardRoyalClean(
+            firebaseInitialization: Future.value(),
+            accessStream: () => access.stream,
+            pendingBackground: const ColoredBox(
+              color: Colors.blue,
+              child: Text('PUBLIC ART'),
+            ),
+            builder: (_) {
+              builds++;
+              return const Text('PRIVATE');
+            },
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.text('PUBLIC ART'), findsOneWidget);
+      expect(builds, 0);
+      access.add(AdminAccessRoyalClean.denied);
+      await tester.pumpAndSettle();
+      expect(find.text('PUBLIC ART'), findsOneWidget);
+      expect(builds, 0);
+      access.add(AdminAccessRoyalClean.allowed);
+      await tester.pumpAndSettle();
+      expect(find.text('PRIVATE'), findsOneWidget);
+      access.add(AdminAccessRoyalClean.denied);
+      await tester.pumpAndSettle();
+      expect(find.text('PRIVATE'), findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
   test('Admin requires matching email and strict boolean permissions', () {
     const valid = {
       'email': 'ADMIN@example.test',

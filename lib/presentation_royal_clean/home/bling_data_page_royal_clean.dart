@@ -1,3 +1,4 @@
+import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import '../auth/account_ui_royal_clean.dart';
@@ -257,7 +258,7 @@ class _BlingDataState extends State<BlingDataPageRoyalClean> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               TextButton.icon(
-                onPressed: _closeInvoice,
+                onPressed: tactileTapRoyalClean(_closeInvoice),
                 icon: const Icon(Icons.arrow_back),
                 label: const Text('Voltar às notas'),
               ),
@@ -280,9 +281,11 @@ class _BlingDataState extends State<BlingDataPageRoyalClean> {
                 ),
               if (note != null) Text('Situação: ${note['statusLabel']}'),
               TextButton.icon(
-                onPressed: _loadingDetails
-                    ? null
-                    : () => _loadInvoice(_selectedInvoice!),
+                onPressed: tactileTapRoyalClean(
+                  _loadingDetails
+                      ? null
+                      : () => _loadInvoice(_selectedInvoice!),
+                ),
                 icon: const Icon(Icons.refresh),
                 label: const Text('Atualizar itens'),
               ),
@@ -344,30 +347,30 @@ class _BlingDataState extends State<BlingDataPageRoyalClean> {
               ChoiceChip(
                 label: const Text('Produtos'),
                 selected: _kind == 'products',
-                onSelected: _busy
-                    ? null
-                    : (_) => _refresh(page: 1, kind: 'products'),
+                onSelected: tactileValueRoyalClean(
+                  _busy ? null : (_) => _refresh(page: 1, kind: 'products'),
+                ),
               ),
               ChoiceChip(
                 label: const Text('Pedidos de venda'),
                 selected: _kind == 'sales',
-                onSelected: _busy
-                    ? null
-                    : (_) => _refresh(page: 1, kind: 'sales'),
+                onSelected: tactileValueRoyalClean(
+                  _busy ? null : (_) => _refresh(page: 1, kind: 'sales'),
+                ),
               ),
               ChoiceChip(
                 label: const Text('Notas de saída'),
                 selected: _kind == 'invoices',
-                onSelected: _busy
-                    ? null
-                    : (_) => _refresh(page: 1, kind: 'invoices'),
+                onSelected: tactileValueRoyalClean(
+                  _busy ? null : (_) => _refresh(page: 1, kind: 'invoices'),
+                ),
               ),
               ChoiceChip(
                 label: const Text('Clientes e fornecedores'),
                 selected: _kind == 'contacts',
-                onSelected: _busy
-                    ? null
-                    : (_) => _refresh(page: 1, kind: 'contacts'),
+                onSelected: tactileValueRoyalClean(
+                  _busy ? null : (_) => _refresh(page: 1, kind: 'contacts'),
+                ),
               ),
             ],
           ),
@@ -384,28 +387,33 @@ class _BlingDataState extends State<BlingDataPageRoyalClean> {
           if (_kind == 'contacts') ...[
             const SizedBox(height: 12),
             TextField(
+              onTap: TouchFeedbackRoyalClean.pulse,
               controller: _contactSearchController,
               enabled: !_busy,
               maxLength: 120,
               textInputAction: TextInputAction.search,
-              onSubmitted: (_) => _searchContacts(),
+              onSubmitted: tactileValueRoyalClean((_) => _searchContacts()),
               decoration: InputDecoration(
                 labelText: 'Pesquisar clientes e fornecedores',
                 hintText: 'Nome, CPF/CNPJ, e-mail ou código',
                 counterText: '',
                 prefixIcon: IconButton(
                   tooltip: 'Pesquisar contatos',
-                  onPressed: _busy ? null : _searchContacts,
+                  onPressed: tactileTapRoyalClean(
+                    _busy ? null : _searchContacts,
+                  ),
                   icon: const Icon(Icons.search),
                 ),
                 suffixIcon: IconButton(
                   tooltip: 'Limpar pesquisa de contatos',
-                  onPressed: _busy
-                      ? null
-                      : () {
-                          _contactSearchController.clear();
-                          _searchContacts();
-                        },
+                  onPressed: tactileTapRoyalClean(
+                    _busy
+                        ? null
+                        : () {
+                            _contactSearchController.clear();
+                            _searchContacts();
+                          },
+                  ),
                   icon: const Icon(Icons.close),
                 ),
               ),
@@ -417,7 +425,7 @@ class _BlingDataState extends State<BlingDataPageRoyalClean> {
           ],
           if (_hasPeriod)
             TextButton.icon(
-              onPressed: _busy ? null : _period,
+              onPressed: tactileTapRoyalClean(_busy ? null : _period),
               icon: const Icon(Icons.date_range),
               label: Text('${_date(_range.start)} até ${_date(_range.end)}'),
             ),
@@ -431,16 +439,18 @@ class _BlingDataState extends State<BlingDataPageRoyalClean> {
                     (e) => DropdownMenuItem(value: e.key, child: Text(e.value)),
                   )
                   .toList(),
-              onChanged: _busy
-                  ? null
-                  : (value) {
-                      if (value == null) return;
-                      _invoiceStatus = value;
-                      _refresh(page: 1);
-                    },
+              onChanged: tactileValueRoyalClean(
+                _busy
+                    ? null
+                    : (value) {
+                        if (value == null) return;
+                        _invoiceStatus = value;
+                        _refresh(page: 1);
+                      },
+              ),
             ),
           TextButton.icon(
-            onPressed: _busy ? null : () => _refresh(),
+            onPressed: tactileTapRoyalClean(_busy ? null : () => _refresh()),
             icon: const Icon(Icons.sync),
             label: const Text('Atualizar do Bling'),
           ),
@@ -456,7 +466,7 @@ class _BlingDataState extends State<BlingDataPageRoyalClean> {
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: tactileTapRoyalClean(() => Navigator.pop(context)),
               child: const Text('Voltar à integração'),
             ),
           ],
@@ -480,9 +490,12 @@ class _BlingDataState extends State<BlingDataPageRoyalClean> {
             (item) => Builder(
               builder: (cardContext) => Card(
                 child: InkWell(
-                  onLongPress: _kind == 'invoices'
-                      ? () => _invoiceMenu(item, cardContext)
-                      : null,
+                  enableFeedback: false,
+                  onLongPress: tactileTapRoyalClean(
+                    _kind == 'invoices'
+                        ? () => _invoiceMenu(item, cardContext)
+                        : null,
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -545,8 +558,9 @@ class _BlingDataState extends State<BlingDataPageRoyalClean> {
                                 child: IconButton(
                                   tooltip: 'Opções da NF-e ${item['code']}',
                                   icon: const Icon(Icons.more_horiz),
-                                  onPressed: () =>
-                                      _invoiceMenu(item, cardContext),
+                                  onPressed: tactileTapRoyalClean(
+                                    () => _invoiceMenu(item, cardContext),
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -584,16 +598,18 @@ class _BlingDataState extends State<BlingDataPageRoyalClean> {
             spacing: 8,
             children: [
               TextButton(
-                onPressed: !_busy && _page > 1
-                    ? () => _refresh(page: _page - 1)
-                    : null,
+                onPressed: tactileTapRoyalClean(
+                  !_busy && _page > 1 ? () => _refresh(page: _page - 1) : null,
+                ),
                 child: const Text('Anterior'),
               ),
               Text('Página $_page'),
               TextButton(
-                onPressed: !_busy && _result?['hasMore'] == true
-                    ? () => _refresh(page: _page + 1)
-                    : null,
+                onPressed: tactileTapRoyalClean(
+                  !_busy && _result?['hasMore'] == true
+                      ? () => _refresh(page: _page + 1)
+                      : null,
+                ),
                 child: const Text('Próxima'),
               ),
             ],

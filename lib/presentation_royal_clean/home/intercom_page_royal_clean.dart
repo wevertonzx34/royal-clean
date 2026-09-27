@@ -1,3 +1,4 @@
+import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../core_royal_clean/services/intercom_royal_clean.dart';
@@ -24,10 +25,12 @@ class _IntercomPageState extends State<IntercomPageRoyalClean> {
         FilledButton.icon(
           icon: const Icon(Icons.add_comment_outlined),
           label: const Text('Nova publicação'),
-          onPressed: () => showDialog<void>(
-            context: context,
-            barrierDismissible: false,
-            builder: (_) => const _PublishDialog(),
+          onPressed: tactileTapRoyalClean(
+            () => showDialog<void>(
+              context: context,
+              barrierDismissible: false,
+              builder: (_) => const _PublishDialog(),
+            ),
           ),
         ),
         const SizedBox(height: 20),
@@ -45,7 +48,9 @@ class _IntercomPageState extends State<IntercomPageRoyalClean> {
                   child: ChoiceChip(
                     label: Text(entry.value),
                     selected: _tab == entry.key,
-                    onSelected: (_) => setState(() => _tab = entry.key),
+                    onSelected: tactileValueRoyalClean(
+                      (_) => setState(() => _tab = entry.key),
+                    ),
                   ),
                 ),
             ],
@@ -100,7 +105,7 @@ class _IntercomPageState extends State<IntercomPageRoyalClean> {
                   if (feed.error != null) ...[
                     Text(feed.error!),
                     TextButton(
-                      onPressed: feed.reload,
+                      onPressed: tactileTapRoyalClean(feed.reload),
                       child: const Text('Tentar novamente'),
                     ),
                   ],
@@ -231,12 +236,13 @@ class _PublishDialogState extends State<_PublishDialog> {
                           DropdownMenuItem(value: value, child: Text(value)),
                     )
                     .toList(),
-                onChanged: _busy
-                    ? null
-                    : (value) => setState(() => _kind = value!),
+                onChanged: tactileValueRoyalClean(
+                  _busy ? null : (value) => setState(() => _kind = value!),
+                ),
               ),
               const SizedBox(height: 12),
               TextFormField(
+                onTap: TouchFeedbackRoyalClean.pulse,
                 controller: _title,
                 enabled: !_busy,
                 maxLength: 100,
@@ -246,6 +252,7 @@ class _PublishDialogState extends State<_PublishDialog> {
                     : null,
               ),
               TextFormField(
+                onTap: TouchFeedbackRoyalClean.pulse,
                 controller: _body,
                 enabled: !_busy,
                 maxLength: 2000,
@@ -267,9 +274,9 @@ class _PublishDialogState extends State<_PublishDialog> {
                       ),
                     )
                     .toList(),
-                onChanged: _busy
-                    ? null
-                    : (value) => setState(() => _days = value!),
+                onChanged: tactileValueRoyalClean(
+                  _busy ? null : (value) => setState(() => _days = value!),
+                ),
               ),
               if (_error != null)
                 Padding(
@@ -287,11 +294,13 @@ class _PublishDialogState extends State<_PublishDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: _busy ? null : () => Navigator.pop(context),
+          onPressed: tactileTapRoyalClean(
+            _busy ? null : () => Navigator.pop(context),
+          ),
           child: const Text('Cancelar'),
         ),
         FilledButton(
-          onPressed: _busy ? null : _publish,
+          onPressed: tactileTapRoyalClean(_busy ? null : _publish),
           child: Text(_busy ? 'Publicando…' : 'Publicar'),
         ),
       ],

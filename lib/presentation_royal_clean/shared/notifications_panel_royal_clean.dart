@@ -1,3 +1,4 @@
+import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'package:flutter/material.dart';
 import '../../core_royal_clean/services/intercom_royal_clean.dart';
 
@@ -31,7 +32,9 @@ class NotificationsPanelRoyalClean extends StatelessWidget {
                   ),
                   IconButton(
                     tooltip: 'Fechar notificações',
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: tactileTapRoyalClean(
+                      () => Navigator.pop(context),
+                    ),
                     icon: const Icon(Icons.close_rounded),
                   ),
                 ],
@@ -55,7 +58,7 @@ class NotificationsPanelRoyalClean extends StatelessWidget {
                           style: const TextStyle(color: Color(0xFF092F43)),
                         ),
                         TextButton(
-                          onPressed: feed.reload,
+                          onPressed: tactileTapRoyalClean(feed.reload),
                           child: const Text('Tentar novamente'),
                         ),
                       ],
@@ -90,8 +93,10 @@ class NotificationsPanelRoyalClean extends StatelessWidget {
                         Align(
                           alignment: Alignment.centerRight,
                           child: TextButton(
-                            onPressed: () => feed.markRead(
-                              messages.map((message) => message.id),
+                            onPressed: tactileTapRoyalClean(
+                              () => feed.markRead(
+                                messages.map((message) => message.id),
+                              ),
                             ),
                             child: const Text('Marcar todas como lidas'),
                           ),
@@ -127,8 +132,9 @@ class NotificationsPanelRoyalClean extends StatelessWidget {
                                 ),
                                 if (feed.isUnread(message))
                                   TextButton(
-                                    onPressed: () =>
-                                        feed.markRead([message.id]),
+                                    onPressed: tactileTapRoyalClean(
+                                      () => feed.markRead([message.id]),
+                                    ),
                                     child: const Text('Marcar como lida'),
                                   ),
                               ],

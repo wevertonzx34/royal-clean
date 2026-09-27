@@ -1,3 +1,4 @@
+import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'dart:async';
 import '../shared/header_actions_royal_clean.dart';
 import 'dart:math' as math;
@@ -81,8 +82,9 @@ class PartnershipSectionRoyalClean extends StatelessWidget {
                                 clipBehavior: Clip.antiAlias,
                                 child: InkWell(
                                   customBorder: const CircleBorder(),
-                                  onTap: () =>
-                                      _openPartner(context, items[index]),
+                                  onTap: tactileTapRoyalClean(
+                                    () => _openPartner(context, items[index]),
+                                  ),
                                   child: ClipOval(
                                     child: _Picture(
                                       item: items[index],
@@ -182,7 +184,7 @@ void _openPartner(BuildContext context, PublicPartnerRoyalClean item) {
               const Spacer(),
               IconButton(
                 tooltip: 'Fechar',
-                onPressed: () => Navigator.pop(context),
+                onPressed: tactileTapRoyalClean(() => Navigator.pop(context)),
                 icon: const Icon(Icons.close),
               ),
             ],
@@ -350,10 +352,10 @@ class _AdCarouselState extends State<_AdCarousel> with WidgetsBindingObserver {
                 tooltip: _paused
                     ? 'Retomar rolagem automática'
                     : 'Pausar rolagem automática',
-                onPressed: () {
+                onPressed: tactileTapRoyalClean(() {
                   setState(() => _paused = !_paused);
                   _schedule();
-                },
+                }),
                 icon: Icon(
                   _paused ? Icons.play_arrow_rounded : Icons.pause_rounded,
                   color: _navy,
@@ -380,7 +382,7 @@ class _AdCard extends StatelessWidget {
         side: const BorderSide(color: Color(0xFFE3EBEF)),
       ),
       child: InkWell(
-        onTap: () => _openPartner(context, item),
+        onTap: tactileTapRoyalClean(() => _openPartner(context, item)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
