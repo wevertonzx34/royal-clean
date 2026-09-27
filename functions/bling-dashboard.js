@@ -1,3 +1,4 @@
+import {invoiceMetricKeys} from './bling-invoice-list.js';
 // Aggregate sanitized private records; never infer complete ERP coverage.
 const groups=['products','sales','invoices','contacts'];
 const periods=['daily','weekly','monthly','quarterly','halfYear','yearly'];
@@ -52,7 +53,7 @@ export function aggregateDashboard(group,period,records,now=new Date(),filters={
   if(group==='contacts'&&filters.contactRole&&filters.contactRole!=='all') records=records.filter(r=>filters.contactRole==='unclassified'?!r.roles?.length:r.roles?.includes(filters.contactRole));
   if(group==='sales'&&filters.salesFilter&&filters.salesFilter!=='all') records=records.filter(r=>filters.salesFilter==='overdue'?
     r.flow==='incoming'&&calendarDate(r.plannedDate)&&calendarDate(r.plannedDate)<today:r.flow===filters.salesFilter);
-  let labels,details,metrics,invalidDates=0,missingAmounts=0,summary=null;
+  let ranges=[],labels,details,metrics,invalidDates=0,missingAmounts=0,summary=null;
   if(position) {
     const states=group==='products'?['A','I','?']:['A','I','S','E','?'];
     const names={A:'Ativos',I:'Inativos',S:'Sem mov.',E:'Excluídos','?':'Outros'};
@@ -61,6 +62,8 @@ export function aggregateDashboard(group,period,records,now=new Date(),filters={
   } else {
     const bins=intervals(period,today);
     labels=bins.map(b=>b.label);details=bins.map(b=>b.detail);
+    ranges=bins.map(b=>({start:iso(b.start),endExclusive:iso(b.end)}));
+    if(period==='yearly') ranges.push({start:iso(tomorrow),endExclusive:null});
     if(period==='yearly'){labels.push('Futuro');details.push(`Datas posteriores a ${iso(today)} • já registradas, sem projeção`);}
     metrics=[{label:'Quantidade',unit:group==='sales'?'pedidos':'notas',money:false},{label:'Valor',unit:'',money:true}];
     if(group==='invoices')metrics.push({label:'Autorizadas',unit:'notas',money:false},{label:'Canceladas',unit:'notas',money:false},
@@ -76,17 +79,18 @@ export function aggregateDashboard(group,period,records,now=new Date(),filters={
       if(i<0)continue;
       metrics[0].values[i]++;
       if(future)futureCount++;else count++;
-      const eligible=group!=='invoices'||['5','6'].includes(record.status);
+      const membership=group==='invoices'?invoiceMetricKeys(record):[];
+      const eligible=group!=='invoices'||membership.includes('Faturamento');
       if(eligible&&!future)financialCount++;
       if(eligible&&finite(record.total)) {
         const cents=Math.round(record.total*100);metrics[1].values[i]+=cents;
         if(future)futureCents+=cents;else valueCents+=cents;
       } else if(eligible) {if(future)futureMissing++;else missingAmounts++;}
       if(group==='invoices') {
-        if(['5','6'].includes(record.status))metrics[2].values[i]++;
-        if(record.status==='2')metrics[3].values[i]++;
-        if(['3','4','5','6','8','9','10','11'].includes(record.status))metrics[4].values[i]++;
-        if(record.status==='1')metrics[6].values[i]++;
+        if(membership.includes('Autorizadas'))metrics[2].values[i]++;
+        if(membership.includes('Canceladas'))metrics[3].values[i]++;
+        if(membership.includes('Entregues'))metrics[4].values[i]++;
+        if(membership.includes('Pendentes'))metrics[6].values[i]++;
       }
     }
     metrics[1].values=metrics[1].values.map(v=>v/100);
@@ -95,7 +99,7 @@ export function aggregateDashboard(group,period,records,now=new Date(),filters={
     summary={label:`Valor ${name}`,value:valueCents/100,count,financialCount,missingAmounts,
       start:iso(bins[0].start),end:iso(today),futureValue:futureCents/100,futureCount,futureMissing};
   }
-  return {group,period,position,labels,details,metrics,invalidDates,missingAmounts,summary,unclassified,missingStatuses,
+  return {group,period,position,labels,details,ranges,metrics,invalidDates,missingAmounts,summary,unclassified,missingStatuses,
     records:records.length,baseRecords:baseCount,partial:true,source:'Bling • base consultada'};
 }
 export async function readDashboard(db,input) {
@@ -108,7 +112,7 @@ export async function readDashboard(db,input) {
       const result=aggregateDashboard('products',input.period,[]);
       result.metrics[0].values=['A','I','?'].map(status=>counts[status]??0);
       result.records=result.metrics[0].values.reduce((a,b)=>a+b,0);
-      return {...result,baseRecords:result.records,partial:false,excluded:counts.E??0,
+      return {...result,baseRecords:result.records,partial:false,excluded:counts.E??0,catalogRun:catalog.complete.runId,
         source:'Bling • catálogo completo',checkedAt:catalog.complete.checkedAt,oldestAt:catalog.complete.checkedAt,
         catalogPending:catalog.phase==='running',truncated:false};
     }
@@ -121,7 +125,7 @@ export async function readDashboard(db,input) {
       const snapshot=await db.collection(`bling_catalog_snapshots/${catalog.complete.slot}/${input.group}`)
         .where('catalogRun','==',catalog.complete.runId).select(...fields).get();
       return {...aggregateDashboard(input.group,input.period,snapshot.docs.map(doc=>doc.data()),new Date(),input),
-        partial:false,truncated:false,source:'Bling • base completa',checkedAt:catalog.complete.checkedAt,
+        partial:false,truncated:false,catalogRun:catalog.complete.runId,source:'Bling • base completa',checkedAt:catalog.complete.checkedAt,
         oldestAt:catalog.complete.checkedAt,catalogPending:catalog.phase==='running'};
     }
   }

@@ -42,6 +42,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/preview/royal-store/royal-cloused.webp
     - assets/preview/
     - assets/preview/logo-parceiro/coroa-royal.webp
     - assets/logo/logo-gif.webp

@@ -1,3 +1,6 @@
+import {validateInvoiceCatalog, readInvoiceCatalog} from './bling-invoice-list.js';
+import {validateProductCatalog, readProductCatalog} from './bling-product-list.js';
+import {validateContactQuery, readActiveContacts, contactDetails} from './bling-contact-details.js';
 import {randomUUID} from 'node:crypto';
 import {Timestamp, FieldValue} from 'firebase-admin/firestore';
 import {HttpsError} from 'firebase-functions/v2/https';
@@ -51,6 +54,9 @@ export function sanitizeBlingRecord(kind, item) {
 
 export function validateBlingQuery(input = {}) {
   const kind = input.kind ?? 'products';
+  if(kind==='invoiceCatalog') return validateInvoiceCatalog(input);
+  if(kind==='productCatalog') return validateProductCatalog(input);
+  if(['activeContacts','contactDetails'].includes(kind)) return validateContactQuery(input);
   if(kind==='dashboard') {
     if(!validDashboardQuery(input)) fail('invalid-argument','Indicador ou período inválido.');
     return {kind,page:1,path:null};
@@ -149,6 +155,21 @@ export function createBlingDataHandler({db, authenticated, requireAdmin, rateLim
     await requireAdmin(user);
     await rateLimit(user.uid, 'bling_data', 30);
     const {kind, page, path} = validateBlingQuery(request.data);
+    if(kind==='productCatalog') {
+      const result=await readProductCatalog(db,request.data);
+      await requireAdmin(await authenticated(request));
+      return result;
+    }
+    if(kind==='invoiceCatalog') {
+      const result=await readInvoiceCatalog(db,request.data);
+      await requireAdmin(await authenticated(request));
+      return result;
+    }
+    if(kind==='activeContacts') {
+      const result=await readActiveContacts(db,request.data);
+      await requireAdmin(await authenticated(request));
+      return result;
+    }
     if(kind==='dashboard') {
       let enrichment;
       if(request.data.refreshDetails===true) {
@@ -222,7 +243,7 @@ export function createBlingDataHandler({db, authenticated, requireAdmin, rateLim
       ? 'Habilite Notas Fiscais — visualização no Bling e renove a autorização na tela de integração.'
       : kind === 'sales'
       ? 'Habilite a visualização de Pedidos de Venda no Bling e renove a autorização na tela de integração.'
-      : kind === 'contacts'
+      : ['contacts','contactDetails'].includes(kind)
       ? 'Habilite Clientes e Fornecedores — visualização no Bling e renove a autorização na tela de integração.'
       : 'Habilite a visualização de Produtos no Bling e renove a autorização.');
     if (response.status === 401) {
@@ -233,9 +254,14 @@ export function createBlingDataHandler({db, authenticated, requireAdmin, rateLim
       fail('failed-precondition', 'A autorização expirou ou foi revogada. Renove a autorização do Bling.');
     }
     if (response.status === 429) fail('resource-exhausted', 'O Bling limitou as consultas. Aguarde um minuto.');
-    if (response.status === 404) fail('not-found', 'A nota não foi encontrada no Bling. Atualize a lista.');
+    if (response.status === 404) fail('not-found', 'O registro não foi encontrado no Bling. Atualize a lista.');
     if (!response.ok) fail('unavailable', 'Consulta indisponível no Bling. Tente novamente.');
     const payload = await response.json();
+    if(kind==='contactDetails') {
+      const result=contactDetails(payload.data,request.data.contactId);
+      await requireAdmin(await authenticated(request));
+      return result;
+    }
     if (kind === 'invoiceItems') {
       const result = sanitizeInvoiceItems(payload.data, request.data.invoiceId);
       await requireAdmin(await authenticated(request));

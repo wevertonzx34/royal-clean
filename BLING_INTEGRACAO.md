@@ -382,3 +382,30 @@ flutter analyze sem problemas. APK instalado e executado no Moto G32.
 - Tokens de depuração, credenciais e dados privados não fazem parte deste backup.
   Após desinstalar o APK de desenvolvimento, pode ser necessário cadastrar o novo
   token da instalação no App Check. A configuração fica no Firebase, não no Git.
+## Lista de NF-e por barra do gráfico
+
+O resumo de Notas fornece `ranges` com início inclusivo e fim exclusivo por barra,
+calculados junto com os indicadores no fuso America/Sao_Paulo. A lista usa esses
+limites e a mesma classificação fiscal (`invoiceMetricKeys`). A barra Futuro do
+anual começa no dia seguinte ao dia de referência; não é uma projeção.
+
+A sincronização privada das notas (catálogo versão 3) conserva número, razão social
+ou nome do destinatário, CPF/CNPJ e data/hora de emissão retornados pelo Bling.
+Esses campos só são disponibilizados pela callable administrativa com App Check;
+não são publicados na vitrine. Campos ausentes são apresentados como não informados.
+O endpoint `invoiceCatalog` só fornece gerações completas com esses campos preparados.
+
+A lista inteira é pré-carregada por páginas, em memória e vinculada ao administrador
+confirmado. Atualiza a cada hora, no retorno após expirar e após atualização da base.
+Falhas mantêm a última geração completa; logout ou perda de permissão limpa a cópia.
+O primeiro carregamento de uma sessão requer conexão. A navegação posterior e as
+categorias são filtradas localmente, sem uma nova consulta a cada barra.
+Pagas continua indisponível até haver conciliação; Entregues mantém o significado
+fiscal existente, sem representar confirmação de entrega física.
+### Produtos: abertura pela barra
+
+Cada barra de Produtos abre uma lista privada do catálogo completo da mesma sincronização usada no gráfico. Ativos (A), Inativos (I) e Outros (situações desconhecidas) preservam o código e ID do Bling; excluídos (E) ficam fora do gráfico e das listas. Nome, preço, unidade e saldo virtual são os dados informados pelo Bling.
+
+A base atual é uma posição do catálogo, não um histórico de cadastro/estoque por data. Por isso os seis períodos mantêm a situação atual e a tela identifica a data/hora da sincronização. Nenhuma data de cadastro é inferida. Se uma geração mais recente chegar enquanto o gráfico estiver aberto, a lista informa a diferença.
+
+O administrador recebe pré-carregamento em memória, atualização horária e preservação da última geração completa em caso de falha; os dados são descartados ao sair ou perder acesso administrativo. O endpoint productCatalog não consulta o Bling ao abrir cada barra e valida paginação e integridade da geração.

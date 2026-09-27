@@ -305,16 +305,42 @@ void main() {
       await tester.pumpAndSettle();
       expect(queries.last['contactRole'], 'customer');
       await tester.drag(
-        find.descendant(
-          of: find.byKey(const ValueKey('filters-Contatos')),
-          matching: find.byType(ListView),
-        ),
+        find.byKey(const ValueKey('filters-Contatos')),
         const Offset(-100, 0),
       );
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(ChoiceChip, 'Fornecedores'));
       await tester.pumpAndSettle();
       expect(queries.last['contactRole'], 'supplier');
+      await tester.drag(
+        find.byKey(const ValueKey('filters-Contatos')),
+        const Offset(700, 0),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Todos'));
+      await tester.pumpAndSettle();
+      expect(
+        queries.any(
+          (q) => q['group'] == 'contacts' && q['contactRole'] == 'all',
+        ),
+        isTrue,
+      );
+      expect(
+        tester
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Todos'))
+            .selected,
+        isTrue,
+      );
+      final beforeReselect = queries.length;
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Todos'));
+      await tester.pumpAndSettle();
+      expect(queries.length, beforeReselect);
+      expect(
+        tester
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Todos'))
+            .selected,
+        isTrue,
+      );
       expect(tester.takeException(), isNull);
     },
   );

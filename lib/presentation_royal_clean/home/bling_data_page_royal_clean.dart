@@ -5,7 +5,8 @@ import '../../core_royal_clean/services/bling_sync_events_royal_clean.dart';
 
 class BlingDataPageRoyalClean extends StatefulWidget {
   final Future<Map<String, dynamic>> Function(Map<String, dynamic>)? load;
-  const BlingDataPageRoyalClean({super.key, this.load});
+  final Map<String, dynamic>? initialInvoice;
+  const BlingDataPageRoyalClean({super.key, this.load, this.initialInvoice});
   @override
   State<BlingDataPageRoyalClean> createState() => _BlingDataState();
 }
@@ -65,7 +66,11 @@ class _BlingDataState extends State<BlingDataPageRoyalClean> {
       start: DateTime(now.year, now.month),
       end: DateTime(now.year, now.month, now.day),
     );
-    _refresh();
+    if (widget.initialInvoice != null) {
+      _loadInvoice(widget.initialInvoice!);
+    } else {
+      _refresh();
+    }
   }
 
   Future<void> _refresh({int? page, String? kind}) async {
@@ -229,6 +234,10 @@ class _BlingDataState extends State<BlingDataPageRoyalClean> {
 
   void _closeInvoice() {
     _detailRequest++;
+    if (widget.initialInvoice != null) {
+      Navigator.of(context).pop();
+      return;
+    }
     setState(() => _selectedInvoice = null);
   }
 

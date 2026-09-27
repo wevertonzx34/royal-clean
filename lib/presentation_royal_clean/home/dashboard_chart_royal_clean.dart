@@ -1,3 +1,9 @@
+import '../../core_royal_clean/services/invoice_list_cache_royal_clean.dart';
+import 'invoice_bar_page_royal_clean.dart';
+import 'product_bar_page_royal_clean.dart';
+import '../../core_royal_clean/services/product_list_cache_royal_clean.dart';
+import '../../core_royal_clean/services/active_contacts_cache_royal_clean.dart';
+import 'active_contacts_page_royal_clean.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
@@ -5,17 +11,20 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import '../../core_royal_clean/services/bling_sync_events_royal_clean.dart';
 import 'dashboard_data_royal_clean.dart';
-import 'dashboard_filters_royal_clean.dart';
 
 enum DashboardChartStyleRoyalClean { bars, line, area }
 
 class DashboardChartRoyalClean extends StatefulWidget {
   final double availableHeight;
   final Future<Map<String, dynamic>> Function(Map<String, dynamic>)? load;
+  final ActiveContactsCacheRoyalClean? invoiceCache;
+  final ActiveContactsCacheRoyalClean? productCache;
   const DashboardChartRoyalClean({
     super.key,
     this.availableHeight = 720,
     this.load,
+    this.invoiceCache,
+    this.productCache,
   });
   @override
   State<DashboardChartRoyalClean> createState() => _DashboardChartState();
@@ -29,7 +38,7 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
     'Contatos': 'contacts',
   };
   String _group = 'Produtos';
-  String? _contactRole;
+  String _contactRole = 'all';
   int _metric = 0, _selected = 0, _request = 0;
   DashboardPeriodRoyalClean _period = DashboardPeriodRoyalClean.monthly;
   DashboardChartStyleRoyalClean _style = DashboardChartStyleRoyalClean.bars;
@@ -50,6 +59,9 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     blingSyncRevisionRoyalClean.addListener(_synced);
+    if (widget.load == null) ActiveContactsSessionRoyalClean.instance.start();
+    if (widget.load == null) InvoiceListSessionRoyalClean.instance.start();
+    if (widget.load == null) ProductListSessionRoyalClean.instance.start();
     _scheduleHourly();
     _reload();
   }
@@ -93,8 +105,7 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
     'kind': 'dashboard',
     'group': _groups[group],
     'period': _period.name,
-    if (group == 'Contatos' && _contactRole != null)
-      'contactRole': _contactRole,
+    if (group == 'Contatos') 'contactRole': _contactRole,
   };
 
   Future<Map<String, dynamic>> _fetch(Map<String, dynamic> input) async {
@@ -122,6 +133,26 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
         break;
       }
       previousRemaining = remaining;
+    }
+    if (input['group'] == 'contacts' && result?['catalogPending'] != true) {
+      final contacts = ActiveContactsSessionRoyalClean.instance.cache;
+      if (contacts.checkedAt != result?['checkedAt']) {
+        unawaited(contacts.refresh(force: true));
+      }
+    }
+    if (input['group'] == 'invoices' &&
+        result?['catalogPending'] != true &&
+        widget.load == null) {
+      final invoices = InvoiceListSessionRoyalClean.instance.cache;
+      if (invoices.catalogRun != result?['catalogRun']) {
+        unawaited(invoices.refresh(force: true));
+      }
+    }
+    if (input['group'] == 'products' && result?['catalogPending'] != true) {
+      final products = ProductListSessionRoyalClean.instance.cache;
+      if (products.catalogRun != result?['catalogRun']) {
+        unawaited(products.refresh(force: true));
+      }
     }
     return result!;
   }
@@ -270,8 +301,16 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
         .map((m) => DashboardMetricRoyalClean(m as Map))
         .toList();
     final metric = metrics.isEmpty ? null : metrics[_metric];
-    final labels = (_data?['labels'] as List? ?? []).cast<String>();
-    final details = (_data?['details'] as List? ?? []).cast<String>();
+    String contactLabel(String label) =>
+        _group == 'Contatos' && label == 'Outros' ? 'Integrados' : label;
+    final labels = (_data?['labels'] as List? ?? [])
+        .cast<String>()
+        .map(contactLabel)
+        .toList();
+    final details = (_data?['details'] as List? ?? [])
+        .cast<String>()
+        .map(contactLabel)
+        .toList();
     final hasRecords =
         (_data?['baseRecords'] as num? ?? _data?['records'] as num? ?? 0) > 0;
     final summary = _data?['summary'] as Map?;
@@ -381,20 +420,30 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
           ),
           const SizedBox(height: 8),
           if (_group == 'Contatos')
-            SizedBox(
-              height: 56,
-              child: DashboardFiltersRoyalClean(
-                key: ValueKey('filters-$_group'),
-                selected: _contactRole,
-                options: const {
-                  'customer': 'Clientes',
-                  'supplier': 'Fornecedores',
-                  'unclassified': 'Sem classificação',
-                },
-                onSelected: (value) {
-                  _contactRole = value;
-                  _reload();
-                },
+            SingleChildScrollView(
+              key: const ValueKey('filters-Contatos'),
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (final category in const {
+                    'all': 'Todos',
+                    'customer': 'Clientes',
+                    'supplier': 'Fornecedores',
+                    'unclassified': 'Sem classificação',
+                  }.entries)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: ChoiceChip(
+                        label: Text(category.value),
+                        selected: _contactRole == category.key,
+                        onSelected: (_) {
+                          if (_contactRole == category.key) return;
+                          _contactRole = category.key;
+                          _reload();
+                        },
+                      ),
+                    ),
+                ],
               ),
             ),
           if (_busy || _refreshingAll)
@@ -553,7 +602,8 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
                               '${metric.label}, ${details[_selected]}: ${metric.format(metric.values[_selected])}',
                           child: GestureDetector(
                             behavior: HitTestBehavior.opaque,
-                            onTapDown: (event) {
+                            key: const ValueKey('dashboard-plot'),
+                            onTapUp: (event) {
                               final fraction =
                                   ((event.localPosition.dx - 48) /
                                           (constraints.maxWidth - 60))
@@ -564,6 +614,39 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
                                   (fraction * labels.length).floor(),
                                 ),
                               );
+                              if (_group == 'Produtos') {
+                                openProductBarRoyalClean(
+                                  context,
+                                  category: labels[_selected],
+                                  chartRun: _data?['catalogRun'] as String?,
+                                  cache: widget.productCache,
+                                );
+                              }
+                              if (_group == 'Contatos' &&
+                                  labels[_selected] == 'Ativos') {
+                                openActiveContactsRoyalClean(
+                                  context,
+                                  _contactRole,
+                                  load: widget.load,
+                                );
+                              }
+                              if (_group == 'Notas' &&
+                                  metric.unavailable == null) {
+                                final ranges = _data?['ranges'] as List?;
+                                if (ranges != null &&
+                                    _selected < ranges.length) {
+                                  final range = ranges[_selected] as Map;
+                                  openInvoiceBarRoyalClean(
+                                    context,
+                                    start: range['start'] as String,
+                                    endExclusive:
+                                        range['endExclusive'] as String?,
+                                    metric: metric.label,
+                                    periodLabel: details[_selected],
+                                    cache: widget.invoiceCache,
+                                  );
+                                }
+                              }
                             },
                             child: CustomPaint(
                               painter: _DashboardPainter(

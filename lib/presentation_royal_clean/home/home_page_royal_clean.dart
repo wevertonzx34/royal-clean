@@ -5,6 +5,7 @@ import '../auth/logout_royal_clean.dart';
 import 'home_form_royal_clean.dart';
 import '../shared/header_actions_royal_clean.dart';
 import 'dashboard_chart_royal_clean.dart';
+import 'overview_shortcut_royal_clean.dart';
 
 class HomePageRoyalClean extends StatelessWidget {
   const HomePageRoyalClean({super.key});
@@ -29,8 +30,10 @@ class HomePageRoyalClean extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    DashboardChartRoyalClean(
-                      availableHeight: constraints.maxHeight,
+                    OverviewShortcutRoyalClean(
+                      child: DashboardChartRoyalClean(
+                        availableHeight: constraints.maxHeight,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     ConstrainedBox(
