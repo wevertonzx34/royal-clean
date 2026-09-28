@@ -1,0 +1,25 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function owner(uid) {
+      return request.auth != null && request.auth.uid == uid
+        && request.auth.token.email_verified == true
+        && (
+          (firestore.exists(/databases/(default)/documents/admin/$(uid))
+            && firestore.get(/databases/(default)/documents/admin/$(uid)).data.ativo == true
+            && firestore.get(/databases/(default)/documents/admin/$(uid)).data.eAdministrador == true
+            && firestore.get(/databases/(default)/documents/admin/$(uid)).data.email.lower() == request.auth.token.email.lower())
+          || (!firestore.exists(/databases/(default)/documents/admin/$(uid))
+            && firestore.get(/databases/(default)/documents/users/$(uid)).data.active == true)
+        );
+    }
+    match /profile_media/{uid}/{file} {
+      allow get, delete: if owner(uid) && file in ['photo.png', 'logo.png'];
+      allow create, update: if owner(uid) && file in ['photo.png', 'logo.png']
+        && request.resource.size > 0 && request.resource.size <= 2 * 1024 * 1024
+        && request.resource.contentType == 'image/png';
+      allow list: if false;
+    }
+    match /{path=**} { allow read, write: if false; }
+  }
+}

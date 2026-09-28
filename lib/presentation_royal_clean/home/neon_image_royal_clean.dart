@@ -7,6 +7,9 @@ class NeonImageRoyalClean extends StatefulWidget {
   final Color glow;
   final BoxFit fit;
   final double activation;
+  final Color activationGlow;
+  final Color? activationSecondaryGlow;
+  final int cacheWidth;
   const NeonImageRoyalClean({
     super.key,
     required this.asset,
@@ -14,6 +17,9 @@ class NeonImageRoyalClean extends StatefulWidget {
     required this.glow,
     this.fit = BoxFit.contain,
     this.activation = 0,
+    this.activationGlow = const Color(0xFF008CFF),
+    this.activationSecondaryGlow,
+    this.cacheWidth = 900,
   });
   @override
   State<NeonImageRoyalClean> createState() => _NeonImageState();
@@ -47,7 +53,7 @@ class _NeonImageState extends State<NeonImageRoyalClean>
     widget.asset,
     fit: widget.fit,
     width: double.infinity,
-    cacheWidth: 900,
+    cacheWidth: widget.cacheWidth,
     color: color,
     colorBlendMode: color == null ? null : BlendMode.srcIn,
   );
@@ -77,7 +83,18 @@ class _NeonImageState extends State<NeonImageRoyalClean>
             child: RepaintBoundary(
               child: ImageFiltered(
                 imageFilter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                child: _image(color: const Color(0xFF008CFF)),
+                child: widget.activationSecondaryGlow == null
+                    ? _image(color: widget.activationGlow)
+                    : ShaderMask(
+                        blendMode: BlendMode.srcIn,
+                        shaderCallback: (bounds) => LinearGradient(
+                          colors: [
+                            widget.activationGlow,
+                            widget.activationSecondaryGlow!,
+                          ],
+                        ).createShader(bounds),
+                        child: _image(color: Colors.white),
+                      ),
               ),
             ),
           ),

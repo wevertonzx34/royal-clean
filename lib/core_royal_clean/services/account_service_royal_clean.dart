@@ -63,6 +63,15 @@ class AccountServiceRoyalClean {
     }
     if (error is FirebaseAuthException) {
       switch (error.code) {
+        case 'invalid-verification-code':
+        case 'session-expired':
+          return 'Código incorreto ou expirado. Confira o SMS ou solicite outro código.';
+        case 'credential-already-in-use':
+          return 'Este telefone já está vinculado a outra conta.';
+        case 'requires-recent-login':
+          return 'Entre novamente na sua conta antes de confirmar o telefone.';
+        case 'invalid-phone-number':
+          return 'Confira o telefone e o DDD.';
         case 'invalid-credential':
         case 'wrong-password':
         case 'user-not-found':

@@ -207,7 +207,7 @@ class _RegistrationState extends State<RegistrationPageRoyalClean> {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Crie sua conta com poucos dados. CPF ou CNPJ podem ser adicionados depois, em Meus dados.',
+              'Crie sua conta de consumidor sem convite ou autorização prévia. Você começa como pessoa física e pode completar os dados ou mudar para pessoa jurídica em Meus dados.',
             ),
             const SizedBox(height: 24),
             _field(
@@ -258,7 +258,7 @@ class _RegistrationState extends State<RegistrationPageRoyalClean> {
               if (!_user!.emailVerified) ...[
                 const SizedBox(height: 12),
                 const Text(
-                  'Verifique seu e-mail antes de concluir. O convite ainda não foi utilizado.',
+                  'Verifique seu e-mail antes de concluir o cadastro.',
                 ),
                 TextButton(
                   onPressed: tactileTapRoyalClean(

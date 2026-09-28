@@ -72,6 +72,8 @@ O código de convite é opcional e registrado apenas na criação da conta. Para
 
 CPF ou CNPJ podem ser informados opcionalmente em Meus dados para futuras operações de compra e identificação fiscal. A verificação dos dígitos não comprova titularidade nem situação cadastral.
 
+Em Meus dados, você também pode informar telefone, descrição, endereço e foto. Ao mudar para pessoa jurídica, informe CNPJ e razão social; nome fantasia e logo são opcionais. Essas informações não mudam suas permissões e não são publicadas automaticamente na vitrine. As imagens são redimensionadas antes do envio. A confirmação opcional do telefone usa SMS do Firebase; o Google processa o número para autenticação e prevenção de abuso. Preencher dados não concede benefícios comerciais automaticamente.
+
 A opção de receber ofertas começa desmarcada e pode ser alterada em Meus dados. Ela não é condição para utilizar sua conta.
 
 Os serviços Firebase/Google processam os dados necessários à autenticação e ao armazenamento. Os perfis são privados; o painel administrativo é restrito a pessoas autorizadas. Dados de documentos não são publicados na prévia.

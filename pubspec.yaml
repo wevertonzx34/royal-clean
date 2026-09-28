@@ -23,6 +23,8 @@ dependencies:
   flutter_secure_storage: ^11.2.0
   path_provider_android: 2.2.23
   local_auth_android: 2.2.0
+  firebase_storage: ^13.6.0
+  image_picker: ^1.2.3
 
 dev_dependencies:
   flutter_test:
@@ -45,6 +47,7 @@ flutter:
     - assets/preview/royal-store/royal-cloused.webp
     - assets/preview/royal-store/royal-home.webp
     - assets/preview/royal-store/royal-avatar.webp
+    - assets/preview/royal-store/royal-dados.webp
     - assets/preview/royal-store/royal-porta.webp
     - assets/preview/royal-store/royal-stoque.webp
     - assets/preview/

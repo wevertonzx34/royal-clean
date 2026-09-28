@@ -209,6 +209,46 @@ class _HomePageState extends State<HomePageRoyalClean> {
                           ),
                         ),
                       ),
+                    if (!overviewOpen)
+                      Positioned(
+                        // Light column plus 2% of the screen width to the right.
+                        left:
+                            constraints.maxWidth * (.015 + .97 * .35 + .02) -
+                            50,
+                        top: constraints.maxHeight * (.015 + .97 * .25),
+                        width: 100,
+                        height: 100,
+                        child: Tooltip(
+                          message: 'Meus dados',
+                          child: Semantics(
+                            button: true,
+                            label: 'Abrir meus dados',
+                            child: ImageActionRoyalClean(
+                              key: const ValueKey('profile-data-shortcut'),
+                              pulses: 2,
+                              duration: const Duration(milliseconds: 600),
+                              scaleDepth: .018,
+                              onActivate: () async {
+                                await Navigator.of(
+                                  context,
+                                ).pushNamed('/my-data');
+                              },
+                              builder: (_, flash) => NeonImageRoyalClean(
+                                asset:
+                                    'assets/preview/royal-store/royal-dados.webp',
+                                aspectRatio: 1,
+                                cacheWidth: 300,
+                                glow: const Color(0xFF5CE7EC),
+                                activation: flash,
+                                activationGlow: const Color(0xFFC05AFF),
+                                activationSecondaryGlow: const Color(
+                                  0xFF1623A8,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     Positioned(
                       top: 8 + constraints.maxHeight * .08,
                       right: 14,

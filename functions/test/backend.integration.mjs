@@ -211,6 +211,7 @@ test('backend: common registration stores immutable consent and ignores injected
   await registerAccount.run(request('new-one',data({role:'admin', email:'forged@example.test'})));
   const profile = (await db.doc('users/new-one').get()).data();
   assert.equal(profile.role,'consumer');
+  assert.equal((await db.doc('personal_data/new-one').get()).data().personType,'individual');
   assert.equal(profile.email,'new-one@example.test');
   assert.equal(profile.offers,false);
   assert.equal(profile.referral,null);
@@ -287,6 +288,12 @@ test('backend: personal document validation, owner targeting and revocation', as
   await assert.rejects(updateMyData.run(request('new-one',{...input,document:'11111111111'})),{code:'invalid-argument'});
   await updateMyData.run(request('new-one',{...input,documentKind:'',document:''}));
   assert.equal((await db.doc('personal_data/new-one').get()).data().document,'');
+  await updateMyData.run(request('new-three', {name:'Consumidor Empresa', offers:false,
+    personType:'company', cpf:'', cnpj:'62.581.826/0001-49', companyLegalName:'Royal Clean Distribuidora LTDA', role:'admin', phoneVerified:true}));
+  assert.equal((await db.doc('users/new-three').get()).data().role,'consumer');
+  const company = (await db.doc('personal_data/new-three').get()).data();
+  assert.equal(company.personType,'company');
+  assert.equal(company.phoneVerified,false);
   await setUserRole.run(request('role-admin',{uid:'new-one',role:'promoter',active:false}));
   await assert.rejects(updateMyData.run(request('new-one',input)),{code:'permission-denied'});
   await db.doc('users/admin-disabled').set({active:true, role:'consumer'});

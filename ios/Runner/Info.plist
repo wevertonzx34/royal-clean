@@ -47,5 +47,7 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Selecione sua foto de perfil ou a logo da sua empresa.</string>
 </dict>
 </plist>

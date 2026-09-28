@@ -6,7 +6,8 @@ import {onSchedule} from 'firebase-functions/v2/scheduler';
 import {createScheduledBlingSync} from './bling-scheduled-sync.js';
 import {createBlingHandlers} from './bling.js';
 import {createBlingDataHandler} from './bling-data.js';
-import {LEGAL_VERSION, ROLES, validName, validDocument, normalizeDocument, inviteProblem, normalizePhone} from './validation.js';
+import {LEGAL_VERSION, ROLES, validName, inviteProblem, normalizePhone} from './validation.js';
+import {personalData} from './personal-data.js';
 
 initializeApp();
 const db = getFirestore();
@@ -98,8 +99,9 @@ export const registerAccount = onCall(options, async request => {
       referral: invite ? {inviteId: inviteRef.id, code, createdByUid: invite.createdByUid,
         profileReference: invite.profile, collaboratorFunction: invite.collaboratorFunction ?? null} : null,
     });
-    if (invite) tx.create(db.doc(`personal_data/${user.uid}`), {name: input.name.trim(),
-      phone: normalizePhone(input.phone), phoneVerified: false, documentKind: '', document: '', offers: input.offers, updatedAt: timestamp});
+    tx.create(db.doc(`personal_data/${user.uid}`), {name: input.name.trim(), personType: 'individual',
+      phone: invite ? normalizePhone(input.phone) : '', phoneVerified: false,
+      cpf: '', cnpj: '', documentKind: '', document: '', offers: input.offers, updatedAt: timestamp});
     if (invite) tx.update(inviteRef, {isUsed: true, registrationEnabled: false,
       status: 'used', usedAt: timestamp, usedByUid: user.uid});
   });
@@ -112,14 +114,12 @@ export const updateMyData = onCall(options, async request => {
   await rateLimit(user.uid, 'data');
   const input = request.data ?? {};
   if (!validName(input.name) || typeof input.offers !== 'boolean') fail('Confira nome e preferência de ofertas.');
-  if (typeof input.document !== 'string') fail('Confira o documento informado.');
-  const document = normalizeDocument(input.document);
-  const documentKind = input.documentKind ?? '';
-  if (!validDocument(documentKind, document)) fail('Confira o CPF ou CNPJ informado.');
   await db.runTransaction(async tx => {
     const profileRef = db.doc(`users/${user.uid}`);
     const profile = await tx.get(profileRef);
     const admin = (await tx.get(db.doc(`admin/${user.uid}`))).data();
+    const personalRef = db.doc(`personal_data/${user.uid}`);
+    const previous = (await tx.get(personalRef)).data() ?? {};
     const activeAdmin = admin?.eAdministrador === true && admin?.ativo === true &&
       typeof admin.email === 'string' && admin.email.toLowerCase() === user.email.toLowerCase();
     if (admin && !activeAdmin) fail('Acesso administrativo indisponível.', 'permission-denied');
@@ -127,10 +127,12 @@ export const updateMyData = onCall(options, async request => {
       fail('Conta sem acesso. Entre novamente.', 'permission-denied');
     }
     const timestamp = FieldValue.serverTimestamp();
+    let editable;
+    try { editable = personalData(input, previous, user); }
+    catch (error) { fail(error.message); }
     if (profile.exists) tx.update(profileRef, {name: input.name.trim(), offers: input.offers,
       offersUpdatedAt: timestamp, updatedAt: timestamp});
-    tx.set(db.doc(`personal_data/${user.uid}`), {name: input.name.trim(), documentKind,
-      document, offers: input.offers, updatedAt: timestamp}, {merge: true});
+    tx.set(personalRef, {...editable, updatedAt: timestamp}, {merge: true});
   });
   return {success: true};
 });
