@@ -9,6 +9,8 @@ Future<void> precacheProfileImagesRoyalClean(BuildContext context) async {
     'royal-dados',
     'royal-stoque',
     'royal-pixels',
+    'royal-office',
+    'royal-producao',
   ]) {
     if (!context.mounted) return;
     await precacheImage(
@@ -18,6 +20,8 @@ Future<void> precacheProfileImagesRoyalClean(BuildContext context) async {
             ? 1080
             : asset == 'royal-dados'
             ? 300
+            : asset == 'royal-office' || asset == 'royal-producao'
+            ? 600
             : 900,
       ),
       context,
