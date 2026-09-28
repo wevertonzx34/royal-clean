@@ -48,10 +48,15 @@ void main() {
       await tester.pumpWidget(
         host((q) {
           calls++;
+          if (calls == 1) expect(q['group'], 'invoices');
           return calls == 1 ? Future.value(sample(q)) : pending.future;
         }),
       );
       await tester.pumpAndSettle();
+      expect(
+        tester.getCenter(find.text('Notas')).dx,
+        lessThan(tester.getCenter(find.text('Produtos')).dx),
+      );
       expect(find.text('3 registros'), findsOneWidget);
       blingSyncRevisionRoyalClean.value++;
       await tester.pump(const Duration(milliseconds: 600));
@@ -133,6 +138,8 @@ void main() {
           },
         ),
       );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Produtos'));
       await tester.pumpAndSettle();
       expect(find.text('427 registros'), findsOneWidget);
       expect(find.textContaining('catálogo completo'), findsOneWidget);

@@ -3,6 +3,9 @@ import {getAuth} from 'firebase-admin/auth';
 import {getFirestore, FieldValue, Timestamp} from 'firebase-admin/firestore';
 import {onCall, onRequest, HttpsError} from 'firebase-functions/v2/https';
 import {onSchedule} from 'firebase-functions/v2/scheduler';
+import {onDocumentWritten, onDocumentCreated} from 'firebase-functions/v2/firestore';
+import {getMessaging} from 'firebase-admin/messaging';
+import {catalogGroups, reconcileNotifications, deviceKey, sendAdminEvent} from './bling-notifications.js';
 import {createScheduledBlingSync} from './bling-scheduled-sync.js';
 import {createBlingHandlers} from './bling.js';
 import {createBlingDataHandler} from './bling-data.js';
@@ -15,6 +18,32 @@ const db = getFirestore();
 const options = {region: 'southamerica-east1', enforceAppCheck: true, maxInstances: 10};
 const bling = createBlingHandlers({db, auth: getAuth(), authenticated, requireAdmin, rateLimit});
 const blingOptions = {...options, maxInstances: 2, concurrency: 20, timeoutSeconds: 60};
+export const blingCatalogNotifications = onDocumentWritten({region:'southamerica-east1',document:'integrations_private/{catalog}',
+  timeoutSeconds:540,maxInstances:1,concurrency:1,retry:true}, async event => {
+  const group=catalogGroups[event.params.catalog];
+  const after=event.data?.after.data()?.complete;
+  if(!group || !after || after.runId===event.data?.before.data()?.complete?.runId) return;
+  // Ignore obsolete delivery; staging slots can already belong to another run.
+  const current=(await db.doc(`integrations_private/${event.params.catalog}`).get()).data()?.complete;
+  if(current?.runId!==after.runId) return;
+  await reconcileNotifications(db,group,after);
+});
+export const blingPushNotification = onDocumentCreated({region:'southamerica-east1',document:'admin_bling_events/{eventId}',
+  timeoutSeconds:120,maxInstances:1,retry:true},event=>sendAdminEvent({db,auth:getAuth(),messaging:getMessaging(),eventId:event.params.eventId}));
+export const registerAdminNotifications = onCall(options,async request=>{
+  const user=await authenticated(request);
+  const token=request.data?.token;
+  if(typeof token!=='string'||token.length<20||token.length>4096) throw new HttpsError('invalid-argument','Dispositivo inválido.');
+  const ref=db.doc(`admin_notification_devices/${deviceKey(token)}`);
+  if(request.data?.remove===true) {
+    await db.runTransaction(async tx=>{if((await tx.get(ref)).data()?.uid===user.uid)tx.delete(ref);});
+    return {registered:false};
+  }
+  await requireAdmin(user);
+  await rateLimit(user.uid,'push_registration',30);
+  await ref.set({uid:user.uid,token,updatedAt:FieldValue.serverTimestamp()});
+  return {registered:true};
+});
 export const blingConnectionStatus = onCall(blingOptions, bling.status);
 export const blingBeginAuthorization = onCall(blingOptions, bling.begin);
 export const blingReadData = onCall(blingOptions,

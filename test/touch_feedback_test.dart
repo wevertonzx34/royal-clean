@@ -6,6 +6,53 @@ import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean
 import 'package:royal_clean/presentation_royal_clean/home/image_action_royal_clean.dart';
 
 void main() {
+  testWidgets('Returning shortcut replays its flash without activating again', (
+    tester,
+  ) async {
+    var version = 0;
+    var visible = true;
+    var activations = 0;
+    var flash = 0.0;
+    late StateSetter update;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) {
+            update = setState;
+            return Visibility(
+              visible: visible,
+              maintainState: true,
+              child: ImageActionRoyalClean(
+                replayVersion: version,
+                pulses: 2,
+                duration: const Duration(milliseconds: 600),
+                onActivate: () => activations++,
+                builder: (_, value) {
+                  flash = value;
+                  return const SizedBox(width: 100, height: 100);
+                },
+              ),
+            );
+          },
+        ),
+      ),
+    );
+    update(() => visible = false);
+    await tester.pump();
+    update(() {
+      visible = true;
+      version++;
+    });
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(flash, closeTo(1, .001));
+    expect(activations, 0);
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(flash, closeTo(0, .001));
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(tester.takeException(), isNull);
+  });
   testWidgets(
     'Native feedback keeps disabled actions disabled and deduplicates nested callbacks',
     (tester) async {

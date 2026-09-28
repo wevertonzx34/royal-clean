@@ -20,6 +20,27 @@ let noEmail;
 const intercomMessage = () => ({title: 'Aviso Royal Clean', body: 'Mensagem pública de teste.',
   kind: 'Mensagem', publishedAt: serverTimestamp(), expiresAt: Timestamp.fromMillis(Date.now() + 86400000)});
 
+test('Bling events and revisions are private to verified active admins; tokens and event writes are server-only', async () => {
+  const verifiedAdmin=env.authenticatedContext('admin-ok',{email:'admin@example.test',email_verified:true}).firestore();
+  const consumer=env.authenticatedContext('member',{email:'member@example.test',email_verified:true}).firestore();
+  await env.withSecurityRulesDisabled(async context=>{
+    for(const path of ['admin_bling_events/products_123','admin_bling_sync/products','admin_notification_devices/test']) {
+      await setDoc(doc(context.firestore(),path),{title:'Privado'});
+    }
+  });
+  for(const path of ['admin_bling_events/products_123','admin_bling_sync/products']) {
+    await assertSucceeds(getDoc(doc(verifiedAdmin,path)));
+    for(const db of [visitor,consumer,admin,inactive,mismatch,nonAdmin]) await assertFails(getDoc(doc(db,path)));
+    await assertFails(setDoc(doc(verifiedAdmin,path),{title:'Forjado'}));
+  }
+  await assertSucceeds(getDocs(collection(verifiedAdmin,'admin_bling_events')));
+  await assertFails(getDocs(collection(consumer,'admin_bling_events')));
+  for(const db of [verifiedAdmin,consumer,visitor]) {
+    await assertFails(getDoc(doc(db,'admin_notification_devices/test')));
+    await assertFails(setDoc(doc(db,'admin_notification_devices/test'),{token:'forged'}));
+  }
+});
+
 test('Interfone: only active admin publishes, and public messages are readable by guests', async () => {
   for (const db of [visitor, member, inactive, mismatch, nonAdmin, noEmail]) {
     await assertFails(setDoc(doc(db, 'intercom_messages/blocked'), intercomMessage()));

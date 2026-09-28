@@ -13,6 +13,8 @@ import 'overview_shortcut_royal_clean.dart';
 import 'neon_image_royal_clean.dart';
 import 'stock_functions_page_royal_clean.dart';
 import 'door_light_royal_clean.dart';
+import 'door_invitation_royal_clean.dart';
+import 'my_property_page_royal_clean.dart';
 
 class HomePageRoyalClean extends StatefulWidget {
   const HomePageRoyalClean({super.key});
@@ -24,6 +26,22 @@ class _HomePageState extends State<HomePageRoyalClean> {
   final _overviewOpen = ValueNotifier<bool>(false);
   Future<void>? _imagesReady;
   bool _openingStock = false;
+  bool _openingProperty = false;
+  int _dataReplay = 0;
+  bool _wasOverviewOpen = false;
+  @override
+  void initState() {
+    super.initState();
+    _overviewOpen.addListener(_overviewChanged);
+  }
+
+  void _overviewChanged() {
+    if (_wasOverviewOpen && !_overviewOpen.value) {
+      setState(() => _dataReplay++);
+    }
+    _wasOverviewOpen = _overviewOpen.value;
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -73,6 +91,31 @@ class _HomePageState extends State<HomePageRoyalClean> {
     );
   }
 
+  Future<void> _openProperty(BuildContext context) async {
+    if (_openingProperty) return;
+    _openingProperty = true;
+    try {
+      await _imagesReady;
+      if (!context.mounted) return;
+      final route = PageRouteBuilder<void>(
+        transitionDuration: const Duration(milliseconds: 180),
+        reverseTransitionDuration: const Duration(milliseconds: 180),
+        transitionsBuilder: (_, animation, secondaryAnimation, child) =>
+            FadeTransition(opacity: animation, child: child),
+        pageBuilder: (_, animation, secondaryAnimation) =>
+            AdminRouteGuardRoyalClean(
+              pendingBackground: const MyPropertyBackgroundRoyalClean(),
+              firebaseInitialization: Future<void>.value(),
+              builder: (_) => const MyPropertyPageRoyalClean(),
+            ),
+      );
+      await Navigator.of(context).push(route);
+      await route.completed;
+    } finally {
+      _openingProperty = false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<bool>(
     valueListenable: _overviewOpen,
@@ -105,6 +148,7 @@ class _HomePageState extends State<HomePageRoyalClean> {
                           width: constraints.maxWidth * .97,
                           height: constraints.maxHeight * .97,
                           child: OverviewShortcutRoyalClean(
+                            onHomeActivate: () => _openProperty(context),
                             height: constraints.maxHeight * .97,
                             openState: _overviewOpen,
                             overlayTopInset: math.max(
@@ -158,6 +202,7 @@ class _HomePageState extends State<HomePageRoyalClean> {
                                             DoorLightRoyalClean(
                                               activation: flash,
                                             ),
+                                            const DoorInvitationRoyalClean(),
                                           ],
                                         ),
                                       ),
@@ -209,30 +254,29 @@ class _HomePageState extends State<HomePageRoyalClean> {
                           ),
                         ),
                       ),
-                    if (!overviewOpen)
-                      Positioned(
-                        // Light column plus 2% of the screen width to the right.
-                        left:
-                            constraints.maxWidth * (.015 + .97 * .35 + .02) -
-                            50,
-                        top: constraints.maxHeight * (.015 + .97 * .25),
-                        width: 100,
-                        height: 100,
+                    Positioned(
+                      // Light column plus 2% of the screen width to the right.
+                      key: const ValueKey('profile-data-position'),
+                      left:
+                          constraints.maxWidth * (.015 + .97 * .35 + .02) - 50,
+                      top: constraints.maxHeight * (.015 + .97 * .25),
+                      width: 100,
+                      height: 100,
+                      child: Visibility(
+                        visible: !overviewOpen,
+                        maintainState: true,
                         child: Tooltip(
-                          message: 'Meus dados',
+                          message: 'Visão geral',
                           child: Semantics(
                             button: true,
-                            label: 'Abrir meus dados',
+                            label: 'Abrir Visão geral',
                             child: ImageActionRoyalClean(
                               key: const ValueKey('profile-data-shortcut'),
                               pulses: 2,
+                              replayVersion: _dataReplay,
                               duration: const Duration(milliseconds: 600),
                               scaleDepth: .018,
-                              onActivate: () async {
-                                await Navigator.of(
-                                  context,
-                                ).pushNamed('/my-data');
-                              },
+                              onActivate: () => _overviewOpen.value = true,
                               builder: (_, flash) => NeonImageRoyalClean(
                                 asset:
                                     'assets/preview/royal-store/royal-dados.webp',
@@ -249,6 +293,7 @@ class _HomePageState extends State<HomePageRoyalClean> {
                           ),
                         ),
                       ),
+                    ),
                     Positioned(
                       top: 8 + constraints.maxHeight * .08,
                       right: 14,

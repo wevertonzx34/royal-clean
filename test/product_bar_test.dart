@@ -79,6 +79,8 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Produtos').first);
+      await tester.pumpAndSettle();
       for (var i = 0; i < 2; i++) {
         final plot = find.byKey(const ValueKey('dashboard-plot'));
         await tester.ensureVisible(plot);

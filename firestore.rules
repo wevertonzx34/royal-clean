@@ -292,6 +292,15 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Private ERP notifications. No client may forge an event or register tokens directly.
+    match /admin_bling_events/{id} {
+      allow read: if signedIn() && request.auth.token.email_verified == true && activeAdmin();
+      allow write: if false;
+    }
+    match /admin_bling_sync/{group} {
+      allow read: if signedIn() && request.auth.token.email_verified == true && activeAdmin();
+      allow write: if false;
+    }
     // Novas coleções e subcoleções permanecem fechadas por padrão.
     match /{document=**} {
       allow read, write: if false;

@@ -25,6 +25,8 @@ dependencies:
   local_auth_android: 2.2.0
   firebase_storage: ^13.6.0
   image_picker: ^1.2.3
+  firebase_messaging: ^16.7.0
+  flutter_local_notifications: ^22.3.1
 
 dev_dependencies:
   flutter_test:
@@ -46,6 +48,7 @@ flutter:
   assets:
     - assets/preview/royal-store/royal-cloused.webp
     - assets/preview/royal-store/royal-home.webp
+    - assets/preview/royal-store/royal-pixels.webp
     - assets/preview/royal-store/royal-avatar.webp
     - assets/preview/royal-store/royal-dados.webp
     - assets/preview/royal-store/royal-porta.webp

@@ -5,7 +5,7 @@ if (process.env.FIRESTORE_EMULATOR_HOST !== '127.0.0.1:8185' || process.env.FIRE
   throw new Error('Backend integration tests require both LOCAL emulators; refusing production access.');
 }
 process.env.GCLOUD_PROJECT = 'demo-royal-clean';
-const {registerAccount, updateMyData, setUserRole} = await import('../index.js');
+const {registerAccount, updateMyData, setUserRole, registerAdminNotifications} = await import('../index.js');
 const {getFirestore, Timestamp} = await import('firebase-admin/firestore');
 const {getAuth} = await import('firebase-admin/auth');
 const {getApp, deleteApp} = await import('firebase-admin/app');
@@ -15,6 +15,20 @@ const db = getFirestore();
 const auth = getAuth();
 const data = (extra={}) => ({name:'João da Silva', acceptTerms:true, legalVersion:'2026-09-22', offers:false, inviteCode:'', ...extra});
 const request = (uid, input = {}) => ({auth:{uid}, data:input});
+
+test('Admin push registration rejects guests, consumers and unverified accounts',async()=>{
+ const input={token:'test-token-that-is-long-enough-for-validation'};
+ await assert.rejects(registerAdminNotifications.run({data:input}),{code:'unauthenticated'});
+ await assert.rejects(registerAdminNotifications.run(request('unverified',input)),{code:'failed-precondition'});
+ await assert.rejects(registerAdminNotifications.run(request('intruder',input)),{code:'permission-denied'});
+ await registerAdminNotifications.run(request('role-admin',input));
+ const devices=await db.collection('admin_notification_devices').get();
+ assert.equal(devices.size,1);assert.equal(devices.docs[0].data().uid,'role-admin');
+ await registerAdminNotifications.run(request('intruder',{...input,remove:true}));
+ assert.equal((await devices.docs[0].ref.get()).exists,true);
+ await registerAdminNotifications.run(request('role-admin',{...input,remove:true}));
+ assert.equal((await devices.docs[0].ref.get()).exists,false);
+});
 
 test('Bling OAuth: admin gate, browser binding, single use and private token storage', async () => {
   await db.doc('integrations_private/bling').delete();

@@ -6,6 +6,23 @@ import 'package:flutter/services.dart';
 class TouchFeedbackRoyalClean {
   static final _clock = Stopwatch()..start();
   static int? _last;
+  static bool _sequenceRunning = false;
+
+  static void homePulse() {
+    if (_sequenceRunning) return;
+    _sequenceRunning = true;
+    unawaited(() async {
+      try {
+        await HapticFeedback.vibrate();
+        await Future<void>.delayed(const Duration(milliseconds: 220));
+        await HapticFeedback.heavyImpact();
+      } catch (_) {
+        // Unsupported haptics must never interrupt navigation.
+      } finally {
+        _sequenceRunning = false;
+      }
+    }());
+  }
 
   static void pulse() {
     final now = _clock.elapsedMilliseconds;

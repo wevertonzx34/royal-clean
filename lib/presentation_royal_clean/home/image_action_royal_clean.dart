@@ -11,6 +11,8 @@ class ImageActionRoyalClean extends StatefulWidget {
   final Duration duration;
   final double scaleDepth;
   final bool replayAfterActivation;
+  final int replayVersion;
+  final VoidCallback? feedback;
   const ImageActionRoyalClean({
     super.key,
     required this.onActivate,
@@ -19,6 +21,8 @@ class ImageActionRoyalClean extends StatefulWidget {
     this.duration = const Duration(milliseconds: 160),
     this.scaleDepth = .006,
     this.replayAfterActivation = false,
+    this.replayVersion = 0,
+    this.feedback,
   });
 
   @override
@@ -30,10 +34,27 @@ class _ImageActionState extends State<ImageActionRoyalClean>
   late final _animation = AnimationController(vsync: this);
   bool _busy = false;
 
+  @override
+  void didUpdateWidget(covariant ImageActionRoyalClean oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.replayVersion != widget.replayVersion) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted ||
+            _busy ||
+            MediaQuery.disableAnimationsOf(context) ||
+            !TickerMode.valuesOf(context).enabled) {
+          return;
+        }
+        _animation.duration = widget.duration;
+        _animation.forward(from: 0);
+      });
+    }
+  }
+
   Future<void> _activate() async {
     if (_busy) return;
     _busy = true;
-    TouchFeedbackRoyalClean.pulse();
+    (widget.feedback ?? TouchFeedbackRoyalClean.pulse)();
     try {
       if (!MediaQuery.disableAnimationsOf(context) &&
           TickerMode.valuesOf(context).enabled) {

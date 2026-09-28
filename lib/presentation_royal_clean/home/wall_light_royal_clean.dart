@@ -6,7 +6,12 @@ import 'package:flutter/material.dart';
 /// Decorative wall light; its invisible source is at the top centre.
 class WallLightRoyalClean extends StatefulWidget {
   final ValueListenable<bool> openState;
-  const WallLightRoyalClean({super.key, required this.openState});
+  final Listenable? faultSignal;
+  const WallLightRoyalClean({
+    super.key,
+    required this.openState,
+    this.faultSignal,
+  });
 
   static const width = 300.0;
   static const height = 520.0;
@@ -28,6 +33,7 @@ class _WallLightState extends State<WallLightRoyalClean>
   void initState() {
     super.initState();
     widget.openState.addListener(_onToggle);
+    widget.faultSignal?.addListener(_onFault);
     _animation.addStatusListener((status) {
       if (status == AnimationStatus.completed) _scheduleFault();
     });
@@ -36,6 +42,10 @@ class _WallLightState extends State<WallLightRoyalClean>
   @override
   void didUpdateWidget(covariant WallLightRoyalClean oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.faultSignal != widget.faultSignal) {
+      oldWidget.faultSignal?.removeListener(_onFault);
+      widget.faultSignal?.addListener(_onFault);
+    }
     if (oldWidget.openState != widget.openState) {
       oldWidget.openState.removeListener(_onToggle);
       widget.openState.addListener(_onToggle);
@@ -77,9 +87,18 @@ class _WallLightState extends State<WallLightRoyalClean>
     _animation.forward(from: 0);
   }
 
+  void _onFault() {
+    if (!_enabled) return;
+    _pause?.cancel();
+    _interaction = false;
+    _animation.duration = const Duration(milliseconds: 720);
+    _animation.forward(from: 0);
+  }
+
   @override
   void dispose() {
     widget.openState.removeListener(_onToggle);
+    widget.faultSignal?.removeListener(_onFault);
     _pause?.cancel();
     _animation.dispose();
     super.dispose();

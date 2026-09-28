@@ -3,44 +3,55 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:royal_clean/presentation_royal_clean/home/overview_shortcut_royal_clean.dart';
 
 void main() {
-  testWidgets('Image opens and closes dashboard without resetting its state', (
-    tester,
-  ) async {
-    await tester.binding.setSurfaceSize(const Size(400, 900));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(
-      MaterialApp(
-        home: MediaQuery(
-          data: const MediaQueryData(disableAnimations: true),
-          child: Scaffold(
-            body: SingleChildScrollView(
-              child: OverviewShortcutRoyalClean(foreground: const Positioned(bottom: 0, left: 0, child: Text('Porta')), child: _Counter()),
+  testWidgets(
+    'Home only closes overview; external shortcut opens it without resetting state',
+    (tester) async {
+      final open = ValueNotifier(false);
+      await tester.binding.setSurfaceSize(const Size(400, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: const MediaQueryData(disableAnimations: true),
+            child: Scaffold(
+              body: OverviewShortcutRoyalClean(
+                height: 800,
+                openState: open,
+                overlayTopInset: 100,
+                foreground: const Positioned(
+                  bottom: 0,
+                  left: 0,
+                  child: Text('Porta'),
+                ),
+                child: _Counter(),
+              ),
             ),
           ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('Consulta 0'), findsNothing);
-    expect(find.text('Porta'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('overview-image-shortcut')));
-    await tester.pumpAndSettle();
-    expect(find.text('Porta'), findsNothing);
-    await tester.ensureVisible(find.text('Consulta 0'));
-    await tester.tap(find.text('Consulta 0'));
-    await tester.pump();
-    expect(find.text('Consulta 1'), findsOneWidget);
-    await tester.ensureVisible(
-      find.byKey(const ValueKey('overview-image-shortcut')),
-    );
-    await tester.tap(find.byKey(const ValueKey('overview-image-shortcut')));
-    await tester.pumpAndSettle();
-    expect(find.text('Consulta 1'), findsNothing);
-    await tester.tap(find.byKey(const ValueKey('overview-image-shortcut')));
-    await tester.pumpAndSettle();
-    expect(find.text('Consulta 1'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+      );
+      await tester.pumpAndSettle();
+      await tester.tapAt(const Offset(200, 50));
+      await tester.pumpAndSettle();
+      expect(open.value, false);
+      expect(find.text('Consulta 0'), findsNothing);
+      open.value = true;
+      await tester.pumpAndSettle();
+      expect(find.text('Porta'), findsNothing);
+      await tester.tap(find.text('Consulta 0'));
+      await tester.pump();
+      expect(find.text('Consulta 1'), findsOneWidget);
+      await tester.tapAt(const Offset(200, 50));
+      await tester.pumpAndSettle();
+      expect(open.value, false);
+      expect(find.text('Porta'), findsOneWidget);
+      open.value = true;
+      await tester.pumpAndSettle();
+      expect(find.text('Consulta 1'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      open.dispose();
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
 
 class _Counter extends StatefulWidget {

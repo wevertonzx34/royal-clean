@@ -8,12 +8,13 @@ Future<void> precacheProfileImagesRoyalClean(BuildContext context) async {
     'royal-avatar',
     'royal-dados',
     'royal-stoque',
+    'royal-pixels',
   ]) {
     if (!context.mounted) return;
     await precacheImage(
       ResizeImage(
         AssetImage('assets/preview/royal-store/$asset.webp'),
-        width: asset == 'royal-stoque'
+        width: asset == 'royal-stoque' || asset == 'royal-pixels'
             ? 1080
             : asset == 'royal-dados'
             ? 300

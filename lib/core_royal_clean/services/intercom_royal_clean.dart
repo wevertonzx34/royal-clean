@@ -3,6 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'account_access_royal_clean.dart';
+import 'biometric_access_royal_clean.dart';
+import 'bling_sync_events_royal_clean.dart';
 
 class IntercomMessageRoyalClean {
   final String id, title, body, kind;
@@ -31,10 +34,16 @@ class IntercomMessageRoyalClean {
   }
 }
 
-/// Public messages only. Personal information and review records are never in this feed.
+/// Public Interfone and a separately authorized, private admin feed.
 class IntercomRoyalClean extends ChangeNotifier {
   static final instance = IntercomRoyalClean();
   List<IntercomMessageRoyalClean> messages = [];
+  List<IntercomMessageRoyalClean> _privateMessages = [];
+  StreamSubscription<dynamic>? _privateFeed, _sync;
+  String? _adminReader;
+  int _privateGeneration = 0;
+  String? _syncVersion;
+  Timer? _privateRetry;
   Set<String> _seen = {};
   String _reader = 'visitor';
   bool loading = false;
@@ -43,7 +52,11 @@ class IntercomRoyalClean extends ChangeNotifier {
   Timer? _clock;
   bool _started = false;
   List<IntercomMessageRoyalClean> get active =>
-      messages.where((message) => message.activeAt(DateTime.now())).toList();
+      [
+          ...messages,
+          ..._privateMessages,
+        ].where((message) => message.activeAt(DateTime.now())).toList()
+        ..sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
   bool isUnread(IntercomMessageRoyalClean message) =>
       !_seen.contains(message.id);
   int get unreadCount => active.where(isUnread).length;
@@ -51,6 +64,9 @@ class IntercomRoyalClean extends ChangeNotifier {
   void start() {
     if (_started) return;
     _started = true;
+    AccountAccessRoyalClean.instance.addListener(_adminChanged);
+    BiometricAccessRoyalClean.instance.addListener(_adminChanged);
+    _adminChanged();
     _auth = FirebaseAuth.instance.authStateChanges().listen((user) async {
       final reader = user?.uid ?? 'visitor';
       _reader = reader;
@@ -71,6 +87,72 @@ class IntercomRoyalClean extends ChangeNotifier {
       (_) => notifyListeners(),
     );
     reload();
+  }
+
+  void _adminChanged() {
+    final access = AccountAccessRoyalClean.instance.value;
+    final uid =
+        access.status == AccountAccessStatus.admin &&
+            !BiometricAccessRoyalClean.instance.locked
+        ? access.identity?.uid
+        : null;
+    if (uid == _adminReader) return;
+    _adminReader = uid;
+    _privateRetry?.cancel();
+    final generation = ++_privateGeneration;
+    unawaited(_privateFeed?.cancel());
+    unawaited(_sync?.cancel());
+    _privateMessages = [];
+    _syncVersion = null;
+    notifyListeners();
+    if (uid == null) return;
+    _privateFeed = FirebaseFirestore.instance
+        .collection('admin_bling_events')
+        .orderBy('publishedAt', descending: true)
+        .limit(200)
+        .snapshots()
+        .listen(
+          (snapshot) {
+            if (_adminReader != uid ||
+                generation != _privateGeneration ||
+                snapshot.metadata.isFromCache) {
+              return;
+            }
+            _privateMessages = snapshot.docs
+                .map(IntercomMessageRoyalClean.fromDoc)
+                .toList();
+            notifyListeners();
+          },
+          onError: (Object _) {
+            if (generation != _privateGeneration) return;
+            _privateMessages = [];
+            notifyListeners();
+            _privateRetry = Timer(const Duration(seconds: 30), () {
+              if (generation != _privateGeneration) return;
+              _adminReader = null;
+              _adminChanged();
+            });
+          },
+        );
+    _sync = FirebaseFirestore.instance
+        .collection('admin_bling_sync')
+        .snapshots()
+        .listen((snapshot) {
+          if (_adminReader != uid ||
+              generation != _privateGeneration ||
+              snapshot.metadata.isFromCache) {
+            return;
+          }
+          final parts =
+              snapshot.docs
+                  .map((doc) => '${doc.id}:${doc.data()['runId']}')
+                  .toList()
+                ..sort();
+          final version = parts.join('|');
+          if (version == _syncVersion) return;
+          _syncVersion = version;
+            if (version.isNotEmpty) blingSyncRevisionRoyalClean.value++;
+        }, onError: (Object _) {});
   }
 
   void reload() {
@@ -153,6 +235,11 @@ class IntercomRoyalClean extends ChangeNotifier {
 
   @override
   void dispose() {
+    _privateRetry?.cancel();
+    AccountAccessRoyalClean.instance.removeListener(_adminChanged);
+    BiometricAccessRoyalClean.instance.removeListener(_adminChanged);
+    unawaited(_privateFeed?.cancel());
+    unawaited(_sync?.cancel());
     unawaited(_feed?.cancel());
     unawaited(_auth?.cancel());
     _clock?.cancel();

@@ -36,11 +36,11 @@ class DashboardChartRoyalClean extends StatefulWidget {
 class _DashboardChartState extends State<DashboardChartRoyalClean>
     with WidgetsBindingObserver {
   static const _groups = {
-    'Produtos': 'products',
     'Notas': 'invoices',
+    'Produtos': 'products',
     'Contatos': 'contacts',
   };
-  String _group = 'Produtos';
+  String _group = 'Notas';
   String _contactRole = 'all';
   int _metric = 0, _selected = 0, _request = 0;
   DashboardPeriodRoyalClean _period = DashboardPeriodRoyalClean.monthly;

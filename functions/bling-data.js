@@ -174,7 +174,7 @@ export function createBlingDataHandler({db, authenticated, requireAdmin, rateLim
       let enrichment;
       if(request.data.refreshDetails===true) {
         const token=await accessToken();
-        let reservations=Promise.resolve();
+        let reservations=Promise.resolve(),dispatches=Promise.resolve(),lastDispatch=0;
         const reserveSlots=async(count=1)=>{
           // Coordinate the provider's account-wide quota across app and scheduled calls.
           const quota=db.doc('integrations_private/bling_read_quota');
@@ -190,7 +190,14 @@ export function createBlingDataHandler({db, authenticated, requireAdmin, rateLim
         };
         const get=async(path,startAt=null)=>{
           startAt??=await reserveSlots();
-          await new Promise(resolve=>setTimeout(resolve,Math.max(0,startAt-Date.now())));
+          // A busy event loop can release several expired timers together. Preserve
+          // actual spacing as well as the account-wide reserved request slots.
+          const dispatch=dispatches.then(async()=>{
+            await new Promise(resolve=>setTimeout(resolve,Math.max(0,startAt-Date.now(),lastDispatch+450-Date.now())));
+            lastDispatch=Date.now();
+          });
+          dispatches=dispatch;
+          await dispatch;
           try {
             const response=await fetchImpl(`https://api.bling.com.br/Api/v3/${path}`,{
               headers:{Authorization:`Bearer ${token}`,Accept:'application/json','enable-jwt':'1'},

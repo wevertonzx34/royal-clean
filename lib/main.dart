@@ -1,5 +1,7 @@
 import 'core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'dart:async';
+import 'core_royal_clean/services/admin_push_royal_clean.dart';
+import 'presentation_royal_clean/shared/notifications_panel_royal_clean.dart';
 import 'core_royal_clean/services/intercom_royal_clean.dart';
 import 'presentation_royal_clean/home/intercom_page_royal_clean.dart';
 import 'presentation_royal_clean/home/bling_integration_page_royal_clean.dart';
@@ -33,6 +35,11 @@ import 'presentation_royal_clean/preview/partnership_content_royal_clean.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  adminNotificationOpenedRoyalClean.addListener(() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      royalNotificationNavigator.currentState?.pushNamed('/notifications');
+    });
+  });
   final firebaseInitialization = Future<void>.sync(() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -64,6 +71,7 @@ void main() {
     );
     AccountAccessRoyalClean.instance.start();
     IntercomRoyalClean.instance.start();
+    AdminPushRoyalClean.instance.start();
     if (kDebugMode && const bool.fromEnvironment('VERIFY_APP_CHECK')) {
       debugPrint(
         'RoyalClean session: retained=${FirebaseAuth.instance.currentUser != null}; biometric=${BiometricAccessRoyalClean.instance.enabled}; locked=${BiometricAccessRoyalClean.instance.locked}',
@@ -87,6 +95,8 @@ Future<void> _verifyAppCheck() async {
     debugPrint('RoyalClean AppCheck verification: FAILED');
   }
 }
+
+final royalNotificationNavigator = GlobalKey<NavigatorState>();
 
 class RoyalCleanApp extends StatelessWidget {
   final Future<void> firebaseInitialization;
@@ -128,6 +138,7 @@ class RoyalCleanApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: royalNotificationNavigator,
       title: 'Royal Clean',
       navigatorObservers: [TouchNavigationObserverRoyalClean()],
       debugShowCheckedModeBanner: false,
@@ -138,6 +149,8 @@ class RoyalCleanApp extends StatelessWidget {
       ),
       initialRoute: AppRoutesRoyalClean.splash,
       routes: {
+        '/notifications': (_) =>
+            _admin((_) => const Scaffold(body: NotificationsPanelRoyalClean())),
         AppRoutesRoyalClean.splash: (_) => SplashPageRoyalClean(
           firebaseInitialization: firebaseInitialization,
         ),
