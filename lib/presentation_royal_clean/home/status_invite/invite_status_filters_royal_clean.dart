@@ -1,3 +1,4 @@
+import 'package:royal_clean/presentation_royal_clean/shared/layout_button_royal_clean.dart';
 import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'package:flutter/material.dart';
 
@@ -31,41 +32,50 @@ class InviteStatusFiltersRoyalClean extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 14),
-        DropdownButtonFormField<String>(
-          initialValue: selectedProfile,
-          decoration: const InputDecoration(
-            labelText: 'Perfil',
-            prefixIcon: Icon(Icons.badge_outlined),
+        LayoutButtonRoyalClean(
+          id: 'invite_status_filters_royal_clean.aux_control_01',
+          child: DropdownButtonFormField<String>(
+            initialValue: selectedProfile,
+            decoration: const InputDecoration(
+              labelText: 'Perfil',
+              prefixIcon: Icon(Icons.badge_outlined),
+            ),
+            items: const [
+              DropdownMenuItem(value: 'Todos', child: Text('Todos')),
+              DropdownMenuItem(value: 'Mestre', child: Text('Mestre')),
+              DropdownMenuItem(value: 'Cliente', child: Text('Cliente')),
+              DropdownMenuItem(
+                value: 'Colaborador',
+                child: Text('Colaborador'),
+              ),
+              DropdownMenuItem(value: 'Promotor', child: Text('Promotor')),
+            ],
+            onChanged: tactileValueRoyalClean((value) {
+              if (value == null) return;
+              onProfileChanged(value);
+            }),
           ),
-          items: const [
-            DropdownMenuItem(value: 'Todos', child: Text('Todos')),
-            DropdownMenuItem(value: 'Mestre', child: Text('Mestre')),
-            DropdownMenuItem(value: 'Cliente', child: Text('Cliente')),
-            DropdownMenuItem(value: 'Colaborador', child: Text('Colaborador')),
-            DropdownMenuItem(value: 'Promotor', child: Text('Promotor')),
-          ],
-          onChanged: tactileValueRoyalClean((value) {
-            if (value == null) return;
-            onProfileChanged(value);
-          }),
         ),
         const SizedBox(height: 14),
-        DropdownButtonFormField<String>(
-          initialValue: selectedStatus,
-          decoration: const InputDecoration(
-            labelText: 'Status',
-            prefixIcon: Icon(Icons.filter_alt_outlined),
+        LayoutButtonRoyalClean(
+          id: 'invite_status_filters_royal_clean.aux_control_02',
+          child: DropdownButtonFormField<String>(
+            initialValue: selectedStatus,
+            decoration: const InputDecoration(
+              labelText: 'Status',
+              prefixIcon: Icon(Icons.filter_alt_outlined),
+            ),
+            items: const [
+              DropdownMenuItem(value: 'Todos', child: Text('Todos')),
+              DropdownMenuItem(value: 'Ativo', child: Text('Ativo')),
+              DropdownMenuItem(value: 'Usado', child: Text('Usado')),
+              DropdownMenuItem(value: 'Processing', child: Text('Processing')),
+            ],
+            onChanged: tactileValueRoyalClean((value) {
+              if (value == null) return;
+              onStatusChanged(value);
+            }),
           ),
-          items: const [
-            DropdownMenuItem(value: 'Todos', child: Text('Todos')),
-            DropdownMenuItem(value: 'Ativo', child: Text('Ativo')),
-            DropdownMenuItem(value: 'Usado', child: Text('Usado')),
-            DropdownMenuItem(value: 'Processing', child: Text('Processing')),
-          ],
-          onChanged: tactileValueRoyalClean((value) {
-            if (value == null) return;
-            onStatusChanged(value);
-          }),
         ),
       ],
     );

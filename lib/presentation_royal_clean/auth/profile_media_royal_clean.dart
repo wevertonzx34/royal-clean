@@ -1,3 +1,4 @@
+import 'package:royal_clean/presentation_royal_clean/shared/layout_button_royal_clean.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -141,27 +142,33 @@ class _ProfileMediaState extends State<ProfileMediaRoyalClean> {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: OutlinedButton.icon(
-              onPressed: tactileTapRoyalClean(
-                widget.enabled && !_busy ? _pick : null,
-              ),
-              icon: const Icon(Icons.add_photo_alternate_outlined),
-              label: Text(
-                _busy
-                    ? 'Enviando…'
-                    : widget.kind == 'photo'
-                    ? 'Foto de perfil'
-                    : 'Logo da empresa',
+            child: LayoutButtonRoyalClean(
+              id: 'profile_media_royal_clean.control_01',
+              child: OutlinedButton.icon(
+                onPressed: tactileTapRoyalClean(
+                  widget.enabled && !_busy ? _pick : null,
+                ),
+                icon: const Icon(Icons.add_photo_alternate_outlined),
+                label: Text(
+                  _busy
+                      ? 'Enviando…'
+                      : widget.kind == 'photo'
+                      ? 'Foto de perfil'
+                      : 'Logo da empresa',
+                ),
               ),
             ),
           ),
           if (widget.path.isNotEmpty)
-            IconButton(
-              tooltip: 'Remover imagem',
-              onPressed: tactileTapRoyalClean(
-                widget.enabled && !_busy ? () => widget.onChanged('') : null,
+            LayoutButtonRoyalClean(
+              id: 'profile_media_royal_clean.control_02',
+              child: IconButton(
+                tooltip: 'Remover imagem',
+                onPressed: tactileTapRoyalClean(
+                  widget.enabled && !_busy ? () => widget.onChanged('') : null,
+                ),
+                icon: const Icon(Icons.close),
               ),
-              icon: const Icon(Icons.close),
             ),
         ],
       ),

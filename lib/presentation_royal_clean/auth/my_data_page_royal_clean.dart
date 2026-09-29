@@ -1,3 +1,4 @@
+import 'package:royal_clean/presentation_royal_clean/shared/layout_button_royal_clean.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -201,25 +202,28 @@ class _MyDataState extends State<MyDataPageRoyalClean> {
             SelectableText(widget.user.email ?? ''),
             const SizedBox(height: 20),
             _field('name', 'Nome completo'),
-            DropdownButtonFormField<String>(
-              key: ValueKey(_personType),
-              initialValue: _personType,
-              isExpanded: true,
-              decoration: const InputDecoration(labelText: 'Tipo de pessoa'),
-              items: const [
-                DropdownMenuItem(
-                  value: 'individual',
-                  child: Text('Pessoa física'),
+            LayoutButtonRoyalClean(
+              id: 'my_data_page_royal_clean.aux_control_01',
+              child: DropdownButtonFormField<String>(
+                key: ValueKey(_personType),
+                initialValue: _personType,
+                isExpanded: true,
+                decoration: const InputDecoration(labelText: 'Tipo de pessoa'),
+                items: const [
+                  DropdownMenuItem(
+                    value: 'individual',
+                    child: Text('Pessoa física'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'company',
+                    child: Text('Pessoa jurídica'),
+                  ),
+                ],
+                onChanged: tactileValueRoyalClean(
+                  _enabled
+                      ? (value) => setState(() => _personType = value!)
+                      : null,
                 ),
-                DropdownMenuItem(
-                  value: 'company',
-                  child: Text('Pessoa jurídica'),
-                ),
-              ],
-              onChanged: tactileValueRoyalClean(
-                _enabled
-                    ? (value) => setState(() => _personType = value!)
-                    : null,
               ),
             ),
             const SizedBox(height: 16),
@@ -266,13 +270,18 @@ class _MyDataState extends State<MyDataPageRoyalClean> {
               max: 30,
               keyboard: TextInputType.phone,
             ),
-            OutlinedButton.icon(
-              onPressed: tactileTapRoyalClean(
-                _enabled && !verified ? _verifyPhone : null,
-              ),
-              icon: Icon(verified ? Icons.verified : Icons.sms_outlined),
-              label: Text(
-                verified ? 'Telefone confirmado' : 'Confirmar telefone por SMS',
+            LayoutButtonRoyalClean(
+              id: 'my_data_page_royal_clean.control_01',
+              child: OutlinedButton.icon(
+                onPressed: tactileTapRoyalClean(
+                  _enabled && !verified ? _verifyPhone : null,
+                ),
+                icon: Icon(verified ? Icons.verified : Icons.sms_outlined),
+                label: Text(
+                  verified
+                      ? 'Telefone confirmado'
+                      : 'Confirmar telefone por SMS',
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -319,35 +328,44 @@ class _MyDataState extends State<MyDataPageRoyalClean> {
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               ),
-            FilledButton(
-              onPressed: tactileTapRoyalClean(_enabled ? _save : null),
-              child: Text(_busy ? 'Aguarde…' : 'Salvar dados'),
+            LayoutButtonRoyalClean(
+              id: 'my_data_page_royal_clean.control_02',
+              child: FilledButton(
+                onPressed: tactileTapRoyalClean(_enabled ? _save : null),
+                child: Text(_busy ? 'Aguarde…' : 'Salvar dados'),
+              ),
             ),
             if (!_loaded && !_busy)
-              TextButton(
-                onPressed: tactileTapRoyalClean(() {
-                  setState(() {
-                    _busy = true;
-                    _error = null;
-                  });
-                  _load();
-                }),
-                child: const Text('Tentar carregar novamente'),
+              LayoutButtonRoyalClean(
+                id: 'my_data_page_royal_clean.control_03',
+                child: TextButton(
+                  onPressed: tactileTapRoyalClean(() {
+                    setState(() {
+                      _busy = true;
+                      _error = null;
+                    });
+                    _load();
+                  }),
+                  child: const Text('Tentar carregar novamente'),
+                ),
               ),
             const SizedBox(height: 16),
             const Text(
               'Consumidores não precisam de convite. Outros perfis dependem de autorização da Royal Clean.',
             ),
-            TextButton(
-              onPressed: tactileTapRoyalClean(
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => const LegalPageRoyalClean(privacy: true),
+            LayoutButtonRoyalClean(
+              id: 'my_data_page_royal_clean.control_04',
+              child: TextButton(
+                onPressed: tactileTapRoyalClean(
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => const LegalPageRoyalClean(privacy: true),
+                    ),
                   ),
                 ),
+                child: const Text('Aviso de privacidade'),
               ),
-              child: const Text('Aviso de privacidade'),
             ),
           ],
         ),

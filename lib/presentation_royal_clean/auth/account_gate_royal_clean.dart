@@ -1,3 +1,4 @@
+import 'package:royal_clean/presentation_royal_clean/shared/layout_button_royal_clean.dart';
 import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -201,11 +202,14 @@ class RoleAreaRoyalClean extends StatelessWidget {
               ),
             ),
           const SizedBox(height: 24),
-          OutlinedButton(
-            onPressed: tactileTapRoyalClean(
-              () => logoutToPreviewRoyalClean(context),
+          LayoutButtonRoyalClean(
+            id: 'account_gate_royal_clean.control_01',
+            child: OutlinedButton(
+              onPressed: tactileTapRoyalClean(
+                () => logoutToPreviewRoyalClean(context),
+              ),
+              child: const Text('Sair'),
             ),
-            child: const Text('Sair'),
           ),
         ],
       ),
@@ -224,25 +228,31 @@ class _AccessMessage extends StatelessWidget {
       children: [
         Text(message),
         const SizedBox(height: 24),
-        FilledButton(
-          onPressed: tactileTapRoyalClean(
-            () => Navigator.pushNamedAndRemoveUntil(
-              context,
-              '/login',
-              (_) => false,
+        LayoutButtonRoyalClean(
+          id: 'account_gate_royal_clean.control_02',
+          child: FilledButton(
+            onPressed: tactileTapRoyalClean(
+              () => Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/login',
+                (_) => false,
+              ),
             ),
+            child: const Text('Ir para login'),
           ),
-          child: const Text('Ir para login'),
         ),
-        TextButton(
-          onPressed: tactileTapRoyalClean(
-            () => Navigator.pushNamedAndRemoveUntil(
-              context,
-              '/preview',
-              (_) => false,
+        LayoutButtonRoyalClean(
+          id: 'account_gate_royal_clean.control_03',
+          child: TextButton(
+            onPressed: tactileTapRoyalClean(
+              () => Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/preview',
+                (_) => false,
+              ),
             ),
+            child: const Text('Voltar à prévia pública'),
           ),
-          child: const Text('Voltar à prévia pública'),
         ),
       ],
     ),

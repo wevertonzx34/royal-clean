@@ -1,3 +1,4 @@
+import 'package:royal_clean/presentation_royal_clean/shared/layout_button_royal_clean.dart';
 import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -136,32 +137,35 @@ class _ProductCategoriesRoyalCleanState
 
   Widget _arrow({required bool left}) {
     final enabled = left ? _canLeft : _canRight;
-    return IconButton(
-      tooltip: left ? 'Categorias à esquerda' : 'Categorias à direita',
-      onPressed: tactileTapRoyalClean(
-        enabled ? () => _move(left ? -1 : 1) : null,
-      ),
-      color: const Color(0xFF007F9F),
-      disabledColor: const Color(0xFFCBD6DC),
-      icon: TweenAnimationBuilder<double>(
-        key: ValueKey('${left}_$enabled'),
-        tween: Tween(begin: 0, end: 1),
-        duration: Duration(
-          milliseconds: !enabled || MediaQuery.disableAnimationsOf(context)
-              ? 0
-              : 1600,
+    return LayoutButtonRoyalClean(
+      id: 'product_categories_royal_clean.control_01',
+      child: IconButton(
+        tooltip: left ? 'Categorias à esquerda' : 'Categorias à direita',
+        onPressed: tactileTapRoyalClean(
+          enabled ? () => _move(left ? -1 : 1) : null,
         ),
-        builder: (context, value, child) => Transform.translate(
-          offset: Offset(
-            math.sin(value * math.pi * 4) * 3 * (left ? -1 : 1),
-            0,
+        color: const Color(0xFF007F9F),
+        disabledColor: const Color(0xFFCBD6DC),
+        icon: TweenAnimationBuilder<double>(
+          key: ValueKey('${left}_$enabled'),
+          tween: Tween(begin: 0, end: 1),
+          duration: Duration(
+            milliseconds: !enabled || MediaQuery.disableAnimationsOf(context)
+                ? 0
+                : 1600,
           ),
-          child: child,
-        ),
-        child: Icon(
-          left
-              ? Icons.keyboard_double_arrow_left_rounded
-              : Icons.keyboard_double_arrow_right_rounded,
+          builder: (context, value, child) => Transform.translate(
+            offset: Offset(
+              math.sin(value * math.pi * 4) * 3 * (left ? -1 : 1),
+              0,
+            ),
+            child: child,
+          ),
+          child: Icon(
+            left
+                ? Icons.keyboard_double_arrow_left_rounded
+                : Icons.keyboard_double_arrow_right_rounded,
+          ),
         ),
       ),
     );
@@ -193,27 +197,31 @@ class _ProductCategoriesRoyalCleanState
               final category = productCategoriesRoyalClean[index];
               final active = widget.selected == category.id;
               return Center(
-                child: ChoiceChip(
-                  label: Text(category.title),
-                  selected: active,
-                  tooltip: active
-                      ? 'Remover filtro ${category.title}'
-                      : category.title,
-                  showCheckmark: false,
-                  selectedColor: const Color(0xFF092F43),
-                  backgroundColor: Colors.white,
-                  side: BorderSide(
-                    color: active
-                        ? const Color(0xFF092F43)
-                        : const Color(0xFFDCE5EA),
-                  ),
-                  labelStyle: TextStyle(
-                    color: active ? Colors.white : const Color(0xFF607783),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  onSelected: tactileValueRoyalClean(
-                    (_) => widget.onSelected(active ? null : category.id),
+                child: LayoutButtonRoyalClean(
+                  id: 'product_categories_royal_clean.control_02',
+                  instanceKey: category.id,
+                  child: ChoiceChip(
+                    label: Text(category.title),
+                    selected: active,
+                    tooltip: active
+                        ? 'Remover filtro ${category.title}'
+                        : category.title,
+                    showCheckmark: false,
+                    selectedColor: const Color(0xFF092F43),
+                    backgroundColor: Colors.white,
+                    side: BorderSide(
+                      color: active
+                          ? const Color(0xFF092F43)
+                          : const Color(0xFFDCE5EA),
+                    ),
+                    labelStyle: TextStyle(
+                      color: active ? Colors.white : const Color(0xFF607783),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    onSelected: tactileValueRoyalClean(
+                      (_) => widget.onSelected(active ? null : category.id),
+                    ),
                   ),
                 ),
               );

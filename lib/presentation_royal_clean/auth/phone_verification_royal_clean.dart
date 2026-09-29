@@ -1,3 +1,4 @@
+import 'package:royal_clean/presentation_royal_clean/shared/layout_button_royal_clean.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../core_royal_clean/services/account_service_royal_clean.dart';
@@ -64,7 +65,8 @@ class _PhoneVerificationState extends State<PhoneVerificationRoyalClean> {
 
   Future<void> _send() async {
     if (_busy ||
-        (_sentAt != null && DateTime.now().difference(_sentAt!).inSeconds < 60)) {
+        (_sentAt != null &&
+            DateTime.now().difference(_sentAt!).inSeconds < 60)) {
       return;
     }
     setState(() {
@@ -124,12 +126,15 @@ class _PhoneVerificationState extends State<PhoneVerificationRoyalClean> {
           'Enviaremos um código por SMS. O número será processado pelo Google/Firebase para autenticação e prevenção de abuso.',
         ),
         const SizedBox(height: 16),
-        OutlinedButton(
-          onPressed: tactileTapRoyalClean(_busy ? null : _send),
-          child: Text(
-            _verificationId == null
-                ? 'Enviar código por SMS'
-                : 'Reenviar código (aguarde 60 s)',
+        LayoutButtonRoyalClean(
+          id: 'phone_verification_royal_clean.control_01',
+          child: OutlinedButton(
+            onPressed: tactileTapRoyalClean(_busy ? null : _send),
+            child: Text(
+              _verificationId == null
+                  ? 'Enviar código por SMS'
+                  : 'Reenviar código (aguarde 60 s)',
+            ),
           ),
         ),
         if (_verificationId != null) ...[
@@ -141,26 +146,29 @@ class _PhoneVerificationState extends State<PhoneVerificationRoyalClean> {
             decoration: const InputDecoration(labelText: 'Código do SMS'),
             onTap: TouchFeedbackRoyalClean.pulse,
           ),
-          FilledButton(
-            onPressed: tactileTapRoyalClean(
-              _busy
-                  ? null
-                  : () {
-                      if (!RegExp(r'^\d{6}$').hasMatch(_code.text.trim())) {
-                        setState(
-                          () => _error = 'Informe os seis dígitos do SMS.',
+          LayoutButtonRoyalClean(
+            id: 'phone_verification_royal_clean.control_02',
+            child: FilledButton(
+              onPressed: tactileTapRoyalClean(
+                _busy
+                    ? null
+                    : () {
+                        if (!RegExp(r'^\d{6}$').hasMatch(_code.text.trim())) {
+                          setState(
+                            () => _error = 'Informe os seis dígitos do SMS.',
+                          );
+                          return;
+                        }
+                        _finish(
+                          PhoneAuthProvider.credential(
+                            verificationId: _verificationId!,
+                            smsCode: _code.text.trim(),
+                          ),
                         );
-                        return;
-                      }
-                      _finish(
-                        PhoneAuthProvider.credential(
-                          verificationId: _verificationId!,
-                          smsCode: _code.text.trim(),
-                        ),
-                      );
-                    },
+                      },
+              ),
+              child: Text(_busy ? 'Confirmando…' : 'Confirmar telefone'),
             ),
-            child: Text(_busy ? 'Confirmando…' : 'Confirmar telefone'),
           ),
         ],
         if (_error != null)

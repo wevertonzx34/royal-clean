@@ -1,3 +1,4 @@
+import 'package:royal_clean/presentation_royal_clean/shared/layout_button_royal_clean.dart';
 import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'package:flutter/material.dart';
 import 'home_buttons_royal_clean.dart';
@@ -42,10 +43,13 @@ class HomeFormRoyalClean extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 26),
-        OutlinedButton.icon(
-          onPressed: tactileTapRoyalClean(onLogoutPressed),
-          icon: const Icon(Icons.logout_rounded),
-          label: const Text('Sair'),
+        LayoutButtonRoyalClean(
+          id: 'home_form_royal_clean.control_01',
+          child: OutlinedButton.icon(
+            onPressed: tactileTapRoyalClean(onLogoutPressed),
+            icon: const Icon(Icons.logout_rounded),
+            label: const Text('Sair'),
+          ),
         ),
       ],
     );

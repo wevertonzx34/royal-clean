@@ -1,3 +1,4 @@
+import 'package:royal_clean/presentation_royal_clean/shared/layout_button_royal_clean.dart';
 import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -106,17 +107,23 @@ class _InvoiceBarState extends State<InvoiceBarPageRoyalClean> {
     final shown = rows.take(_visible).toList();
     return Scaffold(
       appBar: AppBar(
-        leading: BackButton(
-          onPressed: tactileTapRoyalClean(() => Navigator.of(context).pop()),
+        leading: LayoutButtonRoyalClean(
+          id: 'invoice_bar_page_royal_clean.aux_control_01',
+          child: BackButton(
+            onPressed: tactileTapRoyalClean(() => Navigator.of(context).pop()),
+          ),
         ),
         title: const Text('Notas do período'),
         actions: [
-          IconButton(
-            tooltip: 'Atualizar lista',
-            onPressed: tactileTapRoyalClean(
-              _cache.busy ? null : () => _cache.refresh(force: true),
+          LayoutButtonRoyalClean(
+            id: 'invoice_bar_page_royal_clean.control_01',
+            child: IconButton(
+              tooltip: 'Atualizar lista',
+              onPressed: tactileTapRoyalClean(
+                _cache.busy ? null : () => _cache.refresh(force: true),
+              ),
+              icon: const Icon(Icons.refresh),
             ),
-            icon: const Icon(Icons.refresh),
           ),
           const HeaderActionsRoyalClean(),
         ],
@@ -179,11 +186,16 @@ class _InvoiceBarState extends State<InvoiceBarPageRoyalClean> {
                           ? 'Não foi possível atualizar. A última lista completa foi preservada.'
                           : 'A lista ainda não está disponível. Aguarde a sincronização e tente novamente.',
                     ),
-                    TextButton(
-                      onPressed: tactileTapRoyalClean(
-                        _cache.busy ? null : () => _cache.refresh(force: true),
+                    LayoutButtonRoyalClean(
+                      id: 'invoice_bar_page_royal_clean.control_02',
+                      child: TextButton(
+                        onPressed: tactileTapRoyalClean(
+                          _cache.busy
+                              ? null
+                              : () => _cache.refresh(force: true),
+                        ),
+                        child: const Text('Tentar novamente'),
                       ),
-                      child: const Text('Tentar novamente'),
                     ),
                   ],
                 ),
@@ -201,11 +213,14 @@ class _InvoiceBarState extends State<InvoiceBarPageRoyalClean> {
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         if (index == shown.length) {
-                          return OutlinedButton(
-                            onPressed: tactileTapRoyalClean(
-                              () => setState(() => _visible += 50),
+                          return LayoutButtonRoyalClean(
+                            id: 'invoice_bar_page_royal_clean.control_03',
+                            child: OutlinedButton(
+                              onPressed: tactileTapRoyalClean(
+                                () => setState(() => _visible += 50),
+                              ),
+                              child: const Text('Mostrar mais notas'),
                             ),
-                            child: const Text('Mostrar mais notas'),
                           );
                         }
                         final row = shown[index];
@@ -242,14 +257,17 @@ class _InvoiceBarState extends State<InvoiceBarPageRoyalClean> {
                                               ),
                                         ),
                                       ),
-                                      IconButton(
-                                        tooltip:
-                                            'Produtos da NF-e ${text('code')}',
-                                        onPressed: tactileTapRoyalClean(
-                                          () => _products(row),
-                                        ),
-                                        icon: const Icon(
-                                          Icons.inventory_2_outlined,
+                                      LayoutButtonRoyalClean(
+                                        id: 'invoice_bar_page_royal_clean.control_04',
+                                        child: IconButton(
+                                          tooltip:
+                                              'Produtos da NF-e ${text('code')}',
+                                          onPressed: tactileTapRoyalClean(
+                                            () => _products(row),
+                                          ),
+                                          icon: const Icon(
+                                            Icons.inventory_2_outlined,
+                                          ),
                                         ),
                                       ),
                                     ],

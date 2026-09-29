@@ -1,3 +1,4 @@
+import 'package:royal_clean/presentation_royal_clean/shared/layout_button_royal_clean.dart';
 import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -77,22 +78,25 @@ class _UserManagementState extends State<UserManagementPageRoyalClean> {
               children: [
                 Text('${data['name']}\n${data['email']}'),
                 const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  initialValue: role,
-                  isExpanded: true,
-                  items: roleLabelsRoyalClean.entries
-                      .where(
-                        (e) => e.key != 'master' || data['role'] == 'master',
-                      )
-                      .map(
-                        (e) => DropdownMenuItem(
-                          value: e.key,
-                          child: Text(e.value),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: tactileValueRoyalClean(
-                    (v) => update(() => role = v ?? role),
+                LayoutButtonRoyalClean(
+                  id: 'user_management_page_royal_clean.aux_control_01',
+                  child: DropdownButtonFormField<String>(
+                    initialValue: role,
+                    isExpanded: true,
+                    items: roleLabelsRoyalClean.entries
+                        .where(
+                          (e) => e.key != 'master' || data['role'] == 'master',
+                        )
+                        .map(
+                          (e) => DropdownMenuItem(
+                            value: e.key,
+                            child: Text(e.value),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: tactileValueRoyalClean(
+                      (v) => update(() => role = v ?? role),
+                    ),
                   ),
                 ),
                 SwitchListTile(
@@ -110,17 +114,23 @@ class _UserManagementState extends State<UserManagementPageRoyalClean> {
             ),
           ),
           actions: [
-            TextButton(
-              onPressed: tactileTapRoyalClean(
-                () => Navigator.pop(context, false),
+            LayoutButtonRoyalClean(
+              id: 'user_management_page_royal_clean.control_01',
+              child: TextButton(
+                onPressed: tactileTapRoyalClean(
+                  () => Navigator.pop(context, false),
+                ),
+                child: const Text('Cancelar'),
               ),
-              child: const Text('Cancelar'),
             ),
-            FilledButton(
-              onPressed: tactileTapRoyalClean(
-                () => Navigator.pop(context, true),
+            LayoutButtonRoyalClean(
+              id: 'user_management_page_royal_clean.control_02',
+              child: FilledButton(
+                onPressed: tactileTapRoyalClean(
+                  () => Navigator.pop(context, true),
+                ),
+                child: const Text('Salvar acesso'),
               ),
-              child: const Text('Salvar acesso'),
             ),
           ],
         ),
@@ -166,11 +176,14 @@ class _UserManagementState extends State<UserManagementPageRoyalClean> {
             labelText: 'Buscar pelo e-mail completo',
           ),
         ),
-        TextButton(
-          onPressed: tactileTapRoyalClean(
-            _busy ? null : () => _load(reset: true),
+        LayoutButtonRoyalClean(
+          id: 'user_management_page_royal_clean.control_03',
+          child: TextButton(
+            onPressed: tactileTapRoyalClean(
+              _busy ? null : () => _load(reset: true),
+            ),
+            child: const Text('Buscar / atualizar'),
           ),
-          child: const Text('Buscar / atualizar'),
         ),
         if (_error != null) Text(_error!),
         for (final doc in _users)
@@ -181,12 +194,15 @@ class _UserManagementState extends State<UserManagementPageRoyalClean> {
                 '${doc.data()['email']}\n${roleLabelsRoyalClean[doc.data()['role']] ?? 'Perfil desconhecido'} • ${doc.data()['active'] == true ? 'Ativo' : 'Inativo'}'
                 '${doc.data()['referral'] is Map ? '\nConvite: ${(doc.data()['referral'] as Map)['code']} • referência: ${(doc.data()['referral'] as Map)['profileReference']}' : ''}',
               ),
-              trailing: IconButton(
-                tooltip: 'Definir acesso',
-                onPressed: tactileTapRoyalClean(
-                  _busy ? null : () => _edit(doc),
+              trailing: LayoutButtonRoyalClean(
+                id: 'user_management_page_royal_clean.control_04',
+                child: IconButton(
+                  tooltip: 'Definir acesso',
+                  onPressed: tactileTapRoyalClean(
+                    _busy ? null : () => _edit(doc),
+                  ),
+                  icon: const Icon(Icons.manage_accounts),
                 ),
-                icon: const Icon(Icons.manage_accounts),
               ),
             ),
           ),
@@ -194,9 +210,12 @@ class _UserManagementState extends State<UserManagementPageRoyalClean> {
           const Text('Nenhum cadastro encontrado.'),
         if (_busy) const Center(child: CircularProgressIndicator()),
         if (_more && !_busy && _users.isNotEmpty)
-          TextButton(
-            onPressed: tactileTapRoyalClean(_load),
-            child: const Text('Carregar mais'),
+          LayoutButtonRoyalClean(
+            id: 'user_management_page_royal_clean.control_05',
+            child: TextButton(
+              onPressed: tactileTapRoyalClean(_load),
+              child: const Text('Carregar mais'),
+            ),
           ),
       ],
     ),

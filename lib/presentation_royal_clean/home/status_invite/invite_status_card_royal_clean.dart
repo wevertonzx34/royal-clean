@@ -1,3 +1,4 @@
+import 'package:royal_clean/presentation_royal_clean/shared/layout_button_royal_clean.dart';
 import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'package:flutter/material.dart';
 
@@ -114,19 +115,22 @@ class InviteStatusCardRoyalClean extends StatelessWidget {
           /// Botão Detalhes (lado esquerdo)
           Align(
             alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: tactileTapRoyalClean(onDetailsPressed),
-              icon: const Icon(Icons.open_in_new_rounded, size: 18),
-              label: const Text('Detalhes'),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.white70,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
+            child: LayoutButtonRoyalClean(
+              id: 'invite_status_card_royal_clean.control_01',
+              child: TextButton.icon(
+                onPressed: tactileTapRoyalClean(onDetailsPressed),
+                icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                label: const Text('Detalhes'),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white70,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),
@@ -188,10 +192,13 @@ class InviteStatusCardRoyalClean extends StatelessWidget {
           /// Botão Copiar
           SizedBox(
             height: 48,
-            child: OutlinedButton.icon(
-              onPressed: tactileTapRoyalClean(onCopyMessagePressed),
-              icon: const Icon(Icons.copy_rounded),
-              label: const Text('Copiar'),
+            child: LayoutButtonRoyalClean(
+              id: 'invite_status_card_royal_clean.control_02',
+              child: OutlinedButton.icon(
+                onPressed: tactileTapRoyalClean(onCopyMessagePressed),
+                icon: const Icon(Icons.copy_rounded),
+                label: const Text('Copiar'),
+              ),
             ),
           ),
 
@@ -203,15 +210,18 @@ class InviteStatusCardRoyalClean extends StatelessWidget {
             child: SizedBox(
               height: 42,
               width: 180,
-              child: ElevatedButton.icon(
-                onPressed: tactileTapRoyalClean(onSharePressed),
-                icon: const Icon(Icons.share_rounded, size: 18),
-                label: const Text('Compartilhar'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  textStyle: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
+              child: LayoutButtonRoyalClean(
+                id: 'invite_status_card_royal_clean.control_03',
+                child: ElevatedButton.icon(
+                  onPressed: tactileTapRoyalClean(onSharePressed),
+                  icon: const Icon(Icons.share_rounded, size: 18),
+                  label: const Text('Compartilhar'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    textStyle: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),

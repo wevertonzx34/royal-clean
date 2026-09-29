@@ -1,3 +1,4 @@
+import 'package:royal_clean/presentation_royal_clean/shared/layout_button_royal_clean.dart';
 import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -180,12 +181,17 @@ class _RegistrationState extends State<RegistrationPageRoyalClean> {
       decoration: InputDecoration(
         labelText: label,
         suffixIcon: password
-            ? IconButton(
-                tooltip: _obscure ? 'Mostrar senha' : 'Ocultar senha',
-                onPressed: tactileTapRoyalClean(
-                  () => setState(() => _obscure = !_obscure),
+            ? LayoutButtonRoyalClean(
+                id: 'registration_page_royal_clean.control_01',
+                child: IconButton(
+                  tooltip: _obscure ? 'Mostrar senha' : 'Ocultar senha',
+                  onPressed: tactileTapRoyalClean(
+                    () => setState(() => _obscure = !_obscure),
+                  ),
+                  icon: Icon(
+                    _obscure ? Icons.visibility_off : Icons.visibility,
+                  ),
                 ),
-                icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
               )
             : null,
       ),
@@ -260,11 +266,14 @@ class _RegistrationState extends State<RegistrationPageRoyalClean> {
                 const Text(
                   'Verifique seu e-mail antes de concluir o cadastro.',
                 ),
-                TextButton(
-                  onPressed: tactileTapRoyalClean(
-                    _busy ? null : _sendVerification,
+                LayoutButtonRoyalClean(
+                  id: 'registration_page_royal_clean.control_02',
+                  child: TextButton(
+                    onPressed: tactileTapRoyalClean(
+                      _busy ? null : _sendVerification,
+                    ),
+                    child: const Text('Reenviar verificação de e-mail'),
                   ),
-                  child: const Text('Reenviar verificação de e-mail'),
                 ),
               ],
             ],
@@ -310,18 +319,21 @@ class _RegistrationState extends State<RegistrationPageRoyalClean> {
                         : 'Informe o telefone do convite com DDD.';
                   },
                 ),
-                TextButton(
-                  onPressed: tactileTapRoyalClean(
-                    _busy
-                        ? null
-                        : () => setState(() {
-                            _invite.clear();
-                            _phone.clear();
-                            _error = null;
-                          }),
-                  ),
-                  child: const Text(
-                    'Remover código e continuar com conta comum',
+                LayoutButtonRoyalClean(
+                  id: 'registration_page_royal_clean.control_03',
+                  child: TextButton(
+                    onPressed: tactileTapRoyalClean(
+                      _busy
+                          ? null
+                          : () => setState(() {
+                              _invite.clear();
+                              _phone.clear();
+                              _error = null;
+                            }),
+                    ),
+                    child: const Text(
+                      'Remover código e continuar com conta comum',
+                    ),
                   ),
                 ),
               ],
@@ -330,29 +342,35 @@ class _RegistrationState extends State<RegistrationPageRoyalClean> {
             Wrap(
               spacing: 8,
               children: [
-                TextButton(
-                  onPressed: tactileTapRoyalClean(
-                    () => Navigator.push(
-                      context,
-                      MaterialPageRoute<void>(
-                        builder: (_) =>
-                            const LegalPageRoyalClean(privacy: false),
+                LayoutButtonRoyalClean(
+                  id: 'registration_page_royal_clean.control_04',
+                  child: TextButton(
+                    onPressed: tactileTapRoyalClean(
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (_) =>
+                              const LegalPageRoyalClean(privacy: false),
+                        ),
                       ),
                     ),
+                    child: const Text('Ler Termos de Uso'),
                   ),
-                  child: const Text('Ler Termos de Uso'),
                 ),
-                TextButton(
-                  onPressed: tactileTapRoyalClean(
-                    () => Navigator.push(
-                      context,
-                      MaterialPageRoute<void>(
-                        builder: (_) =>
-                            const LegalPageRoyalClean(privacy: true),
+                LayoutButtonRoyalClean(
+                  id: 'registration_page_royal_clean.control_05',
+                  child: TextButton(
+                    onPressed: tactileTapRoyalClean(
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (_) =>
+                              const LegalPageRoyalClean(privacy: true),
+                        ),
                       ),
                     ),
+                    child: const Text('Ler Aviso de Privacidade'),
                   ),
-                  child: const Text('Ler Aviso de Privacidade'),
                 ),
               ],
             ),
@@ -392,38 +410,44 @@ class _RegistrationState extends State<RegistrationPageRoyalClean> {
                 ),
               ),
             const SizedBox(height: 16),
-            FilledButton(
-              onPressed: tactileTapRoyalClean(_busy ? null : _submit),
-              child: Text(
-                _busy
-                    ? 'Aguarde…'
-                    : _user != null && !_user!.emailVerified
-                    ? 'Já verifiquei, concluir cadastro'
-                    : 'Concluir cadastro',
+            LayoutButtonRoyalClean(
+              id: 'registration_page_royal_clean.control_06',
+              child: FilledButton(
+                onPressed: tactileTapRoyalClean(_busy ? null : _submit),
+                child: Text(
+                  _busy
+                      ? 'Aguarde…'
+                      : _user != null && !_user!.emailVerified
+                      ? 'Já verifiquei, concluir cadastro'
+                      : 'Concluir cadastro',
+                ),
               ),
             ),
-            TextButton(
-              onPressed: tactileTapRoyalClean(
-                _busy
-                    ? null
-                    : () async {
-                        if (_user != null) {
-                          await logoutToPreviewRoyalClean(context);
-                          return;
-                        }
-                        if (context.mounted) {
-                          Navigator.pushNamedAndRemoveUntil(
-                            context,
-                            '/login',
-                            (route) => route.isFirst,
-                          );
-                        }
-                      },
-              ),
-              child: Text(
-                _user == null
-                    ? 'Já tenho conta / voltar ao login'
-                    : 'Sair e voltar à loja',
+            LayoutButtonRoyalClean(
+              id: 'registration_page_royal_clean.control_07',
+              child: TextButton(
+                onPressed: tactileTapRoyalClean(
+                  _busy
+                      ? null
+                      : () async {
+                          if (_user != null) {
+                            await logoutToPreviewRoyalClean(context);
+                            return;
+                          }
+                          if (context.mounted) {
+                            Navigator.pushNamedAndRemoveUntil(
+                              context,
+                              '/login',
+                              (route) => route.isFirst,
+                            );
+                          }
+                        },
+                ),
+                child: Text(
+                  _user == null
+                      ? 'Já tenho conta / voltar ao login'
+                      : 'Sair e voltar à loja',
+                ),
               ),
             ),
           ],

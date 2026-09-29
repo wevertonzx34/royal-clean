@@ -1,9 +1,11 @@
+import 'package:royal_clean/presentation_royal_clean/shared/layout_button_royal_clean.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core_royal_clean/services/touch_feedback_royal_clean.dart';
 import '../shared/header_actions_royal_clean.dart';
 import 'image_action_royal_clean.dart';
+import 'title_layout_guide_royal_clean.dart';
 
 class MyPropertyPageRoyalClean extends StatelessWidget {
   const MyPropertyPageRoyalClean({super.key});
@@ -39,7 +41,7 @@ class _PropertyScene extends StatelessWidget {
         constraints.maxWidth / 432,
         constraints.maxHeight / 768,
       );
-      return SizedBox.expand(
+      final artwork = SizedBox.expand(
         child: FittedBox(
           key: const ValueKey('property-cover'),
           fit: BoxFit.cover,
@@ -53,6 +55,15 @@ class _PropertyScene extends StatelessWidget {
             ),
           ),
         ),
+      );
+      if (!interactive) return artwork;
+      final profileWidth = math.min(
+        432 * .615 * 1.4,
+        constraints.maxWidth / coverScale,
+      );
+      return TitleLayoutGuideRoyalClean(
+        defaultY: (768 * .07 + profileWidth * 825 / 2263 + 8) / 768,
+        child: artwork,
       );
     },
   );
@@ -102,38 +113,24 @@ class _PropertyArtwork extends StatelessWidget {
                     button: true,
                     label: 'Royal Perfil',
                     hint: 'Atalho em preparação',
-                    child: ImageActionRoyalClean(
-                      key: const ValueKey('royal-perfil-shortcut'),
-                      pulses: 2,
-                      scaleDepth: .008,
-                      duration: const Duration(milliseconds: 500),
-                      onActivate: () {},
-                      builder: (context, flash) => Image.asset(
-                        'assets/preview/royal-store/royal-perfil.webp',
-                        width: width,
-                        fit: BoxFit.fitWidth,
-                        cacheWidth: 1080,
-                        color: Color.lerp(Colors.white, pink, flash * .25),
-                        colorBlendMode: BlendMode.modulate,
-                        excludeFromSemantics: true,
+                    child: LayoutButtonRoyalClean(
+                      id: 'my_property_page_royal_clean.control_01',
+                      child: ImageActionRoyalClean(
+                        key: const ValueKey('royal-perfil-shortcut'),
+                        pulses: 2,
+                        scaleDepth: .008,
+                        duration: const Duration(milliseconds: 500),
+                        onActivate: () {},
+                        builder: (context, flash) => Image.asset(
+                          'assets/preview/royal-store/royal-perfil.webp',
+                          width: width,
+                          fit: BoxFit.fitWidth,
+                          cacheWidth: 1080,
+                          color: Color.lerp(Colors.white, pink, flash * .25),
+                          colorBlendMode: BlendMode.modulate,
+                          excludeFromSemantics: true,
+                        ),
                       ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: imageHeight * .07 + profileWidth * 825 / 2263 + 8,
-                  left: width * .2,
-                  right: width * .2,
-                  child: const Text(
-                    'My propriedade',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: pink,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      shadows: [
-                        Shadow(color: Color(0xAAFF7EC6), blurRadius: 8),
-                      ],
                     ),
                   ),
                 ),
@@ -144,14 +141,17 @@ class _PropertyArtwork extends StatelessWidget {
                     child: SizedBox(
                       width: 48,
                       height: 48,
-                      child: IconButton(
-                        key: const ValueKey('property-back'),
-                        tooltip: 'Voltar',
-                        iconSize: 19,
-                        onPressed: tactileTapRoyalClean(
-                          () => Navigator.of(context).maybePop(),
+                      child: LayoutButtonRoyalClean(
+                        id: 'my_property_page_royal_clean.control_02',
+                        child: IconButton(
+                          key: const ValueKey('property-back'),
+                          tooltip: 'Voltar',
+                          iconSize: 19,
+                          onPressed: tactileTapRoyalClean(
+                            () => Navigator.of(context).maybePop(),
+                          ),
+                          icon: const Icon(Icons.arrow_back_rounded),
                         ),
-                        icon: const Icon(Icons.arrow_back_rounded),
                       ),
                     ),
                   ),

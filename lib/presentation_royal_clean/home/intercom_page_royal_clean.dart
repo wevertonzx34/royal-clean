@@ -1,3 +1,4 @@
+import 'package:royal_clean/presentation_royal_clean/shared/layout_button_royal_clean.dart';
 import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -22,14 +23,17 @@ class _IntercomPageState extends State<IntercomPageRoyalClean> {
           'Comunique novidades e avisos da Royal Clean. As publicações aparecem no mundinho para todos, inclusive visitantes.',
         ),
         const SizedBox(height: 16),
-        FilledButton.icon(
-          icon: const Icon(Icons.add_comment_outlined),
-          label: const Text('Nova publicação'),
-          onPressed: tactileTapRoyalClean(
-            () => showDialog<void>(
-              context: context,
-              barrierDismissible: false,
-              builder: (_) => const _PublishDialog(),
+        LayoutButtonRoyalClean(
+          id: 'intercom_page_royal_clean.control_01',
+          child: FilledButton.icon(
+            icon: const Icon(Icons.add_comment_outlined),
+            label: const Text('Nova publicação'),
+            onPressed: tactileTapRoyalClean(
+              () => showDialog<void>(
+                context: context,
+                barrierDismissible: false,
+                builder: (_) => const _PublishDialog(),
+              ),
             ),
           ),
         ),
@@ -45,11 +49,14 @@ class _IntercomPageState extends State<IntercomPageRoyalClean> {
               ].asMap().entries)
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                    label: Text(entry.value),
-                    selected: _tab == entry.key,
-                    onSelected: tactileValueRoyalClean(
-                      (_) => setState(() => _tab = entry.key),
+                  child: LayoutButtonRoyalClean(
+                    id: 'intercom_page_royal_clean.control_02',
+                    child: ChoiceChip(
+                      label: Text(entry.value),
+                      selected: _tab == entry.key,
+                      onSelected: tactileValueRoyalClean(
+                        (_) => setState(() => _tab = entry.key),
+                      ),
                     ),
                   ),
                 ),
@@ -104,9 +111,12 @@ class _IntercomPageState extends State<IntercomPageRoyalClean> {
                 children: [
                   if (feed.error != null) ...[
                     Text(feed.error!),
-                    TextButton(
-                      onPressed: tactileTapRoyalClean(feed.reload),
-                      child: const Text('Tentar novamente'),
+                    LayoutButtonRoyalClean(
+                      id: 'intercom_page_royal_clean.control_03',
+                      child: TextButton(
+                        onPressed: tactileTapRoyalClean(feed.reload),
+                        child: const Text('Tentar novamente'),
+                      ),
                     ),
                   ],
                   if (messages.isEmpty && feed.error == null)
@@ -227,17 +237,20 @@ class _PublishDialogState extends State<_PublishDialog> {
                 'Conteúdo público. Não inclua dados pessoais ou informações internas.',
               ),
               const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                initialValue: _kind,
-                decoration: const InputDecoration(labelText: 'Tipo'),
-                items: ['Notificação', 'Alerta', 'Mensagem']
-                    .map(
-                      (value) =>
-                          DropdownMenuItem(value: value, child: Text(value)),
-                    )
-                    .toList(),
-                onChanged: tactileValueRoyalClean(
-                  _busy ? null : (value) => setState(() => _kind = value!),
+              LayoutButtonRoyalClean(
+                id: 'intercom_page_royal_clean.aux_control_01',
+                child: DropdownButtonFormField<String>(
+                  initialValue: _kind,
+                  decoration: const InputDecoration(labelText: 'Tipo'),
+                  items: ['Notificação', 'Alerta', 'Mensagem']
+                      .map(
+                        (value) =>
+                            DropdownMenuItem(value: value, child: Text(value)),
+                      )
+                      .toList(),
+                  onChanged: tactileValueRoyalClean(
+                    _busy ? null : (value) => setState(() => _kind = value!),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -263,19 +276,22 @@ class _PublishDialogState extends State<_PublishDialog> {
                     ? 'Escreva a mensagem.'
                     : null,
               ),
-              DropdownButtonFormField<int>(
-                initialValue: _days,
-                decoration: const InputDecoration(labelText: 'Validade'),
-                items: [1, 7, 30]
-                    .map(
-                      (value) => DropdownMenuItem(
-                        value: value,
-                        child: Text('$value ${value == 1 ? 'dia' : 'dias'}'),
-                      ),
-                    )
-                    .toList(),
-                onChanged: tactileValueRoyalClean(
-                  _busy ? null : (value) => setState(() => _days = value!),
+              LayoutButtonRoyalClean(
+                id: 'intercom_page_royal_clean.aux_control_02',
+                child: DropdownButtonFormField<int>(
+                  initialValue: _days,
+                  decoration: const InputDecoration(labelText: 'Validade'),
+                  items: [1, 7, 30]
+                      .map(
+                        (value) => DropdownMenuItem(
+                          value: value,
+                          child: Text('$value ${value == 1 ? 'dia' : 'dias'}'),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: tactileValueRoyalClean(
+                    _busy ? null : (value) => setState(() => _days = value!),
+                  ),
                 ),
               ),
               if (_error != null)
@@ -293,15 +309,21 @@ class _PublishDialogState extends State<_PublishDialog> {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: tactileTapRoyalClean(
-            _busy ? null : () => Navigator.pop(context),
+        LayoutButtonRoyalClean(
+          id: 'intercom_page_royal_clean.control_04',
+          child: TextButton(
+            onPressed: tactileTapRoyalClean(
+              _busy ? null : () => Navigator.pop(context),
+            ),
+            child: const Text('Cancelar'),
           ),
-          child: const Text('Cancelar'),
         ),
-        FilledButton(
-          onPressed: tactileTapRoyalClean(_busy ? null : _publish),
-          child: Text(_busy ? 'Publicando…' : 'Publicar'),
+        LayoutButtonRoyalClean(
+          id: 'intercom_page_royal_clean.control_05',
+          child: FilledButton(
+            onPressed: tactileTapRoyalClean(_busy ? null : _publish),
+            child: Text(_busy ? 'Publicando…' : 'Publicar'),
+          ),
         ),
       ],
     ),

@@ -1,3 +1,4 @@
+import 'package:royal_clean/presentation_royal_clean/shared/layout_button_royal_clean.dart';
 import 'dart:async';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
@@ -155,8 +156,11 @@ class _NfePageState extends State<NfePageRoyalClean> {
     backgroundColor: const Color(0xFF020C20),
     appBar: AppBar(
       title: const Text('Consulta de notas', style: TextStyle(fontSize: 17)),
-      leading: BackButton(
-        onPressed: tactileTapRoyalClean(() => Navigator.of(context).pop()),
+      leading: LayoutButtonRoyalClean(
+        id: 'nfe_page_royal_clean.aux_control_01',
+        child: BackButton(
+          onPressed: tactileTapRoyalClean(() => Navigator.of(context).pop()),
+        ),
       ),
       actions: [if (widget.showHeaderActions) const HeaderActionsRoyalClean()],
     ),
@@ -181,24 +185,30 @@ class _NfePageState extends State<NfePageRoyalClean> {
                   Row(
                     children: [
                       Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: tactileTapRoyalClean(
-                            _cache.rows('all').isEmpty ? null : _pick,
-                          ),
-                          icon: const Icon(Icons.receipt_long_outlined),
-                          label: Text(
-                            _invoice == null
-                                ? 'Selecionar NF-e'
-                                : 'Trocar NF-e • ${nfeText(_invoice!['code'])}',
+                        child: LayoutButtonRoyalClean(
+                          id: 'nfe_page_royal_clean.control_01',
+                          child: OutlinedButton.icon(
+                            onPressed: tactileTapRoyalClean(
+                              _cache.rows('all').isEmpty ? null : _pick,
+                            ),
+                            icon: const Icon(Icons.receipt_long_outlined),
+                            label: Text(
+                              _invoice == null
+                                  ? 'Selecionar NF-e'
+                                  : 'Trocar NF-e • ${nfeText(_invoice!['code'])}',
+                            ),
                           ),
                         ),
                       ),
-                      IconButton(
-                        tooltip: 'Atualizar notas',
-                        onPressed: tactileTapRoyalClean(
-                          _cache.busy || _busy ? null : _refresh,
+                      LayoutButtonRoyalClean(
+                        id: 'nfe_page_royal_clean.control_02',
+                        child: IconButton(
+                          tooltip: 'Atualizar notas',
+                          onPressed: tactileTapRoyalClean(
+                            _cache.busy || _busy ? null : _refresh,
+                          ),
+                          icon: const Icon(Icons.refresh),
                         ),
-                        icon: const Icon(Icons.refresh),
                       ),
                     ],
                   ),
@@ -231,11 +241,14 @@ class _NfePageState extends State<NfePageRoyalClean> {
                       child: Column(
                         children: [
                           Text(_error!),
-                          TextButton(
-                            onPressed: tactileTapRoyalClean(
-                              () => _select(_invoice!),
+                          LayoutButtonRoyalClean(
+                            id: 'nfe_page_royal_clean.control_03',
+                            child: TextButton(
+                              onPressed: tactileTapRoyalClean(
+                                () => _select(_invoice!),
+                              ),
+                              child: const Text('Tentar novamente'),
                             ),
-                            child: const Text('Tentar novamente'),
                           ),
                         ],
                       ),
@@ -294,10 +307,15 @@ class _InvoicePickerState extends State<_InvoicePicker> {
                     style: TextStyle(fontSize: 20),
                   ),
                 ),
-                IconButton(
-                  tooltip: 'Fechar',
-                  onPressed: tactileTapRoyalClean(() => Navigator.pop(context)),
-                  icon: const Icon(Icons.close),
+                LayoutButtonRoyalClean(
+                  id: 'nfe_page_royal_clean.control_04',
+                  child: IconButton(
+                    tooltip: 'Fechar',
+                    onPressed: tactileTapRoyalClean(
+                      () => Navigator.pop(context),
+                    ),
+                    icon: const Icon(Icons.close),
+                  ),
                 ),
               ],
             ),

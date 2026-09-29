@@ -1,3 +1,4 @@
+import 'package:royal_clean/presentation_royal_clean/shared/layout_button_royal_clean.dart';
 import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import '../home/profile_images_royal_clean.dart';
 import '../shared/header_actions_royal_clean.dart';
@@ -120,18 +121,26 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
     super.dispose();
   }
 
-  Widget _menuButton(String title, VoidCallback? onPressed) => TextButton(
-    onPressed: tactileTapRoyalClean(onPressed),
-    style: TextButton.styleFrom(
-      minimumSize: const Size(0, 48),
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-    ),
-    child: FittedBox(
-      fit: BoxFit.scaleDown,
-      child: Text(title, maxLines: 1, softWrap: false),
-    ),
-  );
+  Widget _menuButton(String title, VoidCallback? onPressed) =>
+      LayoutButtonRoyalClean(
+        id: 'preview_page_royal_clean.control_01',
+        instanceKey: title,
+        child: TextButton(
+          onPressed: tactileTapRoyalClean(onPressed),
+          style: TextButton.styleFrom(
+            minimumSize: const Size(0, 48),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            textStyle: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(title, maxLines: 1, softWrap: false),
+          ),
+        ),
+      );
 
   void _openStory(
     BuildContext context, {
@@ -159,10 +168,15 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
               children: [
                 const HeaderActionsRoyalClean(color: _navy, showMyData: false),
                 const Spacer(),
-                IconButton(
-                  tooltip: 'Fechar',
-                  onPressed: tactileTapRoyalClean(() => Navigator.pop(context)),
-                  icon: const Icon(Icons.close_rounded, color: _navy),
+                LayoutButtonRoyalClean(
+                  id: 'preview_page_royal_clean.control_02',
+                  child: IconButton(
+                    tooltip: 'Fechar',
+                    onPressed: tactileTapRoyalClean(
+                      () => Navigator.pop(context),
+                    ),
+                    icon: const Icon(Icons.close_rounded, color: _navy),
+                  ),
                 ),
               ],
             ),
@@ -288,24 +302,27 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
                 padding: const EdgeInsets.only(right: 16),
                 child: SizedBox(
                   width: _accountColumnWidth,
-                  child: FilledButton.icon(
-                    onPressed: tactileTapRoyalClean(
-                      _openingAccount ? null : () => _openAccount(signedIn),
-                    ),
-                    icon: _openingAccount
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.person_outline_rounded, size: 18),
-                    label: Text(signedIn ? 'Perfil' : 'Login'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: _navy,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  child: LayoutButtonRoyalClean(
+                    id: 'preview_page_royal_clean.control_03',
+                    child: FilledButton.icon(
+                      onPressed: tactileTapRoyalClean(
+                        _openingAccount ? null : () => _openAccount(signedIn),
+                      ),
+                      icon: _openingAccount
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.person_outline_rounded, size: 18),
+                      label: Text(signedIn ? 'Perfil' : 'Login'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: _navy,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
@@ -547,20 +564,25 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
                                       ),
                                     ),
                                     const SizedBox(height: 20),
-                                    FilledButton.icon(
-                                      onPressed: tactileTapRoyalClean(
-                                        _openingAccount
-                                            ? null
-                                            : () => _openAccount(signedIn),
-                                      ),
-                                      icon: const Icon(
-                                        Icons.arrow_forward_rounded,
-                                        size: 18,
-                                      ),
-                                      label: const Text('Acessar minha conta'),
-                                      style: FilledButton.styleFrom(
-                                        backgroundColor: Colors.white,
-                                        foregroundColor: _navy,
+                                    LayoutButtonRoyalClean(
+                                      id: 'preview_page_royal_clean.control_04',
+                                      child: FilledButton.icon(
+                                        onPressed: tactileTapRoyalClean(
+                                          _openingAccount
+                                              ? null
+                                              : () => _openAccount(signedIn),
+                                        ),
+                                        icon: const Icon(
+                                          Icons.arrow_forward_rounded,
+                                          size: 18,
+                                        ),
+                                        label: const Text(
+                                          'Acessar minha conta',
+                                        ),
+                                        style: FilledButton.styleFrom(
+                                          backgroundColor: Colors.white,
+                                          foregroundColor: _navy,
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -674,16 +696,21 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
                     style: TextStyle(fontSize: 14, color: _muted, height: 1.5),
                   ),
                   const SizedBox(height: 20),
-                  FilledButton.icon(
-                    onPressed: tactileTapRoyalClean(() => _goTo(_productsKey)),
-                    label: const Text('Explorar produtos'),
-                    icon: const Icon(Icons.arrow_forward_rounded, size: 17),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: _navy,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(0, 46),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  LayoutButtonRoyalClean(
+                    id: 'preview_page_royal_clean.control_05',
+                    child: FilledButton.icon(
+                      onPressed: tactileTapRoyalClean(
+                        () => _goTo(_productsKey),
+                      ),
+                      label: const Text('Explorar produtos'),
+                      icon: const Icon(Icons.arrow_forward_rounded, size: 17),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: _navy,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(0, 46),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
@@ -797,55 +824,62 @@ class _ProductCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         side: const BorderSide(color: Color(0xFFE3EBEF)),
       ),
-      child: InkWell(
-        onTap: tactileTapRoyalClean(onTap),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Image.asset(
-              product.image,
-              cacheWidth: 630,
-              height: 194,
-              width: 210,
-              fit: BoxFit.cover,
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.category.toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 9,
-                      letterSpacing: 1,
-                      color: _teal,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 7),
-                  Text(
-                    product.name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 9),
-                  const Row(
-                    children: [
-                      Text(
-                        'Conhecer',
-                        style: TextStyle(fontSize: 12, color: _muted),
-                      ),
-                      Spacer(),
-                      Icon(Icons.arrow_forward_rounded, size: 17, color: _teal),
-                    ],
-                  ),
-                ],
+      child: LayoutButtonRoyalClean(
+        id: 'preview_page_royal_clean.control_06',
+        child: InkWell(
+          onTap: tactileTapRoyalClean(onTap),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Image.asset(
+                product.image,
+                cacheWidth: 630,
+                height: 194,
+                width: 210,
+                fit: BoxFit.cover,
               ),
-            ),
-          ],
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.category.toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 9,
+                        letterSpacing: 1,
+                        color: _teal,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    Text(
+                      product.name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 9),
+                    const Row(
+                      children: [
+                        Text(
+                          'Conhecer',
+                          style: TextStyle(fontSize: 12, color: _muted),
+                        ),
+                        Spacer(),
+                        Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 17,
+                          color: _teal,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     ),
@@ -892,69 +926,72 @@ class _NewsCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(20),
       side: const BorderSide(color: Color(0xFFE3EBEF)),
     ),
-    child: InkWell(
-      onTap: tactileTapRoyalClean(onTap),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Image.asset(
-            news.image,
-            cacheWidth: 1080,
-            height: 164,
-            fit: BoxFit.cover,
-            alignment: const Alignment(0, -.2),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _Eyebrow(news.category),
-                const SizedBox(height: 10),
-                Text(
-                  news.title,
-                  style: const TextStyle(
-                    fontSize: 23,
-                    fontWeight: FontWeight.w800,
-                    height: 1.2,
-                    letterSpacing: -.4,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  news.summary,
-                  style: const TextStyle(
-                    color: _muted,
-                    fontSize: 13,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                const Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Editorial demonstrativo',
-                        style: TextStyle(fontSize: 10, color: _muted),
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Text(
-                      'Ler mais',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: _teal,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    SizedBox(width: 6),
-                    Icon(Icons.arrow_forward_rounded, color: _teal, size: 16),
-                  ],
-                ),
-              ],
+    child: LayoutButtonRoyalClean(
+      id: 'preview_page_royal_clean.control_07',
+      child: InkWell(
+        onTap: tactileTapRoyalClean(onTap),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Image.asset(
+              news.image,
+              cacheWidth: 1080,
+              height: 164,
+              fit: BoxFit.cover,
+              alignment: const Alignment(0, -.2),
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _Eyebrow(news.category),
+                  const SizedBox(height: 10),
+                  Text(
+                    news.title,
+                    style: const TextStyle(
+                      fontSize: 23,
+                      fontWeight: FontWeight.w800,
+                      height: 1.2,
+                      letterSpacing: -.4,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    news.summary,
+                    style: const TextStyle(
+                      color: _muted,
+                      fontSize: 13,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  const Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Editorial demonstrativo',
+                          style: TextStyle(fontSize: 10, color: _muted),
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Text(
+                        'Ler mais',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: _teal,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      SizedBox(width: 6),
+                      Icon(Icons.arrow_forward_rounded, color: _teal, size: 16),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     ),
   );

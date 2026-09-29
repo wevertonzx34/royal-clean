@@ -1,3 +1,4 @@
+import 'package:royal_clean/presentation_royal_clean/shared/layout_button_royal_clean.dart';
 import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import '../../core_royal_clean/services/invoice_list_cache_royal_clean.dart';
 import 'invoice_bar_page_royal_clean.dart';
@@ -358,55 +359,64 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
                   ),
                 ),
               ),
-              PopupMenuButton<DashboardPeriodRoyalClean>(
-                key: const ValueKey('dashboard-period'),
-                tooltip: 'Período do gráfico',
-                icon: const Icon(Icons.schedule_outlined, color: _accent),
-                onSelected: tactileValueRoyalClean((period) {
-                  if (period == _period) return;
-                  _period = period;
-                  _reload();
-                }),
-                itemBuilder: (_) => [
-                  if (_position) ...[
-                    const PopupMenuItem<DashboardPeriodRoyalClean>(
-                      enabled: false,
-                      child: Text(
-                        'Sem histórico por data nesta categoria. O gráfico mantém a posição atual.',
+              LayoutButtonRoyalClean(
+                id: 'dashboard_chart_royal_clean.control_01',
+                child: PopupMenuButton<DashboardPeriodRoyalClean>(
+                  key: const ValueKey('dashboard-period'),
+                  tooltip: 'Período do gráfico',
+                  icon: const Icon(Icons.schedule_outlined, color: _accent),
+                  onSelected: tactileValueRoyalClean((period) {
+                    if (period == _period) return;
+                    _period = period;
+                    _reload();
+                  }),
+                  itemBuilder: (_) => [
+                    if (_position) ...[
+                      const PopupMenuItem<DashboardPeriodRoyalClean>(
+                        enabled: false,
+                        child: Text(
+                          'Sem histórico por data nesta categoria. O gráfico mantém a posição atual.',
+                        ),
                       ),
-                    ),
-                    const PopupMenuDivider(),
+                      const PopupMenuDivider(),
+                    ],
+                    for (final period in DashboardPeriodRoyalClean.values)
+                      CheckedPopupMenuItem<DashboardPeriodRoyalClean>(
+                        value: period,
+                        checked: period == _period,
+                        child: Text(period.label),
+                      ),
                   ],
-                  for (final period in DashboardPeriodRoyalClean.values)
-                    CheckedPopupMenuItem<DashboardPeriodRoyalClean>(
-                      value: period,
-                      checked: period == _period,
-                      child: Text(period.label),
-                    ),
-                ],
-              ),
-              PopupMenuButton<DashboardChartStyleRoyalClean>(
-                tooltip: 'Estilo do gráfico',
-                initialValue: _style,
-                icon: const Icon(Icons.bar_chart, color: _accent),
-                onSelected: tactileValueRoyalClean(
-                  (style) => setState(() => _style = style),
                 ),
-                itemBuilder: (_) => [
-                  for (final item in const {
-                    DashboardChartStyleRoyalClean.bars: 'Barras',
-                    DashboardChartStyleRoyalClean.line: 'Linha',
-                    DashboardChartStyleRoyalClean.area: 'Área',
-                  }.entries)
-                    PopupMenuItem(value: item.key, child: Text(item.value)),
-                ],
               ),
-              IconButton(
-                tooltip: 'Atualizar resumo',
-                onPressed: tactileTapRoyalClean(
-                  _refreshingAll ? null : _refreshAll,
+              LayoutButtonRoyalClean(
+                id: 'dashboard_chart_royal_clean.control_02',
+                child: PopupMenuButton<DashboardChartStyleRoyalClean>(
+                  tooltip: 'Estilo do gráfico',
+                  initialValue: _style,
+                  icon: const Icon(Icons.bar_chart, color: _accent),
+                  onSelected: tactileValueRoyalClean(
+                    (style) => setState(() => _style = style),
+                  ),
+                  itemBuilder: (_) => [
+                    for (final item in const {
+                      DashboardChartStyleRoyalClean.bars: 'Barras',
+                      DashboardChartStyleRoyalClean.line: 'Linha',
+                      DashboardChartStyleRoyalClean.area: 'Área',
+                    }.entries)
+                      PopupMenuItem(value: item.key, child: Text(item.value)),
+                  ],
                 ),
-                icon: const Icon(Icons.refresh, color: _accent),
+              ),
+              LayoutButtonRoyalClean(
+                id: 'dashboard_chart_royal_clean.control_03',
+                child: IconButton(
+                  tooltip: 'Atualizar resumo',
+                  onPressed: tactileTapRoyalClean(
+                    _refreshingAll ? null : _refreshAll,
+                  ),
+                  icon: const Icon(Icons.refresh, color: _accent),
+                ),
               ),
             ],
           ),
@@ -416,21 +426,24 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 2),
-                    child: TextButton(
-                      onPressed: tactileTapRoyalClean(() {
-                        _group = group;
-                        _reload();
-                      }),
-                      style: TextButton.styleFrom(
-                        foregroundColor: _text,
-                        backgroundColor: group == _group
-                            ? const Color(0xFF17628B)
-                            : const Color(0xFF19394D),
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                      ),
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(group),
+                    child: LayoutButtonRoyalClean(
+                      id: 'dashboard_chart_royal_clean.control_04',
+                      child: TextButton(
+                        onPressed: tactileTapRoyalClean(() {
+                          _group = group;
+                          _reload();
+                        }),
+                        style: TextButton.styleFrom(
+                          foregroundColor: _text,
+                          backgroundColor: group == _group
+                              ? const Color(0xFF17628B)
+                              : const Color(0xFF19394D),
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(group),
+                        ),
                       ),
                     ),
                   ),
@@ -452,14 +465,18 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
                   }.entries)
                     Padding(
                       padding: const EdgeInsets.only(right: 6),
-                      child: ChoiceChip(
-                        label: Text(category.value),
-                        selected: _contactRole == category.key,
-                        onSelected: tactileValueRoyalClean((_) {
-                          if (_contactRole == category.key) return;
-                          _contactRole = category.key;
-                          _reload();
-                        }),
+                      child: LayoutButtonRoyalClean(
+                        id: 'dashboard_chart_royal_clean.control_05',
+                        instanceKey: category.key,
+                        child: ChoiceChip(
+                          label: Text(category.value),
+                          selected: _contactRole == category.key,
+                          onSelected: tactileValueRoyalClean((_) {
+                            if (_contactRole == category.key) return;
+                            _contactRole = category.key;
+                            _reload();
+                          }),
+                        ),
                       ),
                     ),
                 ],
@@ -492,11 +509,15 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
                     for (var i = 0; i < metrics.length; i++)
                       Padding(
                         padding: const EdgeInsets.only(right: 6),
-                        child: ChoiceChip(
-                          label: Text(metrics[i].label),
-                          selected: i == _metric,
-                          onSelected: tactileValueRoyalClean(
-                            (_) => setState(() => _metric = i),
+                        child: LayoutButtonRoyalClean(
+                          id: 'dashboard_chart_royal_clean.control_06',
+                          instanceKey: metrics[i].label,
+                          child: ChoiceChip(
+                            label: Text(metrics[i].label),
+                            selected: i == _metric,
+                            onSelected: tactileValueRoyalClean(
+                              (_) => setState(() => _metric = i),
+                            ),
                           ),
                         ),
                       ),
@@ -571,25 +592,31 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
                   ],
                 ),
               ),
-              IconButton(
-                tooltip: 'Sobre os dados do gráfico',
-                icon: const Icon(Icons.info_outline, color: _muted, size: 20),
-                onPressed: tactileTapRoyalClean(
-                  () => showDialog<void>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Dados do Bling'),
-                      content: Text(
-                        'Produtos, notas e contatos são sincronizados automaticamente no servidor a cada hora. Use Atualizar para consultar antes. O último resultado completo é preservado durante a sincronização. Produtos excluídos ficam fora do total atual.\n\n${_group == 'Notas' ? 'Faturamento soma o valor nominal das notas Autorizadas e Emitida DANFE; exclui as demais situações. Não representa receita líquida ou recebimento. Quantidade considera as notas no período selecionado. Entregues é o novo título do indicador fiscal anterior; seus dados ainda representam transmissão à SEFAZ, não confirmação de entrega ao cliente. Pendentes corresponde à situação fiscal Pendente. Pagas exige conciliação das contas a receber vinculadas à NF. Valor futuro considera apenas registros futuros, sem estimativa.' : 'Cadastros por situação atual. Contatos são classificados conforme os tipos Cliente e Fornecedor do Bling; um contato pode pertencer aos dois grupos. Sem histórico por data.'}',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: tactileTapRoyalClean(
-                            () => Navigator.pop(context),
-                          ),
-                          child: const Text('Entendi'),
+              LayoutButtonRoyalClean(
+                id: 'dashboard_chart_royal_clean.control_07',
+                child: IconButton(
+                  tooltip: 'Sobre os dados do gráfico',
+                  icon: const Icon(Icons.info_outline, color: _muted, size: 20),
+                  onPressed: tactileTapRoyalClean(
+                    () => showDialog<void>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Dados do Bling'),
+                        content: Text(
+                          'Produtos, notas e contatos são sincronizados automaticamente no servidor a cada hora. Use Atualizar para consultar antes. O último resultado completo é preservado durante a sincronização. Produtos excluídos ficam fora do total atual.\n\n${_group == 'Notas' ? 'Faturamento soma o valor nominal das notas Autorizadas e Emitida DANFE; exclui as demais situações. Não representa receita líquida ou recebimento. Quantidade considera as notas no período selecionado. Entregues é o novo título do indicador fiscal anterior; seus dados ainda representam transmissão à SEFAZ, não confirmação de entrega ao cliente. Pendentes corresponde à situação fiscal Pendente. Pagas exige conciliação das contas a receber vinculadas à NF. Valor futuro considera apenas registros futuros, sem estimativa.' : 'Cadastros por situação atual. Contatos são classificados conforme os tipos Cliente e Fornecedor do Bling; um contato pode pertencer aos dois grupos. Sem histórico por data.'}',
                         ),
-                      ],
+                        actions: [
+                          LayoutButtonRoyalClean(
+                            id: 'dashboard_chart_royal_clean.control_08',
+                            child: TextButton(
+                              onPressed: tactileTapRoyalClean(
+                                () => Navigator.pop(context),
+                              ),
+                              child: const Text('Entendi'),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

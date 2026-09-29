@@ -1,3 +1,4 @@
+import 'package:royal_clean/presentation_royal_clean/shared/layout_button_royal_clean.dart';
 import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import '../preview/preview_page_royal_clean.dart';
 import 'package:flutter/material.dart';
@@ -103,25 +104,31 @@ class _AdminRouteGuardRoyalCleanState extends State<AdminRouteGuardRoyalClean> {
                       }, textAlign: TextAlign.center),
                       const SizedBox(height: 24),
                       if (state != AdminAccessRoyalClean.checking)
-                        ElevatedButton(
+                        LayoutButtonRoyalClean(
+                          id: 'admin_route_guard_royal_clean.control_01',
+                          child: ElevatedButton(
+                            onPressed: tactileTapRoyalClean(
+                              () => Navigator.pushNamedAndRemoveUntil(
+                                context,
+                                AppRoutesRoyalClean.login,
+                                (_) => false,
+                              ),
+                            ),
+                            child: const Text('Ir para login'),
+                          ),
+                        ),
+                      LayoutButtonRoyalClean(
+                        id: 'admin_route_guard_royal_clean.control_02',
+                        child: TextButton(
                           onPressed: tactileTapRoyalClean(
                             () => Navigator.pushNamedAndRemoveUntil(
                               context,
-                              AppRoutesRoyalClean.login,
+                              AppRoutesRoyalClean.preview,
                               (_) => false,
                             ),
                           ),
-                          child: const Text('Ir para login'),
+                          child: const Text('Voltar à prévia'),
                         ),
-                      TextButton(
-                        onPressed: tactileTapRoyalClean(
-                          () => Navigator.pushNamedAndRemoveUntil(
-                            context,
-                            AppRoutesRoyalClean.preview,
-                            (_) => false,
-                          ),
-                        ),
-                        child: const Text('Voltar à prévia'),
                       ),
                     ],
                   ),

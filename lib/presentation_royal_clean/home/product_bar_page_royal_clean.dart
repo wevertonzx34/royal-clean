@@ -1,3 +1,4 @@
+import 'package:royal_clean/presentation_royal_clean/shared/layout_button_royal_clean.dart';
 import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -91,12 +92,15 @@ class _ProductBarState extends State<ProductBarPageRoyalClean> {
       appBar: AppBar(
         title: const Text('Produtos da barra'),
         actions: [
-          IconButton(
-            tooltip: 'Atualizar lista',
-            onPressed: tactileTapRoyalClean(
-              _cache.busy ? null : () => _cache.refresh(force: true),
+          LayoutButtonRoyalClean(
+            id: 'product_bar_page_royal_clean.control_01',
+            child: IconButton(
+              tooltip: 'Atualizar lista',
+              onPressed: tactileTapRoyalClean(
+                _cache.busy ? null : () => _cache.refresh(force: true),
+              ),
+              icon: const Icon(Icons.refresh),
             ),
-            icon: const Icon(Icons.refresh),
           ),
           const HeaderActionsRoyalClean(),
         ],
@@ -150,11 +154,16 @@ class _ProductBarState extends State<ProductBarPageRoyalClean> {
                           ? 'Não foi possível atualizar. A última lista completa foi preservada.'
                           : 'Não foi possível carregar o catálogo. Tente novamente.',
                     ),
-                    TextButton(
-                      onPressed: tactileTapRoyalClean(
-                        _cache.busy ? null : () => _cache.refresh(force: true),
+                    LayoutButtonRoyalClean(
+                      id: 'product_bar_page_royal_clean.control_02',
+                      child: TextButton(
+                        onPressed: tactileTapRoyalClean(
+                          _cache.busy
+                              ? null
+                              : () => _cache.refresh(force: true),
+                        ),
+                        child: const Text('Tentar novamente'),
                       ),
-                      child: const Text('Tentar novamente'),
                     ),
                   ],
                 ),

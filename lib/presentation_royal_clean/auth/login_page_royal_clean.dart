@@ -1,3 +1,4 @@
+import 'package:royal_clean/presentation_royal_clean/shared/layout_button_royal_clean.dart';
 import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -74,17 +75,23 @@ class _LoginState extends State<LoginPageRoyalClean> {
             'Ao fechar e reabrir o aplicativo, confirme sua digital ou use o PIN, padrão ou senha do aparelho para acessar o perfil. Apenas alternar entre aplicativos não bloqueia o acesso. Ative somente no seu aparelho pessoal.',
           ),
           actions: [
-            TextButton(
-              onPressed: tactileTapRoyalClean(
-                () => Navigator.pop(context, false),
+            LayoutButtonRoyalClean(
+              id: 'login_page_royal_clean.control_01',
+              child: TextButton(
+                onPressed: tactileTapRoyalClean(
+                  () => Navigator.pop(context, false),
+                ),
+                child: const Text('Agora não'),
               ),
-              child: const Text('Agora não'),
             ),
-            FilledButton(
-              onPressed: tactileTapRoyalClean(
-                () => Navigator.pop(context, true),
+            LayoutButtonRoyalClean(
+              id: 'login_page_royal_clean.control_02',
+              child: FilledButton(
+                onPressed: tactileTapRoyalClean(
+                  () => Navigator.pop(context, true),
+                ),
+                child: const Text('Ativar'),
               ),
-              child: const Text('Ativar'),
             ),
           ],
         ),
@@ -285,26 +292,29 @@ class _LoginState extends State<LoginPageRoyalClean> {
                           Expanded(
                             child: Align(
                               alignment: Alignment.centerLeft,
-                              child: TextButton(
-                                style: _secondaryButtonStyle,
-                                onPressed: tactileTapRoyalClean(
-                                  _busy
-                                      ? null
-                                      : () => Navigator.pushNamed(
-                                          context,
-                                          '/register',
-                                        ),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.person_add_alt_1_outlined,
-                                      size: 18,
-                                    ),
-                                    SizedBox(width: 8),
-                                    Flexible(child: Text('Novo usuário')),
-                                  ],
+                              child: LayoutButtonRoyalClean(
+                                id: 'login_page_royal_clean.control_03',
+                                child: TextButton(
+                                  style: _secondaryButtonStyle,
+                                  onPressed: tactileTapRoyalClean(
+                                    _busy
+                                        ? null
+                                        : () => Navigator.pushNamed(
+                                            context,
+                                            '/register',
+                                          ),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.person_add_alt_1_outlined,
+                                        size: 18,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Flexible(child: Text('Novo usuário')),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -313,23 +323,26 @@ class _LoginState extends State<LoginPageRoyalClean> {
                           Expanded(
                             child: Align(
                               alignment: Alignment.centerRight,
-                              child: TextButton(
-                                style: _secondaryButtonStyle,
-                                onPressed: tactileTapRoyalClean(
-                                  _busy ? null : _resetPassword,
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.key_outlined, size: 18),
-                                    SizedBox(width: 8),
-                                    Flexible(
-                                      child: Text(
-                                        'Esqueci senha',
-                                        textAlign: TextAlign.right,
+                              child: LayoutButtonRoyalClean(
+                                id: 'login_page_royal_clean.control_04',
+                                child: TextButton(
+                                  style: _secondaryButtonStyle,
+                                  onPressed: tactileTapRoyalClean(
+                                    _busy ? null : _resetPassword,
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.key_outlined, size: 18),
+                                      SizedBox(width: 8),
+                                      Flexible(
+                                        child: Text(
+                                          'Esqueci senha',
+                                          textAlign: TextAlign.right,
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -369,17 +382,20 @@ class _LoginState extends State<LoginPageRoyalClean> {
                         decoration: InputDecoration(
                           labelText: 'Senha',
                           prefixIcon: const Icon(Icons.lock_outline),
-                          suffixIcon: IconButton(
-                            tooltip: _obscure
-                                ? 'Mostrar senha'
-                                : 'Ocultar senha',
-                            onPressed: tactileTapRoyalClean(
-                              () => setState(() => _obscure = !_obscure),
-                            ),
-                            icon: Icon(
-                              _obscure
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
+                          suffixIcon: LayoutButtonRoyalClean(
+                            id: 'login_page_royal_clean.control_05',
+                            child: IconButton(
+                              tooltip: _obscure
+                                  ? 'Mostrar senha'
+                                  : 'Ocultar senha',
+                              onPressed: tactileTapRoyalClean(
+                                () => setState(() => _obscure = !_obscure),
+                              ),
+                              icon: Icon(
+                                _obscure
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                              ),
                             ),
                           ),
                         ),
@@ -388,30 +404,33 @@ class _LoginState extends State<LoginPageRoyalClean> {
                             : null,
                       ),
                       const SizedBox(height: 20),
-                      FilledButton(
-                        onPressed: tactileTapRoyalClean(
-                          _busy
-                              ? null
-                              : () {
-                                  if (_form.currentState!.validate()) {
-                                    _authenticate(() async {
-                                      if (widget.passwordSignIn != null) {
-                                        await widget.passwordSignIn!(
-                                          _email.text.trim(),
-                                          _password.text,
-                                        );
-                                      } else {
-                                        await FirebaseAuth.instance
-                                            .signInWithEmailAndPassword(
-                                              email: _email.text.trim(),
-                                              password: _password.text,
-                                            );
-                                      }
-                                    }, passwordLogin: true);
-                                  }
-                                },
+                      LayoutButtonRoyalClean(
+                        id: 'login_page_royal_clean.control_06',
+                        child: FilledButton(
+                          onPressed: tactileTapRoyalClean(
+                            _busy
+                                ? null
+                                : () {
+                                    if (_form.currentState!.validate()) {
+                                      _authenticate(() async {
+                                        if (widget.passwordSignIn != null) {
+                                          await widget.passwordSignIn!(
+                                            _email.text.trim(),
+                                            _password.text,
+                                          );
+                                        } else {
+                                          await FirebaseAuth.instance
+                                              .signInWithEmailAndPassword(
+                                                email: _email.text.trim(),
+                                                password: _password.text,
+                                              );
+                                        }
+                                      }, passwordLogin: true);
+                                    }
+                                  },
+                          ),
+                          child: Text(_busy ? 'Aguarde…' : 'Entrar'),
                         ),
-                        child: Text(_busy ? 'Aguarde…' : 'Entrar'),
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -432,33 +451,36 @@ class _LoginState extends State<LoginPageRoyalClean> {
                           Expanded(
                             child: Align(
                               alignment: Alignment.centerLeft,
-                              child: TextButton(
-                                style: _socialButtonStyle,
-                                onPressed: tactileTapRoyalClean(
-                                  _busy
-                                      ? null
-                                      : () => _authenticate(
-                                          AccountServiceRoyalClean.apple,
-                                        ),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.apple, size: 22),
-                                    SizedBox(width: 4),
-                                    Flexible(
-                                      child: FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        alignment: Alignment.centerLeft,
-                                        child: Text(
-                                          'Continuar com Apple',
-                                          maxLines: 1,
-                                          softWrap: false,
-                                          style: TextStyle(fontSize: 12),
+                              child: LayoutButtonRoyalClean(
+                                id: 'login_page_royal_clean.control_07',
+                                child: TextButton(
+                                  style: _socialButtonStyle,
+                                  onPressed: tactileTapRoyalClean(
+                                    _busy
+                                        ? null
+                                        : () => _authenticate(
+                                            AccountServiceRoyalClean.apple,
+                                          ),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.apple, size: 22),
+                                      SizedBox(width: 4),
+                                      Flexible(
+                                        child: FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(
+                                            'Continuar com Apple',
+                                            maxLines: 1,
+                                            softWrap: false,
+                                            style: TextStyle(fontSize: 12),
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -467,41 +489,44 @@ class _LoginState extends State<LoginPageRoyalClean> {
                           Expanded(
                             child: Align(
                               alignment: Alignment.centerRight,
-                              child: TextButton(
-                                style: _socialButtonStyle,
-                                onPressed: tactileTapRoyalClean(
-                                  _busy
-                                      ? null
-                                      : () => _authenticate(
-                                          AccountServiceRoyalClean.google,
-                                        ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Opacity(
-                                      opacity: _busy ? 0.4 : 1,
-                                      child: Image.asset(
-                                        'assets/logo/google-g.png',
-                                        width: 16,
-                                        height: 16,
-                                        excludeFromSemantics: true,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    const Flexible(
-                                      child: FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        alignment: Alignment.centerRight,
-                                        child: Text(
-                                          'Continuar com Google',
-                                          maxLines: 1,
-                                          softWrap: false,
-                                          style: TextStyle(fontSize: 12),
+                              child: LayoutButtonRoyalClean(
+                                id: 'login_page_royal_clean.control_08',
+                                child: TextButton(
+                                  style: _socialButtonStyle,
+                                  onPressed: tactileTapRoyalClean(
+                                    _busy
+                                        ? null
+                                        : () => _authenticate(
+                                            AccountServiceRoyalClean.google,
+                                          ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Opacity(
+                                        opacity: _busy ? 0.4 : 1,
+                                        child: Image.asset(
+                                          'assets/logo/google-g.png',
+                                          width: 16,
+                                          height: 16,
+                                          excludeFromSemantics: true,
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(width: 4),
+                                      const Flexible(
+                                        child: FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          alignment: Alignment.centerRight,
+                                          child: Text(
+                                            'Continuar com Google',
+                                            maxLines: 1,
+                                            softWrap: false,
+                                            style: TextStyle(fontSize: 12),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -534,18 +559,21 @@ class _LoginState extends State<LoginPageRoyalClean> {
                         ).textTheme.bodySmall?.copyWith(height: 1.5),
                       ),
                       const SizedBox(height: 8),
-                      TextButton(
-                        style: _secondaryButtonStyle,
-                        onPressed: tactileTapRoyalClean(
-                          _busy
-                              ? null
-                              : () => Navigator.pushNamedAndRemoveUntil(
-                                  context,
-                                  '/preview',
-                                  (_) => false,
-                                ),
+                      LayoutButtonRoyalClean(
+                        id: 'login_page_royal_clean.control_09',
+                        child: TextButton(
+                          style: _secondaryButtonStyle,
+                          onPressed: tactileTapRoyalClean(
+                            _busy
+                                ? null
+                                : () => Navigator.pushNamedAndRemoveUntil(
+                                    context,
+                                    '/preview',
+                                    (_) => false,
+                                  ),
+                          ),
+                          child: const Text('Voltar à loja'),
                         ),
-                        child: const Text('Voltar à loja'),
                       ),
                     ],
                   ),
@@ -589,17 +617,23 @@ class _ResetDialogState extends State<_ResetDialog> {
       ),
     ),
     actions: [
-      TextButton(
-        onPressed: tactileTapRoyalClean(() => Navigator.pop(context)),
-        child: const Text('Cancelar'),
+      LayoutButtonRoyalClean(
+        id: 'login_page_royal_clean.control_10',
+        child: TextButton(
+          onPressed: tactileTapRoyalClean(() => Navigator.pop(context)),
+          child: const Text('Cancelar'),
+        ),
       ),
-      FilledButton(
-        onPressed: tactileTapRoyalClean(() {
-          if (_form.currentState!.validate()) {
-            Navigator.pop(context, _email.text.trim());
-          }
-        }),
-        child: const Text('Enviar instruções'),
+      LayoutButtonRoyalClean(
+        id: 'login_page_royal_clean.control_11',
+        child: FilledButton(
+          onPressed: tactileTapRoyalClean(() {
+            if (_form.currentState!.validate()) {
+              Navigator.pop(context, _email.text.trim());
+            }
+          }),
+          child: const Text('Enviar instruções'),
+        ),
       ),
     ],
   );

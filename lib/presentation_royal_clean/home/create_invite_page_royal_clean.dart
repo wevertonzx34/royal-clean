@@ -1,3 +1,4 @@
+import 'package:royal_clean/presentation_royal_clean/shared/layout_button_royal_clean.dart';
 import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'package:flutter/material.dart';
 import '../shared/header_actions_royal_clean.dart';
@@ -197,26 +198,31 @@ class _CreateInvitePageRoyalCleanState
   }
 
   Widget _buildProfileField() {
-    return DropdownButtonFormField<String>(
-      initialValue: _selectedProfile,
-      decoration: const InputDecoration(
-        labelText: 'Perfil',
-        prefixIcon: Icon(Icons.badge_outlined),
+    return LayoutButtonRoyalClean(
+      id: 'create_invite_page_royal_clean.aux_control_01',
+      child: DropdownButtonFormField<String>(
+        initialValue: _selectedProfile,
+        decoration: const InputDecoration(
+          labelText: 'Perfil',
+          prefixIcon: Icon(Icons.badge_outlined),
+        ),
+        items: InviteServiceRoyalClean.availableProfiles
+            .map(
+              (profile) => DropdownMenuItem<String>(
+                value: profile,
+                child: Text(profile),
+              ),
+            )
+            .toList(),
+        onChanged: tactileValueRoyalClean((value) {
+          if (value == null) return;
+          setState(() {
+            _selectedProfile = value;
+            _preview = null;
+            _inviteSaved = false;
+          });
+        }),
       ),
-      items: InviteServiceRoyalClean.availableProfiles
-          .map(
-            (profile) =>
-                DropdownMenuItem<String>(value: profile, child: Text(profile)),
-          )
-          .toList(),
-      onChanged: tactileValueRoyalClean((value) {
-        if (value == null) return;
-        setState(() {
-          _selectedProfile = value;
-          _preview = null;
-          _inviteSaved = false;
-        });
-      }),
     );
   }
 
@@ -246,26 +252,29 @@ class _CreateInvitePageRoyalCleanState
           const SizedBox(height: 18),
           SizedBox(
             height: 50,
-            child: ElevatedButton.icon(
-              onPressed: tactileTapRoyalClean(
-                (_isSaving || _inviteSaved) ? null : _saveInvite,
-              ),
-              icon: _isSaving
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.2,
-                        color: Colors.black,
-                      ),
-                    )
-                  : const Icon(Icons.save_rounded),
-              label: Text(
-                _isSaving
-                    ? 'Salvando...'
-                    : _inviteSaved
-                    ? 'Salvo'
-                    : 'Salvar',
+            child: LayoutButtonRoyalClean(
+              id: 'create_invite_page_royal_clean.control_01',
+              child: ElevatedButton.icon(
+                onPressed: tactileTapRoyalClean(
+                  (_isSaving || _inviteSaved) ? null : _saveInvite,
+                ),
+                icon: _isSaving
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.2,
+                          color: Colors.black,
+                        ),
+                      )
+                    : const Icon(Icons.save_rounded),
+                label: Text(
+                  _isSaving
+                      ? 'Salvando...'
+                      : _inviteSaved
+                      ? 'Salvo'
+                      : 'Salvar',
+                ),
               ),
             ),
           ),
@@ -273,19 +282,25 @@ class _CreateInvitePageRoyalCleanState
             const SizedBox(height: 12),
             SizedBox(
               height: 50,
-              child: OutlinedButton.icon(
-                onPressed: tactileTapRoyalClean(_copyInviteMessage),
-                icon: const Icon(Icons.copy_rounded),
-                label: const Text('Copiar mensagem'),
+              child: LayoutButtonRoyalClean(
+                id: 'create_invite_page_royal_clean.control_02',
+                child: OutlinedButton.icon(
+                  onPressed: tactileTapRoyalClean(_copyInviteMessage),
+                  icon: const Icon(Icons.copy_rounded),
+                  label: const Text('Copiar mensagem'),
+                ),
               ),
             ),
             const SizedBox(height: 12),
             SizedBox(
               height: 50,
-              child: ElevatedButton.icon(
-                onPressed: tactileTapRoyalClean(_openWhatsapp),
-                icon: const Icon(Icons.share_rounded),
-                label: const Text('Compartilhar'),
+              child: LayoutButtonRoyalClean(
+                id: 'create_invite_page_royal_clean.control_03',
+                child: ElevatedButton.icon(
+                  onPressed: tactileTapRoyalClean(_openWhatsapp),
+                  icon: const Icon(Icons.share_rounded),
+                  label: const Text('Compartilhar'),
+                ),
               ),
             ),
           ],
@@ -314,11 +329,14 @@ class _CreateInvitePageRoyalCleanState
                   ),
                   child: Row(
                     children: [
-                      IconButton(
-                        onPressed: tactileTapRoyalClean(
-                          () => Navigator.pop(context),
+                      LayoutButtonRoyalClean(
+                        id: 'create_invite_page_royal_clean.control_04',
+                        child: IconButton(
+                          onPressed: tactileTapRoyalClean(
+                            () => Navigator.pop(context),
+                          ),
+                          icon: const Icon(Icons.arrow_back_ios_new_rounded),
                         ),
-                        icon: const Icon(Icons.arrow_back_ios_new_rounded),
                       ),
                       Expanded(
                         child: Text(
@@ -414,20 +432,23 @@ class _CreateInvitePageRoyalCleanState
                                   _buildProfileField(),
 
                                   const SizedBox(height: 22),
-                                  ElevatedButton(
-                                    onPressed: tactileTapRoyalClean(
-                                      _isGenerating ? null : _generatePreview,
+                                  LayoutButtonRoyalClean(
+                                    id: 'create_invite_page_royal_clean.control_05',
+                                    child: ElevatedButton(
+                                      onPressed: tactileTapRoyalClean(
+                                        _isGenerating ? null : _generatePreview,
+                                      ),
+                                      child: _isGenerating
+                                          ? const SizedBox(
+                                              width: 22,
+                                              height: 22,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2.4,
+                                                color: Colors.black,
+                                              ),
+                                            )
+                                          : const Text('Gerar convite'),
                                     ),
-                                    child: _isGenerating
-                                        ? const SizedBox(
-                                            width: 22,
-                                            height: 22,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2.4,
-                                              color: Colors.black,
-                                            ),
-                                          )
-                                        : const Text('Gerar convite'),
                                   ),
                                   if (_preview != null) ...[
                                     const SizedBox(height: 22),

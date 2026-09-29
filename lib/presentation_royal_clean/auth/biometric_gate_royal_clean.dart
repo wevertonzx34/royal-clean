@@ -1,3 +1,4 @@
+import 'package:royal_clean/presentation_royal_clean/shared/layout_button_royal_clean.dart';
 import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'package:flutter/material.dart';
 import '../shared/header_actions_royal_clean.dart';
@@ -82,32 +83,41 @@ class _BiometricGateState extends State<BiometricGateRoyalClean> {
                   const SizedBox(height: 16),
                   if (_error != null)
                     Text(_error!, textAlign: TextAlign.center),
-                  FilledButton.icon(
-                    onPressed: tactileTapRoyalClean(_busy ? null : _unlock),
-                    icon: const Icon(Icons.fingerprint),
-                    label: Text(
-                      _busy ? 'Confirmando…' : 'Desbloquear aparelho',
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: tactileTapRoyalClean(
-                      () => Navigator.pushNamedAndRemoveUntil(
-                        context,
-                        '/login',
-                        (_) => false,
+                  LayoutButtonRoyalClean(
+                    id: 'biometric_gate_royal_clean.control_01',
+                    child: FilledButton.icon(
+                      onPressed: tactileTapRoyalClean(_busy ? null : _unlock),
+                      icon: const Icon(Icons.fingerprint),
+                      label: Text(
+                        _busy ? 'Confirmando…' : 'Desbloquear aparelho',
                       ),
                     ),
-                    child: const Text('Entrar com outra conta'),
                   ),
-                  TextButton(
-                    onPressed: tactileTapRoyalClean(
-                      () => Navigator.pushNamedAndRemoveUntil(
-                        context,
-                        '/preview',
-                        (_) => false,
+                  LayoutButtonRoyalClean(
+                    id: 'biometric_gate_royal_clean.control_02',
+                    child: TextButton(
+                      onPressed: tactileTapRoyalClean(
+                        () => Navigator.pushNamedAndRemoveUntil(
+                          context,
+                          '/login',
+                          (_) => false,
+                        ),
                       ),
+                      child: const Text('Entrar com outra conta'),
                     ),
-                    child: const Text('Voltar à loja'),
+                  ),
+                  LayoutButtonRoyalClean(
+                    id: 'biometric_gate_royal_clean.control_03',
+                    child: TextButton(
+                      onPressed: tactileTapRoyalClean(
+                        () => Navigator.pushNamedAndRemoveUntil(
+                          context,
+                          '/preview',
+                          (_) => false,
+                        ),
+                      ),
+                      child: const Text('Voltar à loja'),
+                    ),
                   ),
                 ],
               ),

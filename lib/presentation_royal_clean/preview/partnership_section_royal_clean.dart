@@ -1,3 +1,4 @@
+import 'package:royal_clean/presentation_royal_clean/shared/layout_button_royal_clean.dart';
 import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'dart:async';
 import '../shared/header_actions_royal_clean.dart';
@@ -80,15 +81,18 @@ class PartnershipSectionRoyalClean extends StatelessWidget {
                                   side: BorderSide(color: Color(0xFFD4E4EB)),
                                 ),
                                 clipBehavior: Clip.antiAlias,
-                                child: InkWell(
-                                  customBorder: const CircleBorder(),
-                                  onTap: tactileTapRoyalClean(
-                                    () => _openPartner(context, items[index]),
-                                  ),
-                                  child: ClipOval(
-                                    child: _Picture(
-                                      item: items[index],
-                                      fit: BoxFit.contain,
+                                child: LayoutButtonRoyalClean(
+                                  id: 'partnership_section_royal_clean.control_01',
+                                  child: InkWell(
+                                    customBorder: const CircleBorder(),
+                                    onTap: tactileTapRoyalClean(
+                                      () => _openPartner(context, items[index]),
+                                    ),
+                                    child: ClipOval(
+                                      child: _Picture(
+                                        item: items[index],
+                                        fit: BoxFit.contain,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -182,10 +186,13 @@ void _openPartner(BuildContext context, PublicPartnerRoyalClean item) {
             children: [
               const HeaderActionsRoyalClean(color: _navy, showMyData: false),
               const Spacer(),
-              IconButton(
-                tooltip: 'Fechar',
-                onPressed: tactileTapRoyalClean(() => Navigator.pop(context)),
-                icon: const Icon(Icons.close),
+              LayoutButtonRoyalClean(
+                id: 'partnership_section_royal_clean.control_02',
+                child: IconButton(
+                  tooltip: 'Fechar',
+                  onPressed: tactileTapRoyalClean(() => Navigator.pop(context)),
+                  icon: const Icon(Icons.close),
+                ),
               ),
             ],
           ),
@@ -348,17 +355,20 @@ class _AdCarouselState extends State<_AdCarousel> with WidgetsBindingObserver {
               style: const TextStyle(color: _muted),
             ),
             if (widget.items.length > 1)
-              IconButton(
-                tooltip: _paused
-                    ? 'Retomar rolagem automática'
-                    : 'Pausar rolagem automática',
-                onPressed: tactileTapRoyalClean(() {
-                  setState(() => _paused = !_paused);
-                  _schedule();
-                }),
-                icon: Icon(
-                  _paused ? Icons.play_arrow_rounded : Icons.pause_rounded,
-                  color: _navy,
+              LayoutButtonRoyalClean(
+                id: 'partnership_section_royal_clean.control_03',
+                child: IconButton(
+                  tooltip: _paused
+                      ? 'Retomar rolagem automática'
+                      : 'Pausar rolagem automática',
+                  onPressed: tactileTapRoyalClean(() {
+                    setState(() => _paused = !_paused);
+                    _schedule();
+                  }),
+                  icon: Icon(
+                    _paused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+                    color: _navy,
+                  ),
                 ),
               ),
           ],
@@ -381,94 +391,100 @@ class _AdCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         side: const BorderSide(color: Color(0xFFE3EBEF)),
       ),
-      child: InkWell(
-        onTap: tactileTapRoyalClean(() => _openPartner(context, item)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            SizedBox(
-              height: 164,
-              child: _Picture(item: item, fit: BoxFit.cover),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.isDemo
-                          ? 'VITRINE DEMONSTRATIVA'
-                          : 'VITRINE PARCEIRA',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFF007F9F),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.4,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      item.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: _navy,
-                        fontSize: 23,
-                        fontWeight: FontWeight.w800,
-                        height: 1.2,
-                        letterSpacing: -.4,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      item.description,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: _muted,
-                        fontSize: 13,
-                        height: 1.5,
-                      ),
-                    ),
-                    const Spacer(),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            item.isDemo
-                                ? 'Anúncio demonstrativo'
-                                : 'Publicidade',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: _muted, fontSize: 10),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Ler mais',
-                          style: TextStyle(
-                            color: Color(0xFF007F9F),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        const Icon(
-                          Icons.arrow_forward_rounded,
+      child: LayoutButtonRoyalClean(
+        id: 'partnership_section_royal_clean.control_04',
+        child: InkWell(
+          onTap: tactileTapRoyalClean(() => _openPartner(context, item)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(
+                height: 164,
+                child: _Picture(item: item, fit: BoxFit.cover),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.isDemo
+                            ? 'VITRINE DEMONSTRATIVA'
+                            : 'VITRINE PARCEIRA',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
                           color: Color(0xFF007F9F),
-                          size: 16,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.4,
                         ),
-                      ],
-                    ),
-                  ],
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        item.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: _navy,
+                          fontSize: 23,
+                          fontWeight: FontWeight.w800,
+                          height: 1.2,
+                          letterSpacing: -.4,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        item.description,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: _muted,
+                          fontSize: 13,
+                          height: 1.5,
+                        ),
+                      ),
+                      const Spacer(),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.isDemo
+                                  ? 'Anúncio demonstrativo'
+                                  : 'Publicidade',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: _muted,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Ler mais',
+                            style: TextStyle(
+                              color: Color(0xFF007F9F),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          const Icon(
+                            Icons.arrow_forward_rounded,
+                            color: Color(0xFF007F9F),
+                            size: 16,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     ),

@@ -1,3 +1,4 @@
+import 'package:royal_clean/presentation_royal_clean/shared/layout_button_royal_clean.dart';
 import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'package:flutter/material.dart';
 import '../../core_royal_clean/services/intercom_royal_clean.dart';
@@ -30,12 +31,15 @@ class NotificationsPanelRoyalClean extends StatelessWidget {
                       ),
                     ),
                   ),
-                  IconButton(
-                    tooltip: 'Fechar notificações',
-                    onPressed: tactileTapRoyalClean(
-                      () => Navigator.pop(context),
+                  LayoutButtonRoyalClean(
+                    id: 'notifications_panel_royal_clean.control_01',
+                    child: IconButton(
+                      tooltip: 'Fechar notificações',
+                      onPressed: tactileTapRoyalClean(
+                        () => Navigator.pop(context),
+                      ),
+                      icon: const Icon(Icons.close_rounded),
                     ),
-                    icon: const Icon(Icons.close_rounded),
                   ),
                 ],
               ),
@@ -57,9 +61,12 @@ class NotificationsPanelRoyalClean extends StatelessWidget {
                           feed.error!,
                           style: const TextStyle(color: Color(0xFF092F43)),
                         ),
-                        TextButton(
-                          onPressed: tactileTapRoyalClean(feed.reload),
-                          child: const Text('Tentar novamente'),
+                        LayoutButtonRoyalClean(
+                          id: 'notifications_panel_royal_clean.control_02',
+                          child: TextButton(
+                            onPressed: tactileTapRoyalClean(feed.reload),
+                            child: const Text('Tentar novamente'),
+                          ),
                         ),
                       ],
                       if (messages.isEmpty && feed.error == null)
@@ -92,13 +99,16 @@ class NotificationsPanelRoyalClean extends StatelessWidget {
                       if (feed.unreadCount > 0)
                         Align(
                           alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: tactileTapRoyalClean(
-                              () => feed.markRead(
-                                messages.map((message) => message.id),
+                          child: LayoutButtonRoyalClean(
+                            id: 'notifications_panel_royal_clean.control_03',
+                            child: TextButton(
+                              onPressed: tactileTapRoyalClean(
+                                () => feed.markRead(
+                                  messages.map((message) => message.id),
+                                ),
                               ),
+                              child: const Text('Marcar todas como lidas'),
                             ),
-                            child: const Text('Marcar todas como lidas'),
                           ),
                         ),
                       for (final message in messages)
@@ -131,11 +141,14 @@ class NotificationsPanelRoyalClean extends StatelessWidget {
                                   style: const TextStyle(fontSize: 12),
                                 ),
                                 if (feed.isUnread(message))
-                                  TextButton(
-                                    onPressed: tactileTapRoyalClean(
-                                      () => feed.markRead([message.id]),
+                                  LayoutButtonRoyalClean(
+                                    id: 'notifications_panel_royal_clean.control_04',
+                                    child: TextButton(
+                                      onPressed: tactileTapRoyalClean(
+                                        () => feed.markRead([message.id]),
+                                      ),
+                                      child: const Text('Marcar como lida'),
                                     ),
-                                    child: const Text('Marcar como lida'),
                                   ),
                               ],
                             ),

@@ -1,3 +1,4 @@
+import 'package:royal_clean/presentation_royal_clean/shared/layout_button_royal_clean.dart';
 import 'image_action_royal_clean.dart';
 import '../../core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'package:flutter/material.dart';
@@ -56,30 +57,33 @@ class _OverviewShortcutState extends State<OverviewShortcutRoyalClean> {
                   : open
                   ? 'Voltar para royal-home'
                   : 'Royal Home',
-              child: ImageActionRoyalClean(
-                key: const ValueKey('overview-image-shortcut'),
-                feedback: TouchFeedbackRoyalClean.homePulse,
-                replayAfterActivation: widget.onHomeActivate != null,
-                onActivate: () async {
-                  _state.value = false;
-                  _homeTouch.value++;
-                  if (widget.onHomeActivate != null) {
-                    if (!MediaQuery.disableAnimationsOf(context)) {
-                      await Future<void>.delayed(
-                        const Duration(milliseconds: 180),
-                      );
-                    }
-                    if (!mounted) return;
-                    await widget.onHomeActivate!();
-                    if (!mounted) return;
+              child: LayoutButtonRoyalClean(
+                id: 'overview_shortcut_royal_clean.control_01',
+                child: ImageActionRoyalClean(
+                  key: const ValueKey('overview-image-shortcut'),
+                  feedback: TouchFeedbackRoyalClean.homePulse,
+                  replayAfterActivation: widget.onHomeActivate != null,
+                  onActivate: () async {
+                    _state.value = false;
                     _homeTouch.value++;
-                  }
-                },
-                builder: (_, flash) => const NeonImageRoyalClean(
-                  asset: 'assets/preview/royal-store/royal-home.webp',
-                  aspectRatio: 735 / 1245,
-                  fit: BoxFit.cover,
-                  glow: Color(0xFF7955E8),
+                    if (widget.onHomeActivate != null) {
+                      if (!MediaQuery.disableAnimationsOf(context)) {
+                        await Future<void>.delayed(
+                          const Duration(milliseconds: 180),
+                        );
+                      }
+                      if (!mounted) return;
+                      await widget.onHomeActivate!();
+                      if (!mounted) return;
+                      _homeTouch.value++;
+                    }
+                  },
+                  builder: (_, flash) => const NeonImageRoyalClean(
+                    asset: 'assets/preview/royal-store/royal-home.webp',
+                    aspectRatio: 735 / 1245,
+                    fit: BoxFit.cover,
+                    glow: Color(0xFF7955E8),
+                  ),
                 ),
               ),
             ),

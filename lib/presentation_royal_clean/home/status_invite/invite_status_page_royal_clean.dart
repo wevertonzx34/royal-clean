@@ -1,3 +1,4 @@
+import 'package:royal_clean/presentation_royal_clean/shared/layout_button_royal_clean.dart';
 import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import 'package:flutter/material.dart';
 import '../../shared/header_actions_royal_clean.dart';
@@ -175,11 +176,14 @@ class _InviteStatusPageRoyalCleanState
                   ),
                   child: Row(
                     children: [
-                      IconButton(
-                        onPressed: tactileTapRoyalClean(
-                          () => Navigator.pop(context),
+                      LayoutButtonRoyalClean(
+                        id: 'invite_status_page_royal_clean.control_01',
+                        child: IconButton(
+                          onPressed: tactileTapRoyalClean(
+                            () => Navigator.pop(context),
+                          ),
+                          icon: const Icon(Icons.arrow_back_ios_new_rounded),
                         ),
-                        icon: const Icon(Icons.arrow_back_ios_new_rounded),
                       ),
                       Expanded(
                         child: Text(

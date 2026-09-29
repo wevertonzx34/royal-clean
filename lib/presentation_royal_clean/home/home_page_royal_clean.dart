@@ -1,3 +1,4 @@
+import 'package:royal_clean/presentation_royal_clean/shared/layout_button_royal_clean.dart';
 import 'image_action_royal_clean.dart';
 import '../home/profile_images_royal_clean.dart';
 import 'dart:math' as math;
@@ -178,40 +179,43 @@ class _HomePageState extends State<HomePageRoyalClean> {
                                     label: 'Abrir funções de estoque',
                                     child: Material(
                                       type: MaterialType.transparency,
-                                      child: ImageActionRoyalClean(
-                                        key: const ValueKey(
-                                          'stock-door-shortcut',
-                                        ),
-                                        pulses: 3,
-                                        replayAfterActivation: true,
-                                        duration: const Duration(
-                                          milliseconds: 900,
-                                        ),
-                                        scaleDepth: .018,
-                                        onActivate: () async {
-                                          _overviewOpen.value = false;
-                                          await _openStock(context);
-                                        },
-                                        builder: (_, flash) => Stack(
-                                          fit: StackFit.expand,
-                                          clipBehavior: Clip.none,
-                                          children: [
-                                            Positioned.fill(
-                                              child: ShortcutVaporRoyalClean(
-                                                activation: flash,
-                                                isDoor: true,
+                                      child: LayoutButtonRoyalClean(
+                                        id: 'home_page_royal_clean.control_01',
+                                        child: ImageActionRoyalClean(
+                                          key: const ValueKey(
+                                            'stock-door-shortcut',
+                                          ),
+                                          pulses: 3,
+                                          replayAfterActivation: true,
+                                          duration: const Duration(
+                                            milliseconds: 900,
+                                          ),
+                                          scaleDepth: .018,
+                                          onActivate: () async {
+                                            _overviewOpen.value = false;
+                                            await _openStock(context);
+                                          },
+                                          builder: (_, flash) => Stack(
+                                            fit: StackFit.expand,
+                                            clipBehavior: Clip.none,
+                                            children: [
+                                              Positioned.fill(
+                                                child: ShortcutVaporRoyalClean(
+                                                  activation: flash,
+                                                  isDoor: true,
+                                                ),
                                               ),
-                                            ),
-                                            Image.asset(
-                                              'assets/preview/royal-store/royal-porta.webp',
-                                              fit: BoxFit.contain,
-                                              cacheWidth: 900,
-                                            ),
-                                            DoorLightRoyalClean(
-                                              activation: flash,
-                                            ),
-                                            const DoorInvitationRoyalClean(),
-                                          ],
+                                              Image.asset(
+                                                'assets/preview/royal-store/royal-porta.webp',
+                                                fit: BoxFit.contain,
+                                                cacheWidth: 900,
+                                              ),
+                                              DoorLightRoyalClean(
+                                                activation: flash,
+                                              ),
+                                              const DoorInvitationRoyalClean(),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -240,31 +244,36 @@ class _HomePageState extends State<HomePageRoyalClean> {
                               label: 'Abrir funções administrativas',
                               child: Material(
                                 type: MaterialType.transparency,
-                                child: ImageActionRoyalClean(
-                                  key: const ValueKey('admin-avatar-shortcut'),
-                                  pulses: 2,
-                                  duration: const Duration(milliseconds: 600),
-                                  scaleDepth: .018,
-                                  onActivate: () async {
-                                    _overviewOpen.value = false;
-                                    await _openActions(context);
-                                  },
-                                  builder: (_, flash) => Stack(
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      Positioned.fill(
-                                        child: AvatarAuraRoyalClean(
-                                          activation: flash,
+                                child: LayoutButtonRoyalClean(
+                                  id: 'home_page_royal_clean.control_02',
+                                  child: ImageActionRoyalClean(
+                                    key: const ValueKey(
+                                      'admin-avatar-shortcut',
+                                    ),
+                                    pulses: 2,
+                                    duration: const Duration(milliseconds: 600),
+                                    scaleDepth: .018,
+                                    onActivate: () async {
+                                      _overviewOpen.value = false;
+                                      await _openActions(context);
+                                    },
+                                    builder: (_, flash) => Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        Positioned.fill(
+                                          child: AvatarAuraRoyalClean(
+                                            activation: flash,
+                                          ),
                                         ),
-                                      ),
-                                      NeonImageRoyalClean(
-                                        activation: flash,
-                                        asset:
-                                            'assets/preview/royal-store/royal-avatar.webp',
-                                        aspectRatio: 282 / 603,
-                                        glow: const Color(0xFF5CE7EC),
-                                      ),
-                                    ],
+                                        NeonImageRoyalClean(
+                                          activation: flash,
+                                          asset:
+                                              'assets/preview/royal-store/royal-avatar.webp',
+                                          aspectRatio: 282 / 603,
+                                          glow: const Color(0xFF5CE7EC),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
@@ -288,23 +297,26 @@ class _HomePageState extends State<HomePageRoyalClean> {
                           child: Semantics(
                             button: true,
                             label: 'Abrir Visão geral',
-                            child: ImageActionRoyalClean(
-                              key: const ValueKey('profile-data-shortcut'),
-                              pulses: 2,
-                              replayVersion: _dataReplay,
-                              duration: const Duration(milliseconds: 600),
-                              scaleDepth: .018,
-                              onActivate: () => _overviewOpen.value = true,
-                              builder: (_, flash) => NeonImageRoyalClean(
-                                asset:
-                                    'assets/preview/royal-store/royal-dados.webp',
-                                aspectRatio: 1,
-                                cacheWidth: 300,
-                                glow: const Color(0xFF5CE7EC),
-                                activation: flash,
-                                activationGlow: const Color(0xFFC05AFF),
-                                activationSecondaryGlow: const Color(
-                                  0xFF1623A8,
+                            child: LayoutButtonRoyalClean(
+                              id: 'home_page_royal_clean.control_03',
+                              child: ImageActionRoyalClean(
+                                key: const ValueKey('profile-data-shortcut'),
+                                pulses: 2,
+                                replayVersion: _dataReplay,
+                                duration: const Duration(milliseconds: 600),
+                                scaleDepth: .018,
+                                onActivate: () => _overviewOpen.value = true,
+                                builder: (_, flash) => NeonImageRoyalClean(
+                                  asset:
+                                      'assets/preview/royal-store/royal-dados.webp',
+                                  aspectRatio: 1,
+                                  cacheWidth: 300,
+                                  glow: const Color(0xFF5CE7EC),
+                                  activation: flash,
+                                  activationGlow: const Color(0xFFC05AFF),
+                                  activationSecondaryGlow: const Color(
+                                    0xFF1623A8,
+                                  ),
                                 ),
                               ),
                             ),
