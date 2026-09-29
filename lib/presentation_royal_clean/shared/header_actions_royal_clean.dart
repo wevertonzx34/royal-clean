@@ -18,7 +18,8 @@ void showNotificationsRoyalClean(BuildContext context) {
 
 class NotificationButtonRoyalClean extends StatelessWidget {
   final Color? color;
-  const NotificationButtonRoyalClean({super.key, this.color});
+  final double? iconSize;
+  const NotificationButtonRoyalClean({super.key, this.color, this.iconSize});
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: IntercomRoyalClean.instance,
@@ -32,7 +33,7 @@ class NotificationButtonRoyalClean extends StatelessWidget {
         icon: Badge(
           isLabelVisible: count > 0,
           label: Text(count > 99 ? '99+' : '$count'),
-          child: Icon(Icons.public_rounded, color: color),
+          child: Icon(Icons.public_rounded, color: color, size: iconSize),
         ),
       );
     },

@@ -9,7 +9,12 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      const MaterialApp(home: StockFunctionsPageRoyalClean()),
+      const MaterialApp(
+        home: MediaQuery(
+          data: MediaQueryData(disableAnimations: true),
+          child: StockFunctionsPageRoyalClean(),
+        ),
+      ),
     );
     expect(find.byIcon(Icons.manage_accounts), findsNothing);
     expect(find.byTooltip('Meus dados'), findsOneWidget);

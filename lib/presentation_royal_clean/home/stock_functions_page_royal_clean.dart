@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'office_shortcut_royal_clean.dart';
+import 'stock_lighting_royal_clean.dart';
+import 'nfe_page_royal_clean.dart';
 import '../shared/header_actions_royal_clean.dart';
 
 class StockFunctionsPageRoyalClean extends StatelessWidget {
@@ -18,20 +20,43 @@ class StockFunctionsPageRoyalClean extends StatelessWidget {
       systemOverlayStyle: SystemUiOverlayStyle.light,
       actions: const [HeaderActionsRoyalClean()],
     ),
-    body: const StockBackgroundRoyalClean(showOffice: true),
+    body: StockBackgroundRoyalClean(
+      showOffice: true,
+      onOpenOffice: () => openNfeRoyalClean(context),
+    ),
   );
 }
 
 /// Public decorative background: safe to show while access is being checked.
-class StockBackgroundRoyalClean extends StatelessWidget {
+class StockBackgroundRoyalClean extends StatefulWidget {
   final bool showOffice;
-  const StockBackgroundRoyalClean({super.key, this.showOffice = false});
+  final Future<void> Function()? onOpenOffice;
+  const StockBackgroundRoyalClean({
+    super.key,
+    this.showOffice = false,
+    this.onOpenOffice,
+  });
 
   // Coordinates in the original royal-stoque image (2250 x 4000).
   // The office and backdrop share one transform, including cover cropping.
   static const sceneSize = Size(2250, 4000);
   static const officeRect = Rect.fromLTWH(1645, 1380, 620, 620 * 415 / 191);
   static const productionRect = Rect.fromLTWH(0, 2110, 660, 660 * 496 / 650);
+  @override
+  State<StockBackgroundRoyalClean> createState() => _StockBackgroundState();
+}
+
+class _StockBackgroundState extends State<StockBackgroundRoyalClean> {
+  final _lightTouch = ValueNotifier<int>(0);
+
+  void _flashLights() => _lightTouch.value++;
+
+  @override
+  void dispose() {
+    _lightTouch.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) => SizedBox.expand(
     child: Stack(
@@ -42,8 +67,8 @@ class StockBackgroundRoyalClean extends StatelessWidget {
           alignment: Alignment.center,
           clipBehavior: Clip.hardEdge,
           child: SizedBox(
-            width: sceneSize.width,
-            height: sceneSize.height,
+            width: StockBackgroundRoyalClean.sceneSize.width,
+            height: StockBackgroundRoyalClean.sceneSize.height,
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -53,15 +78,21 @@ class StockBackgroundRoyalClean extends StatelessWidget {
                   cacheWidth: 1080,
                   excludeFromSemantics: true,
                 ),
-                if (showOffice)
+                StockLightingRoyalClean(trigger: _lightTouch),
+                if (widget.showOffice)
                   Positioned.fromRect(
-                    rect: productionRect,
-                    child: const OfficeShortcutRoyalClean.production(),
+                    rect: StockBackgroundRoyalClean.productionRect,
+                    child: OfficeShortcutRoyalClean.production(
+                      onTouch: _flashLights,
+                    ),
                   ),
-                if (showOffice)
+                if (widget.showOffice)
                   Positioned.fromRect(
-                    rect: officeRect,
-                    child: const OfficeShortcutRoyalClean(),
+                    rect: StockBackgroundRoyalClean.officeRect,
+                    child: OfficeShortcutRoyalClean(
+                      onTouch: _flashLights,
+                      onOpen: widget.onOpenOffice,
+                    ),
                   ),
               ],
             ),

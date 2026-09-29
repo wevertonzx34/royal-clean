@@ -34,7 +34,7 @@ dev_dependencies:
   flutter_lints: ^3.0.0
   flutter_launcher_icons: ^0.13.1
 
-# ESTE BLOCO ABAIXO É O QUE ESTAVA FALTANDO PARA O COMANDO FUNCIONAR
+# ESTE BLOCO ABAIXO Ã‰ O QUE ESTAVA FALTANDO PARA O COMANDO FUNCIONAR
 flutter_launcher_icons:
   android: "ic_launcher"
   ios: true
@@ -45,10 +45,17 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
 
+  fonts:
+    - family: RoyalSignature
+      fonts:
+        - asset: assets/fonts/Allura-Regular.ttf
+
   assets:
+    - assets/fonts/Allura-OFL.txt
     - assets/preview/royal-store/royal-cloused.webp
     - assets/preview/royal-store/royal-home.webp
     - assets/preview/royal-store/royal-pixels.webp
+    - assets/preview/royal-store/royal-perfil.webp
     - assets/preview/royal-store/royal-office.webp
     - assets/preview/royal-store/royal-producao.webp
     - assets/preview/royal-store/royal-avatar.webp

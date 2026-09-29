@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:royal_clean/presentation_royal_clean/home/stock_functions_page_royal_clean.dart';
+import 'package:royal_clean/presentation_royal_clean/home/stock_lighting_royal_clean.dart';
 
 void main() {
   testWidgets('Office follows backdrop scaling and cropping across screens', (
@@ -45,7 +46,12 @@ void main() {
         // A cropped shortcut must still respond inside its visible portion.
         final visible = expected.intersect(Offset.zero & viewport);
         expect(visible.isEmpty, isFalse);
+        final lighting = tester.widget<StockLightingRoyalClean>(
+          find.byType(StockLightingRoyalClean),
+        );
+        final previousFlash = lighting.trigger.value;
         await tester.tapAt(visible.center);
+        expect(lighting.trigger.value, previousFlash + 1);
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 700));
         expect(button, findsOneWidget);

@@ -9,6 +9,7 @@ Future<void> precacheProfileImagesRoyalClean(BuildContext context) async {
     'royal-dados',
     'royal-stoque',
     'royal-pixels',
+    'royal-perfil',
     'royal-office',
     'royal-producao',
   ]) {
@@ -16,7 +17,10 @@ Future<void> precacheProfileImagesRoyalClean(BuildContext context) async {
     await precacheImage(
       ResizeImage(
         AssetImage('assets/preview/royal-store/$asset.webp'),
-        width: asset == 'royal-stoque' || asset == 'royal-pixels'
+        width:
+            asset == 'royal-stoque' ||
+                asset == 'royal-pixels' ||
+                asset == 'royal-perfil'
             ? 1080
             : asset == 'royal-dados'
             ? 300

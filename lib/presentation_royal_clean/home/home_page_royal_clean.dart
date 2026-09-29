@@ -14,6 +14,8 @@ import 'neon_image_royal_clean.dart';
 import 'stock_functions_page_royal_clean.dart';
 import 'door_light_royal_clean.dart';
 import 'door_invitation_royal_clean.dart';
+import 'shortcut_vapor_royal_clean.dart';
+import 'avatar_aura_royal_clean.dart';
 import 'my_property_page_royal_clean.dart';
 
 class HomePageRoyalClean extends StatefulWidget {
@@ -194,6 +196,12 @@ class _HomePageState extends State<HomePageRoyalClean> {
                                           fit: StackFit.expand,
                                           clipBehavior: Clip.none,
                                           children: [
+                                            Positioned.fill(
+                                              child: ShortcutVaporRoyalClean(
+                                                activation: flash,
+                                                isDoor: true,
+                                              ),
+                                            ),
                                             Image.asset(
                                               'assets/preview/royal-store/royal-porta.webp',
                                               fit: BoxFit.contain,
@@ -241,12 +249,22 @@ class _HomePageState extends State<HomePageRoyalClean> {
                                     _overviewOpen.value = false;
                                     await _openActions(context);
                                   },
-                                  builder: (_, flash) => NeonImageRoyalClean(
-                                    activation: flash,
-                                    asset:
-                                        'assets/preview/royal-store/royal-avatar.webp',
-                                    aspectRatio: 282 / 603,
-                                    glow: const Color(0xFF5CE7EC),
+                                  builder: (_, flash) => Stack(
+                                    clipBehavior: Clip.none,
+                                    children: [
+                                      Positioned.fill(
+                                        child: AvatarAuraRoyalClean(
+                                          activation: flash,
+                                        ),
+                                      ),
+                                      NeonImageRoyalClean(
+                                        activation: flash,
+                                        asset:
+                                            'assets/preview/royal-store/royal-avatar.webp',
+                                        aspectRatio: 282 / 603,
+                                        glow: const Color(0xFF5CE7EC),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),

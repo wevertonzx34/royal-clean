@@ -56,20 +56,25 @@ class _DoorInvitationState extends State<DoorInvitationRoyalClean>
                   (1 - math.cos(_animation.value * 2 * math.pi)) / 2,
                 )!;
                 return Transform.translate(
-                  offset: Offset(0, -constraints.maxHeight * .12),
+                  offset: Offset(
+                    -constraints.maxWidth * .015,
+                    -constraints.maxHeight * .12,
+                  ),
                   child: Transform.scale(
-                    scale: .75 * (1 + .07 * beat),
+                    scale: .75 * (1 + .035 * beat),
                     child: SizedBox(
                       width: constraints.maxWidth * .8,
                       child: Text(
                         'Entre\nAqui',
                         textAlign: TextAlign.center,
+                        maxLines: 2,
                         style: TextStyle(
-                          fontSize: (constraints.maxWidth * .20).clamp(18, 38),
-                          fontWeight: FontWeight.w900,
-                          height: 1.05,
-                          letterSpacing: 1,
-                          color: color,
+                          fontFamily: 'RoyalSignature',
+                          fontSize: (constraints.maxWidth * .27).clamp(22, 52),
+                          fontWeight: FontWeight.w400,
+                          height: .95,
+                          letterSpacing: 0,
+                          color: Color.lerp(color, Colors.white, .25),
                           shadows: [
                             const Shadow(
                               color: Color(0xFF071825),
@@ -78,11 +83,11 @@ class _DoorInvitationState extends State<DoorInvitationRoyalClean>
                             ),
                             Shadow(
                               color: color.withValues(alpha: .85),
-                              blurRadius: 7 + beat * 5,
+                              blurRadius: 4 + beat * 2,
                             ),
                             Shadow(
-                              color: color.withValues(alpha: .55),
-                              blurRadius: 15 + beat * 8,
+                              color: color.withValues(alpha: .45),
+                              blurRadius: 10 + beat * 4,
                             ),
                           ],
                         ),
