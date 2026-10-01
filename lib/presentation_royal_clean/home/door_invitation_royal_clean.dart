@@ -50,47 +50,21 @@ class _DoorInvitationState extends State<DoorInvitationRoyalClean>
                     : phase >= .24 && phase < .42
                     ? .7 * math.sin((phase - .24) / .18 * math.pi)
                     : 0.0;
-                final color = Color.lerp(
-                  const Color(0xFFA8E5FF),
-                  const Color(0xFFFFBDD9),
-                  (1 - math.cos(_animation.value * 2 * math.pi)) / 2,
-                )!;
                 return Transform.translate(
                   offset: Offset(
-                    -constraints.maxWidth * .015,
-                    -constraints.maxHeight * .12,
+                    constraints.maxWidth * .005,
+                    -constraints.maxHeight * .18,
                   ),
                   child: Transform.scale(
-                    scale: .75 * (1 + .035 * beat),
+                    scale: .466875 * (1 + .035 * beat),
                     child: SizedBox(
                       width: constraints.maxWidth * .8,
-                      child: Text(
-                        'Entre\nAqui',
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        style: TextStyle(
-                          fontFamily: 'RoyalSignature',
-                          fontSize: (constraints.maxWidth * .27).clamp(22, 52),
-                          fontWeight: FontWeight.w400,
-                          height: .95,
-                          letterSpacing: 0,
-                          color: Color.lerp(color, Colors.white, .25),
-                          shadows: [
-                            const Shadow(
-                              color: Color(0xFF071825),
-                              blurRadius: 3,
-                              offset: Offset(0, 2),
-                            ),
-                            Shadow(
-                              color: color.withValues(alpha: .85),
-                              blurRadius: 4 + beat * 2,
-                            ),
-                            Shadow(
-                              color: color.withValues(alpha: .45),
-                              blurRadius: 10 + beat * 4,
-                            ),
-                          ],
-                        ),
+                      child: Image.asset(
+                        'assets/preview/royal-store/logo-porta.webp',
+                        fit: BoxFit.contain,
+                        cacheWidth: 300,
+                        filterQuality: FilterQuality.medium,
+                        gaplessPlayback: true,
                       ),
                     ),
                   ),

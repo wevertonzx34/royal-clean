@@ -1,3 +1,4 @@
+import {liveCatalogRows, catalogRevision, catalogCheckedAt} from './bling-live-sync.js';
 import {HttpsError} from 'firebase-functions/v2/https';
 
 export function validateContactQuery(input) {
@@ -22,14 +23,16 @@ export function activeContacts(records, role='all') {
 export async function readActiveContacts(db,input) {
   const catalog=(await db.doc('integrations_private/bling_contacts_catalog').get()).data()?.complete;
   if(!catalog) throw new HttpsError('failed-precondition','Sincronize os contatos na Visão geral antes de consultar a lista.');
-  if(input.catalogRun&&input.catalogRun!==catalog.runId)
+  const revision=await catalogRevision(db,'contacts',catalog);
+  if(input.catalogRun&&input.catalogRun!==revision)
     throw new HttpsError('aborted','A base foi atualizada. Atualize a lista para continuar.');
   const snapshot=await db.collection(`bling_catalog_snapshots/${catalog.slot}/contacts`)
-    .where('catalogRun','==',catalog.runId).select('id','name','code','document','status','roles').get();
-  const rows=activeContacts(snapshot.docs.map(doc=>({...doc.data(),id:doc.id})),input.contactRole??'all');
+    .where('catalogRun','==',catalog.runId).select('id','name','code','document','status','roles','detailsCheckedAt').get();
+  const rows=activeContacts(await liveCatalogRows(db,'contacts',catalog,snapshot.docs.map(doc=>({...doc.data(),id:doc.id}))),input.contactRole??'all');
   const page=input.page??1,offset=(page-1)*25;
+  if(revision!==await catalogRevision(db,'contacts',catalog))throw new HttpsError('aborted','Base atualizada durante a consulta.');
   return {items:rows.slice(offset,offset+25),total:rows.length,page,hasMore:offset+25<rows.length,
-    checkedAt:catalog.checkedAt,catalogRun:catalog.runId};
+    checkedAt:await catalogCheckedAt(db,'contacts',catalog),catalogRun:revision};
 }
 
 // Only documented contact fields are exposed, only through the authenticated admin callable.

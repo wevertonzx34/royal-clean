@@ -89,28 +89,31 @@ class IntercomRoyalClean extends ChangeNotifier {
     reload();
   }
 
-  void _adminChanged() {
+  void _adminChanged({bool force = false}) {
     final access = AccountAccessRoyalClean.instance.value;
     final uid =
         access.status == AccountAccessStatus.admin &&
             !BiometricAccessRoyalClean.instance.locked
         ? access.identity?.uid
         : null;
-    if (uid == _adminReader) return;
+    if (uid == _adminReader && !force) return;
+    final changedIdentity = uid != _adminReader;
     _adminReader = uid;
     _privateRetry?.cancel();
     final generation = ++_privateGeneration;
     unawaited(_privateFeed?.cancel());
     unawaited(_sync?.cancel());
-    _privateMessages = [];
-    _syncVersion = null;
+    if (changedIdentity) {
+      _privateMessages = [];
+      _syncVersion = null;
+    }
     notifyListeners();
     if (uid == null) return;
     _privateFeed = FirebaseFirestore.instance
         .collection('admin_bling_events')
         .orderBy('publishedAt', descending: true)
         .limit(200)
-        .snapshots()
+        .snapshots(includeMetadataChanges: true)
         .listen(
           (snapshot) {
             if (_adminReader != uid ||
@@ -123,36 +126,52 @@ class IntercomRoyalClean extends ChangeNotifier {
                 .toList();
             notifyListeners();
           },
-          onError: (Object _) {
+          onError: (Object failure) {
             if (generation != _privateGeneration) return;
-            _privateMessages = [];
+            if (failure is FirebaseException &&
+                failure.code == 'permission-denied') {
+              _privateMessages = [];
+            }
             notifyListeners();
             _privateRetry = Timer(const Duration(seconds: 30), () {
               if (generation != _privateGeneration) return;
-              _adminReader = null;
-              _adminChanged();
+              _adminChanged(force: true);
             });
           },
         );
     _sync = FirebaseFirestore.instance
         .collection('admin_bling_sync')
-        .snapshots()
-        .listen((snapshot) {
-          if (_adminReader != uid ||
-              generation != _privateGeneration ||
-              snapshot.metadata.isFromCache) {
-            return;
-          }
-          final parts =
-              snapshot.docs
-                  .map((doc) => '${doc.id}:${doc.data()['runId']}')
-                  .toList()
-                ..sort();
-          final version = parts.join('|');
-          if (version == _syncVersion) return;
-          _syncVersion = version;
+        .snapshots(includeMetadataChanges: true)
+        .listen(
+          (snapshot) {
+            if (_adminReader != uid ||
+                generation != _privateGeneration ||
+                snapshot.metadata.isFromCache) {
+              return;
+            }
+            final parts =
+                snapshot.docs
+                    .map((doc) => '${doc.id}:${doc.data()['runId']}')
+                    .toList()
+                  ..sort();
+            final version = parts.join('|');
+            if (version == _syncVersion) return;
+            final previous = (_syncVersion ?? '').split('|').toSet();
+            blingChangedGroupsRoyalClean = parts
+                .where((part) => !previous.contains(part))
+                .map((part) => part.split(':').first)
+                .toSet();
+            _syncVersion = version;
             if (version.isNotEmpty) blingSyncRevisionRoyalClean.value++;
-        }, onError: (Object _) {});
+          },
+          onError: (Object _) {
+            if (generation != _privateGeneration) return;
+            _privateRetry?.cancel();
+            _privateRetry = Timer(const Duration(seconds: 15), () {
+              if (generation == _privateGeneration) _adminChanged(force: true);
+            });
+          },
+        );
   }
 
   void reload() {

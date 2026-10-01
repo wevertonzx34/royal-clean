@@ -7,10 +7,12 @@ import 'package:flutter/material.dart';
 class WallLightRoyalClean extends StatefulWidget {
   final ValueListenable<bool> openState;
   final Listenable? faultSignal;
+  final bool fillBounds;
   const WallLightRoyalClean({
     super.key,
     required this.openState,
     this.faultSignal,
+    this.fillBounds = false,
   });
 
   static const width = 300.0;
@@ -70,12 +72,15 @@ class _WallLightState extends State<WallLightRoyalClean>
   void _scheduleFault() {
     _pause?.cancel();
     if (!_enabled) return;
-    _pause = Timer(Duration(seconds: _cycle++ % 2 == 0 ? 16 : 23), () {
-      if (!mounted || !_enabled) return;
-      _interaction = false;
-      _animation.duration = const Duration(milliseconds: 720);
-      _animation.forward(from: 0);
-    });
+    _pause = Timer(
+      Duration(milliseconds: _cycle++ % 2 == 0 ? 9600 : 13800),
+      () {
+        if (!mounted || !_enabled) return;
+        _interaction = false;
+        _animation.duration = const Duration(milliseconds: 720);
+        _animation.forward(from: 0);
+      },
+    );
   }
 
   void _onToggle() {
@@ -116,15 +121,20 @@ class _WallLightState extends State<WallLightRoyalClean>
               constraints.maxHeight * .8 / WallLightRoyalClean.height,
             ),
           );
-          final width = WallLightRoyalClean.width * scale;
-          final height = WallLightRoyalClean.height * scale;
+          final width = widget.fillBounds
+              ? constraints.maxWidth
+              : WallLightRoyalClean.width * scale;
+          final height = widget.fillBounds
+              ? constraints.maxHeight
+              : WallLightRoyalClean.height * scale;
           return Stack(
             children: [
               Positioned(
-                left:
-                    (constraints.maxWidth - width) / 2 -
-                    constraints.maxWidth * .15,
-                top: constraints.maxHeight * .10,
+                left: widget.fillBounds
+                    ? 0
+                    : (constraints.maxWidth - width) / 2 -
+                          constraints.maxWidth * .15,
+                top: widget.fillBounds ? 0 : constraints.maxHeight * .10,
                 width: width,
                 height: height,
                 child: RepaintBoundary(

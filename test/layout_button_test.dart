@@ -19,7 +19,12 @@ void main() {
     () =>
         access.value = const AccountAccessState(AccountAccessStatus.signedOut),
   );
-  Future<void> mount(WidgetTester tester, VoidCallback action) async {
+  Future<void> mount(
+    WidgetTester tester,
+    VoidCallback action, {
+    double maxScale = 2.5,
+    bool freeMovement = false,
+  }) async {
     tester.view.physicalSize = const Size(432, 912);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -30,6 +35,8 @@ void main() {
           body: Center(
             child: LayoutButtonRoyalClean(
               id: 'test.button',
+              maxScale: maxScale,
+              freeMovement: freeMovement,
               capturePreview: () async => null,
               child: ElevatedButton(
                 onPressed: action,
@@ -42,6 +49,40 @@ void main() {
     );
     await tester.pumpAndSettle();
   }
+
+  testWidgets(
+    'Free drag and second-finger zoom stop at 140% without tapping the action',
+    (tester) async {
+      var taps = 0;
+      await mount(tester, () => taps++, maxScale: 1.4, freeMovement: true);
+      final target = find.byType(ElevatedButton);
+      final original = tester.getSize(target);
+      await tester.longPress(target);
+      await tester.pumpAndSettle();
+      await tester.dragFrom(const Offset(200, 450), const Offset(70, 70));
+      final first = await tester.startGesture(
+        const Offset(180, 460),
+        pointer: 1,
+      );
+      final second = await tester.startGesture(
+        const Offset(220, 460),
+        pointer: 2,
+      );
+      await tester.pump();
+      await first.moveTo(const Offset(80, 460));
+      await second.moveTo(const Offset(330, 460));
+      await tester.pump();
+      await first.up();
+      await second.up();
+      expect(taps, 0);
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+      final actual = tester.getRect(target);
+      expect(actual.width, closeTo(original.width * 1.4, .1));
+      await tester.tapAt(actual.center);
+      expect(taps, 1);
+    },
+  );
 
   testWidgets(
     'Tap preserves action, long press edits; cancel leaves original',

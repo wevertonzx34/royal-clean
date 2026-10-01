@@ -1,4 +1,5 @@
 import 'package:royal_clean/presentation_royal_clean/home/profile_images_royal_clean.dart';
+import 'package:royal_clean/presentation_royal_clean/home/avatar_aura_royal_clean.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -115,6 +116,14 @@ void main() {
   testWidgets('Profile waits on preview and opens exactly once when ready', (
     tester,
   ) async {
+    // Native image decoding must start outside the fake-async widget clock.
+    await tester.runAsync(AvatarAuraRoyalClean.prepare);
+    await tester.pumpWidget(const MaterialApp(home: Scaffold()));
+    await tester.runAsync(
+      () => precacheProfileImagesRoyalClean(
+        tester.element(find.byType(Scaffold)),
+      ),
+    );
     final ready = Completer<void>();
     await tester.pumpWidget(
       MaterialApp(

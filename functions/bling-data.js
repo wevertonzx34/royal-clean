@@ -9,10 +9,21 @@ import {validDashboardQuery, readDashboard} from './bling-dashboard.js';
 import {syncProductCatalog} from './bling-product-catalog.js';
 import {syncRecordCatalog} from './bling-record-catalog.js';
 import {enrichDashboard} from './bling-enrichment.js';
+import {runLiveSync} from './bling-live-sync.js';
 
 const fail = (code, message) => { throw new HttpsError(code, message); };
 const text = (value, limit = 250) => typeof value === 'string' ? value.slice(0, limit) : '';
 const number = value => typeof value === 'number' && Number.isFinite(value) ? value : null;
+export function sanitizeSalesOrder(item, expectedId) {
+  const order = sanitizeBlingRecord('sales', item);
+  if (order.id !== expectedId || !Array.isArray(item.itens) || !item.itens.length || item.itens.length > 500)
+    fail('data-loss', 'Pedido sem uma lista válida de produtos.');
+  return {...order, name:text(item.contato?.nome), document:text(item.contato?.numeroDocumento,30),
+    promisedDate:text(item.dataPrevista,30), invoiceId:Number.isSafeInteger(item.notaFiscal?.id)&&item.notaFiscal.id>0?String(item.notaFiscal.id):null,
+    notes:text(item.observacoes,3000), internalNotes:text(item.observacoesInternas,3000),
+    items:item.itens.map((line,index)=>({line:String(index),sourceLineId:String(line.id??''),productId:String(line.produto?.id??''),
+      code:text(line.codigo,100),description:text(line.descricao,1000),unit:text(line.unidade,30),quantity:number(line.quantidade),unitPrice:number(line.valor)}))};
+}
 export function sanitizeInvoiceItems(item, expectedId) {
   const invoice = sanitizeBlingRecord('invoices', item);
   if (invoice.id !== expectedId || !Array.isArray(item.itens)) fail('data-loss', 'Detalhes da nota inválidos.');
@@ -54,6 +65,10 @@ export function sanitizeBlingRecord(kind, item) {
 
 export function validateBlingQuery(input = {}) {
   const kind = input.kind ?? 'products';
+  if(kind==='salesOrder') {
+    if(typeof input.orderId!=='string'||! /^[1-9]\d{0,15}$/.test(input.orderId)||!Number.isSafeInteger(Number(input.orderId)))fail('invalid-argument','Pedido inválido.');
+    return {kind,page:1,path:`pedidos/vendas/${input.orderId}`};
+  }
   if(kind==='invoiceCatalog') return validateInvoiceCatalog(input);
   if(kind==='productCatalog') return validateProductCatalog(input);
   if(['activeContacts','contactDetails'].includes(kind)) return validateContactQuery(input);
@@ -106,7 +121,7 @@ export function validateBlingQuery(input = {}) {
 }
 
 export function createBlingDataHandler({db, authenticated, requireAdmin, rateLimit,
-  readCredentials = readBlingCredentials, fetchImpl = (...args) => fetch(...args)}) {
+  allowLiveSync = false, readCredentials = readBlingCredentials, fetchImpl = (...args) => fetch(...args)}) {
   const ref = db.doc('integrations_private/bling');
   async function accessToken() {
     let data = (await ref.get()).data();
@@ -154,7 +169,8 @@ export function createBlingDataHandler({db, authenticated, requireAdmin, rateLim
     const user = await authenticated(request);
     await requireAdmin(user);
     await rateLimit(user.uid, 'bling_data', 30);
-    const {kind, page, path} = validateBlingQuery(request.data);
+    const live = allowLiveSync && request.data?.kind === 'liveSync';
+    const {kind, page, path} = live ? {kind:'liveSync'} : validateBlingQuery(request.data);
     if(kind==='productCatalog') {
       const result=await readProductCatalog(db,request.data);
       await requireAdmin(await authenticated(request));
@@ -170,9 +186,9 @@ export function createBlingDataHandler({db, authenticated, requireAdmin, rateLim
       await requireAdmin(await authenticated(request));
       return result;
     }
-    if(kind==='dashboard') {
+    if(kind==='dashboard'||live) {
       let enrichment;
-      if(request.data.refreshDetails===true) {
+      if(request.data.refreshDetails===true||live) {
         const token=await accessToken();
         let reservations=Promise.resolve(),dispatches=Promise.resolve(),lastDispatch=0;
         const reserveSlots=async(count=1)=>{
@@ -211,6 +227,7 @@ export function createBlingDataHandler({db, authenticated, requireAdmin, rateLim
           const startAt=await reserveSlots(paths.length);
           return Promise.all(paths.map((path,i)=>get(path,startAt+i*450)));
         };
+        if(live) return runLiveSync({db,get,sanitize:sanitizeBlingRecord,event:request.data.event,recheck:async()=>requireAdmin(await authenticated(request))});
         if(request.data.group==='products') {
           enrichment=await syncProductCatalog({db,get,sanitize:item=>sanitizeBlingRecord('products',item),recheck:async()=>requireAdmin(await authenticated(request)),force:request.data.syncLatest===true});
         } else if(['contacts','invoices'].includes(request.data.group)) {
@@ -248,7 +265,7 @@ export function createBlingDataHandler({db, authenticated, requireAdmin, rateLim
     } catch (_) { fail('unavailable', 'O Bling não respondeu. Tente novamente.'); }
     if (response.status === 403) fail('permission-denied', ['invoices','invoiceItems'].includes(kind)
       ? 'Habilite Notas Fiscais — visualização no Bling e renove a autorização na tela de integração.'
-      : kind === 'sales'
+      : ['sales','salesOrder'].includes(kind)
       ? 'Habilite a visualização de Pedidos de Venda no Bling e renove a autorização na tela de integração.'
       : ['contacts','contactDetails'].includes(kind)
       ? 'Habilite Clientes e Fornecedores — visualização no Bling e renove a autorização na tela de integração.'
@@ -264,6 +281,11 @@ export function createBlingDataHandler({db, authenticated, requireAdmin, rateLim
     if (response.status === 404) fail('not-found', 'O registro não foi encontrado no Bling. Atualize a lista.');
     if (!response.ok) fail('unavailable', 'Consulta indisponível no Bling. Tente novamente.');
     const payload = await response.json();
+    if(kind==='salesOrder') {
+      const result=sanitizeSalesOrder(payload.data,request.data.orderId);
+      await requireAdmin(await authenticated(request));
+      return result;
+    }
     if(kind==='contactDetails') {
       const result=contactDetails(payload.data,request.data.contactId);
       await requireAdmin(await authenticated(request));
@@ -277,7 +299,8 @@ export function createBlingDataHandler({db, authenticated, requireAdmin, rateLim
       return {...result, checkedAt:new Date().toISOString(), source:'Bling'};
     }
     if (!Array.isArray(payload.data)) fail('data-loss', 'Resposta inesperada do Bling.');
-    const items = payload.data.map(item => sanitizeBlingRecord(kind, item));
+    const items = payload.data.map(item => ({...sanitizeBlingRecord(kind, item),
+      ...(kind==='sales'?{name:text(item.contato?.nome),document:text(item.contato?.numeroDocumento,30)}:{})}));
     await requireAdmin(await authenticated(request));
     const checkedAt = new Date().toISOString();
     // Private mirror only. Contacts never create users or public partner publications.

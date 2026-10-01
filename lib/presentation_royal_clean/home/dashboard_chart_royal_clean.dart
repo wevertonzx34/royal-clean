@@ -49,7 +49,7 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
   Map<String, dynamic>? _data;
   String? _error;
   bool _busy = false;
-  Timer? _debounce, _hourly, _pendingPoll;
+  Timer? _debounce, _fallback, _pendingPoll;
   final _cache = <String, Map<String, dynamic>>{};
   bool _refreshingAll = false;
   DateTime _lastCycle = DateTime.now();
@@ -66,18 +66,27 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
     if (widget.load == null) ActiveContactsSessionRoyalClean.instance.start();
     if (widget.load == null) InvoiceListSessionRoyalClean.instance.start();
     if (widget.load == null) ProductListSessionRoyalClean.instance.start();
-    _scheduleHourly();
+    _scheduleFallback();
     _reload();
   }
 
-  void _scheduleHourly() {
-    _hourly?.cancel();
-    _hourly = Timer(const Duration(hours: 1), () {
+  void _scheduleFallback() {
+    _fallback?.cancel();
+    _fallback = Timer(const Duration(minutes: 2), () {
       if (_foreground) _refreshAll(syncBling: false);
     });
   }
 
   void _synced() {
+    _cache.removeWhere(
+      (key, _) =>
+          blingChangedGroupsRoyalClean.isEmpty ||
+          blingChangedGroupsRoyalClean.contains(
+            (jsonDecode(key) as Map)['group'],
+          ),
+    );
+    if (blingChangedGroupsRoyalClean.isNotEmpty &&
+        !blingChangedGroupsRoyalClean.contains(_groups[_group])) { return; }
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
       _cache.clear();
@@ -88,7 +97,7 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
   @override
   void dispose() {
     _debounce?.cancel();
-    _hourly?.cancel();
+    _fallback?.cancel();
     _pendingPoll?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     blingSyncRevisionRoyalClean.removeListener(_synced);
@@ -100,7 +109,7 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
     _foreground = state == AppLifecycleState.resumed;
     if (_foreground) _watchPending();
     if (_foreground &&
-        DateTime.now().difference(_lastCycle) >= const Duration(hours: 1)) {
+        DateTime.now().difference(_lastCycle) >= const Duration(minutes: 2)) {
       _refreshAll(syncBling: false);
     }
   }
@@ -224,7 +233,7 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
       _error = null;
     });
     _lastCycle = DateTime.now();
-    _scheduleHourly();
+    _scheduleFallback();
     final since = _lastCycle.toUtc().toIso8601String();
     final failures = <String>[];
     // Sequential batches avoid bursts against Bling and preserve the visible chart.
@@ -603,7 +612,7 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
                       builder: (context) => AlertDialog(
                         title: const Text('Dados do Bling'),
                         content: Text(
-                          'Produtos, notas e contatos são sincronizados automaticamente no servidor a cada hora. Use Atualizar para consultar antes. O último resultado completo é preservado durante a sincronização. Produtos excluídos ficam fora do total atual.\n\n${_group == 'Notas' ? 'Faturamento soma o valor nominal das notas Autorizadas e Emitida DANFE; exclui as demais situações. Não representa receita líquida ou recebimento. Quantidade considera as notas no período selecionado. Entregues é o novo título do indicador fiscal anterior; seus dados ainda representam transmissão à SEFAZ, não confirmação de entrega ao cliente. Pendentes corresponde à situação fiscal Pendente. Pagas exige conciliação das contas a receber vinculadas à NF. Valor futuro considera apenas registros futuros, sem estimativa.' : 'Cadastros por situação atual. Contatos são classificados conforme os tipos Cliente e Fornecedor do Bling; um contato pode pertencer aos dois grupos. Sem histórico por data.'}',
+                          'Eventos configurados do Bling atualizam a base em segundo plano. Consultas automáticas complementam os eventos, com prazo dependente do Bling e do volume de registros. Use Atualizar para solicitar uma conferência completa. O último resultado completo é preservado durante a sincronização. Produtos excluídos ficam fora do total atual.\n\n${_group == 'Notas' ? 'Faturamento soma o valor nominal das notas Autorizadas e Emitida DANFE; exclui as demais situações. Não representa receita líquida ou recebimento. Quantidade considera as notas no período selecionado. Entregues é o novo título do indicador fiscal anterior; seus dados ainda representam transmissão à SEFAZ, não confirmação de entrega ao cliente. Pendentes corresponde à situação fiscal Pendente. Pagas exige conciliação das contas a receber vinculadas à NF. Valor futuro considera apenas registros futuros, sem estimativa.' : 'Cadastros por situação atual. Contatos são classificados conforme os tipos Cliente e Fornecedor do Bling; um contato pode pertencer aos dois grupos. Sem histórico por data.'}',
                         ),
                         actions: [
                           LayoutButtonRoyalClean(

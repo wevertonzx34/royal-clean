@@ -68,9 +68,9 @@ void main() {
       of: find.byType(WallLightRoyalClean),
       matching: find.byType(Opacity),
     );
-    await tester.pump(const Duration(seconds: 15));
+    await tester.pump(const Duration(milliseconds: 9500));
     expect(tester.widget<Opacity>(opacity).opacity, 1);
-    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(milliseconds: 100));
     await tester.pump(const Duration(milliseconds: 100));
     expect(tester.widget<Opacity>(opacity).opacity, lessThan(1));
     await tester.pumpWidget(host(true));

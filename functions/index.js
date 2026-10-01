@@ -8,9 +8,13 @@ import {getMessaging} from 'firebase-admin/messaging';
 import {catalogGroups, reconcileNotifications, deviceKey, sendAdminEvent} from './bling-notifications.js';
 import {createScheduledBlingSync} from './bling-scheduled-sync.js';
 import {createBlingHandlers} from './bling.js';
+import {createBlingWebhook} from './bling-live-sync.js';
+import {defineSecret} from 'firebase-functions/params';
 import {createBlingDataHandler} from './bling-data.js';
 import {LEGAL_VERSION, ROLES, validName, inviteProblem, normalizePhone} from './validation.js';
 import {personalData} from './personal-data.js';
+import {createProductionOrders} from './production-orders.js';
+import {createOrderCare,remindOrderCare} from './order-care.js';
 
 initializeApp();
 const db = getFirestore();
@@ -18,6 +22,25 @@ const db = getFirestore();
 const options = {region: 'southamerica-east1', enforceAppCheck: true, maxInstances: 10};
 const bling = createBlingHandlers({db, auth: getAuth(), authenticated, requireAdmin, rateLimit});
 const blingOptions = {...options, maxInstances: 2, concurrency: 20, timeoutSeconds: 60};
+const liveRead = createBlingDataHandler({db, authenticated, requireAdmin, rateLimit:async()=>{},allowLiveSync:true});
+async function syncLive(event) {
+  const connection=(await db.doc('integrations_private/bling').get()).data();
+  if(!connection?.connectedBy) return;
+  return liveRead({auth:{uid:connection.connectedBy},data:{kind:'liveSync',...(event?{event}:{})}});
+}
+const blingWebhookSecret=defineSecret('BLING_CLIENT_SECRET');
+export const blingWebhook = onRequest({region:'southamerica-east1',timeoutSeconds:15,maxInstances:2,invoker:'public',secrets:[blingWebhookSecret]},
+  createBlingWebhook({db,readCredentials:async()=>({clientSecret:blingWebhookSecret.value()})}));
+export const blingWebhookWorker = onDocumentCreated({region:'southamerica-east1',document:'bling_webhook_queue/{eventId}',
+  timeoutSeconds:120,maxInstances:1,concurrency:1,retry:true},async event=>{
+    const ref=event.data.ref;
+    const data=(await ref.get()).data();
+    if(data?.status==='complete')return;
+    await syncLive(data);
+    await ref.update({status:'complete',processedAt:FieldValue.serverTimestamp()});
+  });
+export const blingLivePoll = onSchedule({region:'southamerica-east1',schedule:'every 1 minutes',
+  timeZone:'America/Sao_Paulo',timeoutSeconds:120,maxInstances:1,retryCount:0},()=>syncLive());
 export const blingCatalogNotifications = onDocumentWritten({region:'southamerica-east1',document:'integrations_private/{catalog}',
   timeoutSeconds:540,maxInstances:1,concurrency:1,retry:true}, async event => {
   const group=catalogGroups[event.params.catalog];
@@ -48,7 +71,19 @@ export const blingConnectionStatus = onCall(blingOptions, bling.status);
 export const blingBeginAuthorization = onCall(blingOptions, bling.begin);
 export const blingReadData = onCall(blingOptions,
   createBlingDataHandler({db, authenticated, requireAdmin, rateLimit}));
-export const blingScheduledSync = onSchedule({region:'southamerica-east1',schedule:'every 60 minutes',
+const productionRead=createBlingDataHandler({db,authenticated,requireAdmin,rateLimit:async()=>{}});
+export const orderCare=onCall(blingOptions,createOrderCare({db,authenticated,requireAdmin,rateLimit,
+  loadOrder:(request,id)=>productionRead({...request,data:{kind:'salesOrder',orderId:id}}),
+  loadInvoice:(request,id)=>productionRead({...request,data:{kind:'invoiceItems',invoiceId:id}})}));
+export const orderCareReminders=onSchedule({region:'southamerica-east1',schedule:'every 60 minutes',
+  timeZone:'America/Sao_Paulo',timeoutSeconds:120,maxInstances:1},()=>remindOrderCare(db));
+export const productionOrder=onCall(blingOptions,createProductionOrders({db,authenticated,requireAdmin,rateLimit,
+  loadInvoice:async(request,id)=>{
+    const details=await productionRead({...request,data:{kind:'invoiceItems',invoiceId:id}});
+    const mirror=(await db.doc(`bling_private_invoices/${id}`).get()).data()??{};
+    return {...details,invoice:{...details.invoice,recipientName:mirror.recipientName??'',recipientDocument:mirror.recipientDocument??''}};
+  }}));
+export const blingScheduledSync = onSchedule({region:'southamerica-east1',schedule:'every 6 hours',
   timeZone:'America/Sao_Paulo',timeoutSeconds:1800,maxInstances:1,retryCount:1},
   createScheduledBlingSync({db,read:createBlingDataHandler({db,authenticated,requireAdmin,rateLimit:async()=>{}})}));
 export const blingCallback = onRequest({region: 'southamerica-east1', maxInstances: 2,

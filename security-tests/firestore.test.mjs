@@ -20,6 +20,18 @@ let noEmail;
 const intercomMessage = () => ({title: 'Aviso Royal Clean', body: 'Mensagem pública de teste.',
   kind: 'Mensagem', publishedAt: serverTimestamp(), expiresAt: Timestamp.fromMillis(Date.now() + 86400000)});
 
+test('Production orders and audit are admin-only and never directly writable, including by admins',async()=>{
+ const verifiedAdmin=env.authenticatedContext('admin-ok',{email:'admin@example.test',email_verified:true}).firestore();
+ const paths=['production_orders/123','production_orders/123/audit/entry','order_care/123','order_care/123/audit/entry','order_care_invoice_links/456/orders/123'];
+ await env.withSecurityRulesDisabled(async context=>{for(const path of paths)await setDoc(doc(context.firestore(),path),{status:'verified'});});
+ for(const path of paths){
+  await assertSucceeds(getDoc(doc(verifiedAdmin,path)));
+  for(const db of [visitor,member,inactive,nonAdmin,admin])await assertFails(getDoc(doc(db,path)));
+  await assertFails(setDoc(doc(verifiedAdmin,path),{status:'verified'}));
+  await assertFails(deleteDoc(doc(verifiedAdmin,path)));
+ }
+});
+
 test('Bling events and revisions are private to verified active admins; tokens and event writes are server-only', async () => {
   const verifiedAdmin=env.authenticatedContext('admin-ok',{email:'admin@example.test',email_verified:true}).firestore();
   const consumer=env.authenticatedContext('member',{email:'member@example.test',email_verified:true}).firestore();

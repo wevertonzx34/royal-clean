@@ -29,7 +29,7 @@ class ProductListSessionRoyalClean with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     AccountAccessRoyalClean.instance.addListener(_access);
     blingSyncRevisionRoyalClean.addListener(_synced);
-    Timer.periodic(const Duration(hours: 1), (_) {
+    Timer.periodic(const Duration(minutes: 2), (_) {
       if (_foreground) unawaited(cache.refresh(force: true));
     });
     _access();
@@ -44,6 +44,8 @@ class ProductListSessionRoyalClean with WidgetsBindingObserver {
   }
 
   void _synced() {
+    if (blingChangedGroupsRoyalClean.isNotEmpty &&
+        !blingChangedGroupsRoyalClean.contains('products')) { return; }
     if (_foreground) unawaited(cache.refresh(force: true));
   }
 

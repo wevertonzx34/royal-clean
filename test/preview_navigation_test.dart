@@ -24,6 +24,13 @@ void main() {
   testWidgets(
     'Notifications open and partnerships shortcut scrolls to section',
     (tester) async {
+      // Prewarm native decoding outside the fake-async widget clock.
+      await tester.pumpWidget(const MaterialApp(home: Scaffold()));
+      await tester.runAsync(
+        () => precacheProfileImagesRoyalClean(
+          tester.element(find.byType(Scaffold)),
+        ),
+      );
       tester.view.physicalSize = const Size(320, 720);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);

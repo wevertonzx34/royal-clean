@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'office_shortcut_royal_clean.dart';
 import 'stock_lighting_royal_clean.dart';
 import 'nfe_page_royal_clean.dart';
+import 'order_care_page_royal_clean.dart';
 import '../shared/header_actions_royal_clean.dart';
 
 class StockFunctionsPageRoyalClean extends StatelessWidget {
@@ -23,6 +24,7 @@ class StockFunctionsPageRoyalClean extends StatelessWidget {
     body: StockBackgroundRoyalClean(
       showOffice: true,
       onOpenOffice: () => openNfeRoyalClean(context),
+      onOpenProduction: () => openOrderCareRoyalClean(context),
     ),
   );
 }
@@ -31,10 +33,12 @@ class StockFunctionsPageRoyalClean extends StatelessWidget {
 class StockBackgroundRoyalClean extends StatefulWidget {
   final bool showOffice;
   final Future<void> Function()? onOpenOffice;
+  final Future<void> Function()? onOpenProduction;
   const StockBackgroundRoyalClean({
     super.key,
     this.showOffice = false,
     this.onOpenOffice,
+    this.onOpenProduction,
   });
 
   // Coordinates in the original royal-stoque image (2250 x 4000).
@@ -84,6 +88,7 @@ class _StockBackgroundState extends State<StockBackgroundRoyalClean> {
                     rect: StockBackgroundRoyalClean.productionRect,
                     child: OfficeShortcutRoyalClean.production(
                       onTouch: _flashLights,
+                      onOpen: widget.onOpenProduction,
                     ),
                   ),
                 if (widget.showOffice)

@@ -19,8 +19,28 @@ Map<String, dynamic> page(int p, {String run = 'r1'}) => {
   'checkedAt': '2026-09-26T20:00:00Z',
 };
 void main() {
+  test('A live revision received during a read schedules one follow-up read', () async {
+    final delayed = Completer<Map<String, dynamic>>();
+    var calls = 0;
+    final cache = ActiveContactsCacheRoyalClean(load: (query) async {
+      calls++;
+      if (calls == 1) return delayed.future;
+      return {...page(1, run: 'new'), 'total': 1, 'hasMore': false};
+    });
+    cache.setOwner('admin');
+    final first = cache.refresh();
+    unawaited(cache.refresh(force: true));
+    unawaited(cache.refresh(force: true));
+    delayed.complete({...page(1), 'total': 1, 'hasMore': false});
+    await first;
+    await Future<void>.delayed(Duration.zero);
+    expect(calls, 2);
+    expect(cache.catalogRun, 'new');
+    expect(cache.rows('all'), hasLength(1));
+    cache.dispose();
+  });
   test(
-    'Prefetch all pages once, filter locally and refresh only at hourly TTL',
+    'Prefetch all pages once, filter locally and refresh only at two-minute fallback TTL',
     () async {
       var now = DateTime(2026, 9, 26);
       var calls = 0;
@@ -38,7 +58,7 @@ void main() {
       expect(c.rows('customer').length, 1);
       await c.refresh();
       expect(calls, 2);
-      now = now.add(const Duration(hours: 1));
+      now = now.add(const Duration(minutes: 2));
       await c.refresh();
       expect(calls, 4);
       await c.refresh(force: true);
@@ -99,7 +119,7 @@ void main() {
       unawaited(c.refresh(force: true));
       await tester.pump();
       expect(find.text('Contato 1'), findsOneWidget);
-      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      expect(find.byType(LinearProgressIndicator), findsNothing);
       pending.completeError(StateError('offline'));
       await tester.pumpAndSettle();
       expect(find.text('Contato 1'), findsOneWidget);

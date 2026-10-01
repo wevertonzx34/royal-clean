@@ -171,7 +171,7 @@ void main() {
     },
   );
   testWidgets(
-    'Hourly refresh updates all groups, reuses cache and manual refresh bypasses freshness',
+    'Background fallback refresh updates all groups, reuses cache and manual refresh bypasses freshness',
     (tester) async {
       addTearDown(() => tester.pumpWidget(const SizedBox.shrink()));
       final calls = <Map<String, dynamic>>[];
@@ -187,7 +187,7 @@ void main() {
       await tester.tap(find.text('Produtos'));
       await tester.pumpAndSettle();
       expect(calls.length, 2);
-      await tester.pump(const Duration(minutes: 59));
+      await tester.pump(const Duration(minutes: 1));
       await tester.pumpAndSettle();
       expect(calls.length, 2);
       await tester.pump(const Duration(minutes: 1));

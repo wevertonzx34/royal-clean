@@ -13,7 +13,7 @@ export async function syncRecordCatalog({db,group,get,sanitize,recheck,force=fal
     const old=(await tx.get(ref)).data()??{};
     if(old.leaseUntil>Date.now())throw new HttpsError('unavailable','Sincronização em andamento. Aguarde.');
     if(!force&&old.version===version&&old.phase!=='running'&&Date.parse(old.complete?.checkedAt)>Date.now()-3600000){state=old;return false;}
-    state=old.phase==='running'&&old.version===version?old:{...old,version,phase:'running',runId:randomUUID(),slot:old.complete?.slot==='a'?'b':'a',page:1,pass:0,pending:null,offset:0,newIds:0};
+    state=old.phase==='running'&&old.version===version?old:{...old,version,phase:'running',startedAt:new Date().toISOString(),runId:randomUUID(),slot:old.complete?.slot==='a'?'b':'a',page:1,pass:0,pending:null,offset:0,newIds:0};
     state={...state,owner,leaseUntil:Date.now()+55000};tx.set(ref,state);return true;
   });
   if(!acquired)return {remaining:0,catalogPending:false};
@@ -65,7 +65,7 @@ export async function syncRecordCatalog({db,group,get,sanitize,recheck,force=fal
           if(live.endOfPass){
             // The default invoice list excludes canceled invoices.
             if(group==='invoices'&&live.pass===0)state={...state,page:1,pass:1};
-            else state={...state,phase:'complete',complete:{runId:live.runId,slot:live.slot,checkedAt}};
+            else state={...state,phase:'complete',complete:{runId:live.runId,slot:live.slot,checkedAt,startedAt:live.startedAt??checkedAt}};
           }
         }
         tx.set(ref,state);

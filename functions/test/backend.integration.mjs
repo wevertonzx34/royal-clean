@@ -16,6 +16,58 @@ const auth = getAuth();
 const data = (extra={}) => ({name:'João da Silva', acceptTerms:true, legalVersion:'2026-09-22', offers:false, inviteCode:'', ...extra});
 const request = (uid, input = {}) => ({auth:{uid}, data:input});
 
+test('Order care transactions enforce authorization, idempotency, revisions, source changes and durable private events',async()=>{
+ const {createOrderCare,remindOrderCare}=await import('../order-care.js');
+ const ref=db.doc('order_care/98765');await db.recursiveDelete(ref);let amount=10,reads=0;
+ const handler=createOrderCare({db,authenticated:async r=>({uid:r.auth?.uid,email:'admin@example.test'}),requireAdmin:async u=>{if(u.uid!=='role-admin')throw Object.assign(Error('Denied'),{code:'permission-denied'});},rateLimit:async()=>{},
+  loadOrder:async()=>{reads++;return {id:'98765',code:'TEST',name:'Sintético',invoiceId:'87654',items:[{line:'0',quantity:amount,code:'SKU'}]};},
+  loadInvoice:async()=>({invoice:{status:'5',code:'TEST-NFE',statusLabel:'Autorizada'}})});
+ const call=data=>handler(request('role-admin',{orderId:'98765',...data}));
+ await assert.rejects(handler(request('intruder',{orderId:'98765',action:'open'})),{code:'permission-denied'});assert.equal(reads,0);
+ let {order}=await call({action:'open'});assert.equal(order.status,'new');
+ const confirm={action:'confirm',revision:order.revision,requestId:'confirm-care-test-0001',confirmation:'Confirmado por teste sintético'};
+ ({order}=await call(confirm));const revision=order.revision;
+ assert.equal((await call(confirm)).order.revision,revision);
+ await assert.rejects(call({...confirm,confirmation:'diferente'}),{code:'already-exists'});
+ await assert.rejects(call({...confirm,requestId:'confirm-care-test-0002'}),{code:'aborted'});
+ assert.equal((await db.doc('order_care_invoice_links/87654/orders/98765').get()).exists,true);
+ assert.equal((await db.doc('admin_bling_events/care_98765_confirm-care-test-0001').get()).exists,true);
+ const lines=order.lines.map(l=>({...l,separated:6,checked:true,reason:'Falta',note:'Comprar',owner:'Admin',due:new Date(Date.now()+3600000).toISOString(),agreement:'Cliente concordou'}));
+ ({order}=await call({action:'verify',revision,requestId:'verify-care-test-0001',lines}));assert.equal(order.status,'pending');
+ await remindOrderCare(db);await remindOrderCare(db);
+ const reminder=await db.doc(`admin_bling_events/care_due_98765_${new Date().toISOString().slice(0,10)}`).get();assert.equal(reminder.exists,true);
+ amount=12;({order}=await call({action:'open'}));assert.equal(order.sourceChanged,true);assert.equal(order.lines[0].separated,6);
+ await assert.rejects(call({action:'dispatch',revision:order.revision,requestId:'dispatch-care-test-01',lines:order.lines,partialApproved:true}),/mudou/);
+ ({order}=await call({action:'reconcile',revision:order.revision,requestId:'reconcile-care-test-1'}));assert.equal(order.lines[0].separated,6);assert.equal(order.lines[0].checked,false);
+ assert.equal(order.source.items[0].quantity,12);assert.ok((await ref.collection('audit').get()).size>=5);
+ await db.recursiveDelete(ref);await db.doc('order_care_invoice_links/87654/orders/98765').delete();
+});
+
+test('Production verification is audited, idempotent, conflict-safe and reopens when original invoice changes',async()=>{
+ const {createProductionOrders}=await import('../production-orders.js');
+ const ref=db.doc('production_orders/123456');await db.recursiveDelete(ref);
+ let quantity=2,status='5',reads=0;
+ const handler=createProductionOrders({db,authenticated:async r=>({uid:r.auth?.uid,email:'admin@example.test'}),
+  requireAdmin:async u=>{if(u.uid!=='role-admin')throw Object.assign(Error('Denied'),{code:'permission-denied'});},rateLimit:async()=>{},
+  loadInvoice:async()=>{reads++;return {invoice:{id:'123456',code:'OS-TEST',status},items:[{code:'SKU',description:'Item',quantity}],total:10};}});
+ const call=data=>handler(request('role-admin',{invoiceId:'123456',...data}));
+ await assert.rejects(handler(request('intruder',{invoiceId:'123456',action:'open'})),{code:'permission-denied'});assert.equal(reads,0);
+ let result=await call({action:'open'});assert.equal(result.order.status,'open');assert.equal(result.order.revision,1);
+ const check={line:'0',quantity:0,checked:false,unavailable:true,observation:'Produto em falta'};
+ result=await call({action:'save',revision:1,requestId:'save-request-000001',checks:[check]});assert.equal(result.order.revision,2);
+ await assert.rejects(call({action:'verify',revision:2,requestId:'verify-request-0001',checks:[check]}),/faltas ou divergências/);
+ await assert.rejects(call({action:'save',revision:1,requestId:'save-request-000002',checks:[check]}),{code:'aborted'});
+ const verified={action:'verify',revision:2,requestId:'verify-request-0002',checks:[{...check,quantity:2,checked:true,unavailable:false,observation:''}]};
+ result=await call(verified);assert.equal(result.order.status,'verified');assert.equal(result.order.verifiedBy,'role-admin');
+ const duplicate=await call(verified);assert.equal(duplicate.order.revision,3);
+ assert.equal((await ref.collection('audit').get()).size,3);
+ quantity=3;result=await call({action:'open'});assert.equal(result.sourceChanged,true);assert.equal(result.order.status,'open');assert.equal(result.order.checks[0].checked,false);
+ status='2';result=await call({action:'open'});
+ await assert.rejects(call({...verified,requestId:'verify-request-0003',revision:result.order.revision}),/autorizada/);
+ assert.equal((await ref.collection('audit').get()).size,5);
+ await db.recursiveDelete(ref);
+});
+
 test('Admin push registration rejects guests, consumers and unverified accounts',async()=>{
  const input={token:'test-token-that-is-long-enough-for-validation'};
  await assert.rejects(registerAdminNotifications.run({data:input}),{code:'unauthenticated'});

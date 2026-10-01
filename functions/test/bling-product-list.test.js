@@ -9,6 +9,7 @@ test('Product list and dashboard share complete snapshot counts in every period,
  records.push({id:'deleted',status:'E'});
  const complete={slot:'a',runId:'r1',checkedAt:'2026-09-27T03:00:00Z',counts:{A:426,I:1,E:1}};
  const db={doc:()=>({get:async()=>({data:()=>({phase:'running',complete})})}),collection:path=>{
+   if(path==='bling_live_records')return {where:()=>({get:async()=>({docs:[]})})};
    assert.equal(path,'bling_catalog_snapshots/a/products');
    return {where:(field,value,run)=>{assert.equal(run,'r1');return {select:()=>({get:async()=>({docs:records.map(r=>({id:r.id,data:()=>r}))})})};}};
  }};

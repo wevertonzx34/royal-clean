@@ -301,6 +301,27 @@ service cloud.firestore {
       allow read: if signedIn() && request.auth.token.email_verified == true && activeAdmin();
       allow write: if false;
     }
+    // Conferência operacional: estados e auditoria só podem ser gravados pelo servidor.
+    match /order_care/{id} {
+      allow read: if signedIn() && request.auth.token.email_verified == true && activeAdmin();
+      allow write: if false;
+      match /audit/{entry} {
+        allow read: if signedIn() && request.auth.token.email_verified == true && activeAdmin();
+        allow write: if false;
+      }
+    }
+    match /order_care_invoice_links/{invoice}/orders/{id} {
+      allow read: if signedIn() && request.auth.token.email_verified == true && activeAdmin();
+      allow write: if false;
+    }
+    match /production_orders/{id} {
+      allow read: if signedIn() && request.auth.token.email_verified == true && activeAdmin();
+      allow write: if false;
+      match /audit/{entry} {
+        allow read: if signedIn() && request.auth.token.email_verified == true && activeAdmin();
+        allow write: if false;
+      }
+    }
     // Novas coleções e subcoleções permanecem fechadas por padrão.
     match /{document=**} {
       allow read, write: if false;

@@ -248,7 +248,7 @@ class _ActiveContactsState extends State<ActiveContactsPageRoyalClean> {
               ],
             ),
           ),
-          if (_busy) const LinearProgressIndicator(),
+          if (_busy && _items.isEmpty) const LinearProgressIndicator(),
           if (_error != null)
             Padding(
               padding: const EdgeInsets.all(16),

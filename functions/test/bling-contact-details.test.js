@@ -1,4 +1,4 @@
-﻿import {test} from 'node:test';
+import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {validateBlingQuery,createBlingDataHandler} from '../bling-data.js';
 import {activeContacts,contactDetails,readActiveContacts} from '../bling-contact-details.js';
@@ -23,7 +23,7 @@ test('Detail exposes documented administrative fields but excludes arbitrary sec
 });
 test('Complete catalog is paginated, scoped and refuses a changed generation',async()=>{
  const rows=Array.from({length:27},(_,i)=>({id:String(i+1),data:()=>({id:String(i+1),name:`Contato ${String(i).padStart(2,'0')}`,status:'A',roles:[]})}));
- const db={doc:()=>({get:async()=>({data:()=>({complete:{slot:'a',runId:'run1',checkedAt:'2026-09-26'}})})}),collection:()=>({where:()=>({select:()=>({get:async()=>({docs:rows})})})})};
+ const db={doc:()=>({get:async()=>({data:()=>({complete:{slot:'a',runId:'run1',checkedAt:'2026-09-26'}})})}),collection:(path)=>path==='bling_live_records'?({where:()=>({get:async()=>({docs:[]})})}):({where:()=>({select:()=>({get:async()=>({docs:rows})})})})};
  const one=await readActiveContacts(db,{page:1});const two=await readActiveContacts(db,{page:2,catalogRun:one.catalogRun});
  assert.equal(one.total,27);assert.equal(one.items.length,25);assert.equal(two.items.length,2);assert.equal(two.hasMore,false);
  await assert.rejects(readActiveContacts(db,{page:2,catalogRun:'old'}),{code:'aborted'});

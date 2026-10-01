@@ -12,15 +12,21 @@ class OfficeShortcutRoyalClean extends StatelessWidget {
   final Future<void> Function()? onOpen;
   const OfficeShortcutRoyalClean({super.key, this.onTouch, this.onOpen})
     : isProduction = false;
-  const OfficeShortcutRoyalClean.production({super.key, this.onTouch})
-    : isProduction = true,
-      onOpen = null;
+  const OfficeShortcutRoyalClean.production({
+    super.key,
+    this.onTouch,
+    this.onOpen,
+  }) : isProduction = true;
 
   @override
   Widget build(BuildContext context) => Semantics(
     button: true,
     label: isProduction ? 'Royal Produção' : 'Royal Office',
-    hint: onOpen == null ? 'Atalho em preparação' : 'Abrir NF-e',
+    hint: onOpen == null
+        ? 'Atalho em preparação'
+        : isProduction
+        ? 'Conferir produtos da OS / NF-e'
+        : 'Abrir NF-e',
     child: LayoutButtonRoyalClean(
       id: isProduction ? 'stock.production' : 'stock.office',
       child: ImageActionRoyalClean(

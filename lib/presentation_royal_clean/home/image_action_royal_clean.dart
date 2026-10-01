@@ -6,6 +6,7 @@ import '../../core_royal_clean/services/touch_feedback_royal_clean.dart';
 /// One tactile response and a finite visual sequence before activating a shortcut.
 class ImageActionRoyalClean extends StatefulWidget {
   final FutureOr<void> Function() onActivate;
+  final FutureOr<void> Function()? onLongActivate;
   final Widget Function(BuildContext context, double flash) builder;
   final int pulses;
   final Duration duration;
@@ -16,6 +17,7 @@ class ImageActionRoyalClean extends StatefulWidget {
   const ImageActionRoyalClean({
     super.key,
     required this.onActivate,
+    this.onLongActivate,
     required this.builder,
     this.pulses = 1,
     this.duration = const Duration(milliseconds: 160),
@@ -51,7 +53,7 @@ class _ImageActionState extends State<ImageActionRoyalClean>
     }
   }
 
-  Future<void> _activate() async {
+  Future<void> _activate([bool longPress = false]) async {
     if (_busy) return;
     _busy = true;
     (widget.feedback ?? TouchFeedbackRoyalClean.pulse)();
@@ -62,7 +64,7 @@ class _ImageActionState extends State<ImageActionRoyalClean>
         await _animation.forward(from: 0).orCancel;
       }
       if (!mounted) return;
-      await widget.onActivate();
+      await (longPress ? widget.onLongActivate!() : widget.onActivate());
       if (mounted && widget.replayAfterActivation) {
         // The returning route re-enables TickerMode on the next frame.
         await WidgetsBinding.instance.endOfFrame;
@@ -91,6 +93,7 @@ class _ImageActionState extends State<ImageActionRoyalClean>
   Widget build(BuildContext context) => GestureDetector(
     behavior: HitTestBehavior.opaque,
     onTap: _activate,
+    onLongPress: widget.onLongActivate == null ? null : () => _activate(true),
     child: AnimatedBuilder(
       animation: _animation,
       builder: (context, _) {

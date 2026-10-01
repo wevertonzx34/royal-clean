@@ -1,4 +1,5 @@
-﻿import {HttpsError} from 'firebase-functions/v2/https';
+import {liveCatalogRows, catalogRevision, catalogCheckedAt} from './bling-live-sync.js';
+import {HttpsError} from 'firebase-functions/v2/https';
 export function invoiceListingFields(data) {
  const text=v=>typeof v==='string'?v.slice(0,250):'';
  return {recipientName:text(data.contato?.nome),recipientDocument:text(data.contato?.numeroDocumento),
@@ -22,13 +23,15 @@ export function validateInvoiceCatalog(input) {
 export async function readInvoiceCatalog(db,input) {
  const complete=(await db.doc('integrations_private/bling_invoices_catalog').get()).data()?.complete;
  if(!complete)throw new HttpsError('failed-precondition','Aguarde a sincronização completa das notas.');
- if(input.catalogRun&&input.catalogRun!==complete.runId)throw new HttpsError('aborted','A base de notas mudou. Atualize a lista.');
+ const revision=await catalogRevision(db,'invoices',complete);
+  if(input.catalogRun&&input.catalogRun!==revision)throw new HttpsError('aborted','A base de notas mudou. Atualize a lista.');
  const snapshot=await db.collection(`bling_catalog_snapshots/${complete.slot}/invoices`)
-   .where('catalogRun','==',complete.runId).select('code','date','status','total','recipientName','recipientDocument','listingVersion').get();
- const rows=snapshot.docs.map(doc=>({id:doc.id,...doc.data()}));
+   .where('catalogRun','==',complete.runId).select('code','date','status','total','recipientName','recipientDocument','listingVersion','detailsCheckedAt').get();
+ const rows=await liveCatalogRows(db,'invoices',complete,snapshot.docs.map(doc=>({id:doc.id,...doc.data()})));
  if(rows.some(r=>r.listingVersion!==1))throw new HttpsError('failed-precondition','Preparando os dados dos destinatários. Aguarde a sincronização das notas.');
  rows.sort((a,b)=>(b.date??'').localeCompare(a.date??'')||a.id.localeCompare(b.id));
  const page=input.page??1,offset=(page-1)*100;
+  if(revision!==await catalogRevision(db,'invoices',complete))throw new HttpsError('aborted','Base atualizada durante a consulta.');
  return {items:rows.slice(offset,offset+100).map(r=>({...r,metricKeys:invoiceMetricKeys(r)})),total:rows.length,
-   page,hasMore:offset+100<rows.length,catalogRun:complete.runId,checkedAt:complete.checkedAt};
+   page,hasMore:offset+100<rows.length,catalogRun:revision,checkedAt:await catalogCheckedAt(db,'invoices',complete)};
 }

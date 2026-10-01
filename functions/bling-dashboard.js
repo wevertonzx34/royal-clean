@@ -1,3 +1,4 @@
+import {liveCatalogRows, catalogRevision, catalogCheckedAt} from './bling-live-sync.js';
 import {invoiceMetricKeys} from './bling-invoice-list.js';
 // Aggregate sanitized private records; never infer complete ERP coverage.
 const groups=['products','sales','invoices','contacts'];
@@ -108,24 +109,22 @@ export async function readDashboard(db,input) {
     const catalog=(await db.doc('integrations_private/bling_product_catalog').get()).data();
     catalogPending=catalog?.phase==='running';
     if(catalog?.complete) {
-      const counts=catalog.complete.counts;
-      const result=aggregateDashboard('products',input.period,[]);
-      result.metrics[0].values=['A','I','?'].map(status=>counts[status]??0);
-      result.records=result.metrics[0].values.reduce((a,b)=>a+b,0);
-      return {...result,baseRecords:result.records,partial:false,excluded:counts.E??0,catalogRun:catalog.complete.runId,
-        source:'Bling • catálogo completo',checkedAt:catalog.complete.checkedAt,oldestAt:catalog.complete.checkedAt,
-        catalogPending:catalog.phase==='running',truncated:false};
+      const snapshot=await db.collection('bling_catalog_snapshots/'+catalog.complete.slot+'/products').where('catalogRun','==',catalog.complete.runId).select('status','detailsCheckedAt').get();
+      const rows=await liveCatalogRows(db,'products',catalog.complete,snapshot.docs.map(doc=>({id:doc.id,...doc.data()})));
+      const result=aggregateDashboard('products',input.period,rows.filter(r=>r.status!=='E'));
+      return {...result,partial:false,excluded:rows.filter(r=>r.status==='E').length,catalogRun:await catalogRevision(db,'products',catalog.complete),
+        source:'Bling • catálogo sincronizado',checkedAt:await catalogCheckedAt(db,input.group,catalog.complete),oldestAt:catalog.complete.checkedAt,catalogPending,truncated:false};
     }
   }
-  const fields=['status','checkedAt','roles','date','total','plannedDate','flow','statusLabel'];
+  const fields=['detailsCheckedAt','status','checkedAt','roles','date','total','plannedDate','flow','statusLabel'];
   if(['contacts','invoices'].includes(input.group)) {
     const catalog=(await db.doc(`integrations_private/bling_${input.group}_catalog`).get()).data();
     catalogPending=catalog?.phase==='running';
     if(catalog?.complete) {
       const snapshot=await db.collection(`bling_catalog_snapshots/${catalog.complete.slot}/${input.group}`)
         .where('catalogRun','==',catalog.complete.runId).select(...fields).get();
-      return {...aggregateDashboard(input.group,input.period,snapshot.docs.map(doc=>doc.data()),new Date(),input),
-        partial:false,truncated:false,catalogRun:catalog.complete.runId,source:'Bling • base completa',checkedAt:catalog.complete.checkedAt,
+      return {...aggregateDashboard(input.group,input.period,await liveCatalogRows(db,input.group,catalog.complete,snapshot.docs.map(doc=>({id:doc.id,...doc.data()}))),new Date(),input),
+        partial:false,truncated:false,catalogRun:await catalogRevision(db,input.group,catalog.complete),source:'Bling • base completa',checkedAt:await catalogCheckedAt(db,input.group,catalog.complete),
         oldestAt:catalog.complete.checkedAt,catalogPending:catalog.phase==='running'};
     }
   }

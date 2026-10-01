@@ -14,6 +14,8 @@ class OverviewShortcutRoyalClean extends StatefulWidget {
   final ValueNotifier<bool>? openState;
   final Widget? foreground;
   final Future<void> Function()? onHomeActivate;
+  final ValueNotifier<int>? lightFaultSignal;
+  final bool showWallLight;
   const OverviewShortcutRoyalClean({
     super.key,
     required this.child,
@@ -23,6 +25,8 @@ class OverviewShortcutRoyalClean extends StatefulWidget {
     this.openState,
     this.foreground,
     this.onHomeActivate,
+    this.lightFaultSignal,
+    this.showWallLight = true,
   });
   @override
   State<OverviewShortcutRoyalClean> createState() => _OverviewShortcutState();
@@ -31,6 +35,7 @@ class OverviewShortcutRoyalClean extends StatefulWidget {
 class _OverviewShortcutState extends State<OverviewShortcutRoyalClean> {
   final _localOpen = ValueNotifier<bool>(false);
   final _homeTouch = ValueNotifier<int>(0);
+  ValueNotifier<int> get _lightSignal => widget.lightFaultSignal ?? _homeTouch;
   ValueNotifier<bool> get _state => widget.openState ?? _localOpen;
   @override
   void dispose() {
@@ -53,7 +58,7 @@ class _OverviewShortcutState extends State<OverviewShortcutRoyalClean> {
               button: true,
               expanded: open,
               label: widget.onHomeActivate != null
-                  ? 'Abrir My Propriedade'
+                  ? 'Royal Home. Segure para abrir My propriedade'
                   : open
                   ? 'Voltar para royal-home'
                   : 'Royal Home',
@@ -61,11 +66,16 @@ class _OverviewShortcutState extends State<OverviewShortcutRoyalClean> {
                 id: 'overview_shortcut_royal_clean.control_01',
                 child: ImageActionRoyalClean(
                   key: const ValueKey('overview-image-shortcut'),
-                  feedback: TouchFeedbackRoyalClean.homePulse,
-                  replayAfterActivation: widget.onHomeActivate != null,
+                  feedback: () {},
+                  scaleDepth: 0,
+                  replayAfterActivation: false,
                   onActivate: () async {
+                    _lightSignal.value++;
+                  },
+                  onLongActivate: () async {
+                    TouchFeedbackRoyalClean.homePulse();
                     _state.value = false;
-                    _homeTouch.value++;
+                    _lightSignal.value++;
                     if (widget.onHomeActivate != null) {
                       if (!MediaQuery.disableAnimationsOf(context)) {
                         await Future<void>.delayed(
@@ -75,7 +85,7 @@ class _OverviewShortcutState extends State<OverviewShortcutRoyalClean> {
                       if (!mounted) return;
                       await widget.onHomeActivate!();
                       if (!mounted) return;
-                      _homeTouch.value++;
+                      _lightSignal.value++;
                     }
                   },
                   builder: (_, flash) => const NeonImageRoyalClean(
@@ -87,7 +97,8 @@ class _OverviewShortcutState extends State<OverviewShortcutRoyalClean> {
                 ),
               ),
             ),
-            WallLightRoyalClean(openState: _state, faultSignal: _homeTouch),
+            if (widget.showWallLight)
+              WallLightRoyalClean(openState: _state, faultSignal: _lightSignal),
             if (!open && widget.foreground != null) widget.foreground!,
             Visibility(
               key: const ValueKey('overview-panel'),

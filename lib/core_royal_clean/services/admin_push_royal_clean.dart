@@ -48,7 +48,7 @@ Future<void> receiveAdminPushRoyalClean(RemoteMessage message) async {
         uid == null ||
         event == null ||
         !RegExp(
-          r'^(products|contacts|invoices)_[a-zA-Z0-9_-]+$',
+          r'^(products|contacts|invoices|proposals|care)_[a-zA-Z0-9_-]+$',
         ).hasMatch(event)) {
       return;
     }

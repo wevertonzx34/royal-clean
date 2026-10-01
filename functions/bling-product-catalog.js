@@ -45,7 +45,7 @@ export async function syncProductCatalog({db,get,sanitize,recheck,force=false,no
         if(response.data.length===100&&newIds===0) throw new HttpsError('data-loss','O Bling repetiu uma página sem novos produtos. Sincronização não concluída.');
         const done=response.data.length<100;
         state={...live,counts,page:live.page+1,leaseUntil:Date.now()+55000};
-        if(done) state={...state,phase:'complete',complete:{runId:live.runId,slot:live.slot,counts,checkedAt,scope:'criterio=5;tipo=T'}};
+        if(done) state={...state,phase:'complete',complete:{runId:live.runId,slot:live.slot,counts,checkedAt,startedAt:live.startedAt,scope:'criterio=5;tipo=T'}};
         tx.set(stateRef,state);
       });
     } while(state.phase==='running' && Date.now()-started<20000);

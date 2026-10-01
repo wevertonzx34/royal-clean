@@ -21,6 +21,7 @@ class ActiveContactsCacheRoyalClean extends ChangeNotifier {
   String? _owner;
   int _generation = 0;
   Future<void>? _pending;
+  bool _refreshAgain = false;
   List<Map<String, dynamic>>? _items;
   DateTime? _loadedAt;
   String? checkedAt, catalogRun;
@@ -29,12 +30,13 @@ class ActiveContactsCacheRoyalClean extends ChangeNotifier {
   bool get hasData => _items != null;
   bool get stale =>
       _loadedAt == null ||
-      now().difference(_loadedAt!) >= const Duration(hours: 1);
+      now().difference(_loadedAt!) >= const Duration(minutes: 2);
   void setOwner(String? owner) {
     if (owner == _owner) return;
     _owner = owner;
     _generation++;
     _pending = null;
+    _refreshAgain = false;
     _items = null;
     _loadedAt = null;
     checkedAt = catalogRun = null;
@@ -54,7 +56,10 @@ class ActiveContactsCacheRoyalClean extends ChangeNotifier {
           .toList();
   Future<void> refresh({bool force = false}) {
     if (_owner == null) return Future<void>.value();
-    if (_pending != null) return _pending!;
+    if (_pending != null) {
+      if (force) _refreshAgain = true;
+      return _pending!;
+    }
     if (!force && !stale) return Future<void>.value();
     final generation = _generation;
     error = null;
@@ -109,6 +114,10 @@ class ActiveContactsCacheRoyalClean extends ChangeNotifier {
       if (generation == _generation) {
         _pending = null;
         notifyListeners();
+        if (_refreshAgain) {
+          _refreshAgain = false;
+          unawaited(refresh(force: true));
+        }
       }
     }
   }
@@ -137,7 +146,7 @@ class ActiveContactsSessionRoyalClean with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     AccountAccessRoyalClean.instance.addListener(_access);
     blingSyncRevisionRoyalClean.addListener(_synced);
-    Timer.periodic(const Duration(hours: 1), (_) {
+    Timer.periodic(const Duration(minutes: 2), (_) {
       if (_foreground) unawaited(cache.refresh(force: true));
     });
     _access();
@@ -152,6 +161,8 @@ class ActiveContactsSessionRoyalClean with WidgetsBindingObserver {
   }
 
   void _synced() {
+    if (blingChangedGroupsRoyalClean.isNotEmpty &&
+        !blingChangedGroupsRoyalClean.contains('contacts')) { return; }
     if (_foreground) unawaited(cache.refresh(force: true));
   }
 

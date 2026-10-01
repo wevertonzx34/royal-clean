@@ -58,7 +58,7 @@ class InvoiceListSessionRoyalClean with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     AccountAccessRoyalClean.instance.addListener(_access);
     blingSyncRevisionRoyalClean.addListener(_synced);
-    Timer.periodic(const Duration(hours: 1), (_) {
+    Timer.periodic(const Duration(minutes: 2), (_) {
       if (_foreground) unawaited(cache.refresh(force: true));
     });
     _access();
@@ -73,6 +73,8 @@ class InvoiceListSessionRoyalClean with WidgetsBindingObserver {
   }
 
   void _synced() {
+    if (blingChangedGroupsRoyalClean.isNotEmpty &&
+        !blingChangedGroupsRoyalClean.contains('invoices')) { return; }
     if (_foreground) unawaited(cache.refresh(force: true));
   }
 

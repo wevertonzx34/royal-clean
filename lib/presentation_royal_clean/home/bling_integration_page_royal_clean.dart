@@ -268,7 +268,7 @@ class _BlingIntegrationState extends State<BlingIntegrationPageRoyalClean>
             ),
           if (authorized) ...[
             const Text(
-              'Consulte produtos, notas e contatos reais. A sincronização automática ocorre a cada hora, mesmo com o aplicativo fechado.',
+              'Consulte produtos, notas e contatos reais. As alterações são consultadas automaticamente em segundo plano. Eventos do Bling exigem webhooks configurados e os respectivos escopos autorizados.',
             ),
             LayoutButtonRoyalClean(
               id: 'bling_integration_page_royal_clean.control_04',

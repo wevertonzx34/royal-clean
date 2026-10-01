@@ -13,12 +13,16 @@ class LayoutButtonRoyalClean extends StatefulWidget {
   final String? instanceKey;
   final Widget child;
   final Future<Uint8List?> Function()? capturePreview;
+  final double maxScale;
+  final bool freeMovement;
   const LayoutButtonRoyalClean({
     super.key,
     required this.id,
     this.instanceKey,
     required this.child,
     this.capturePreview,
+    this.maxScale = 2.5,
+    this.freeMovement = false,
   });
   @override
   State<LayoutButtonRoyalClean> createState() => _LayoutButtonState();
@@ -109,8 +113,13 @@ class _LayoutButtonState extends State<LayoutButtonRoyalClean> {
         barrierDismissible: false,
         barrierColor: Colors.black.withValues(alpha: .28),
         transitionDuration: const Duration(milliseconds: 120),
-        pageBuilder: (context, a, b) =>
-            _ButtonEditor(id: _id, origin: rect, image: bytes),
+        pageBuilder: (context, a, b) => _ButtonEditor(
+          id: _id,
+          origin: rect,
+          image: bytes,
+          maxScale: widget.maxScale,
+          freeMovement: widget.freeMovement,
+        ),
       );
     } finally {
       _opening = false;
@@ -199,7 +208,7 @@ class _LayoutButtonState extends State<LayoutButtonRoyalClean> {
                     record.dy * viewport.height / factor,
                   ),
                   child: Transform.scale(
-                    scale: record.scale,
+                    scale: record.scale.clamp(.5, widget.maxScale),
                     alignment: Alignment.center,
                     child: SizedBox.fromSize(
                       size: box.size,
@@ -236,14 +245,26 @@ class _ButtonEditor extends StatefulWidget {
   final String id;
   final Rect origin;
   final Uint8List? image;
-  const _ButtonEditor({required this.id, required this.origin, this.image});
+  final double maxScale;
+  final bool freeMovement;
+  const _ButtonEditor({
+    required this.id,
+    required this.origin,
+    this.image,
+    required this.maxScale,
+    required this.freeMovement,
+  });
   @override
   State<_ButtonEditor> createState() => _ButtonEditorState();
 }
 
 class _ButtonEditorState extends State<_ButtonEditor> {
   final _store = LayoutApprovalsRoyalClean.instance;
-  late LayoutApprovalRoyalClean _draft = _store.get(widget.id);
+  late LayoutApprovalRoyalClean _draft = LayoutApprovalRoyalClean(
+    dx: _store.get(widget.id).dx,
+    dy: _store.get(widget.id).dy,
+    scale: _store.get(widget.id).scale.clamp(.5, widget.maxScale),
+  );
   late LayoutApprovalRoyalClean _start = _draft;
   Offset _focal = Offset.zero;
   bool _saving = false;
@@ -332,7 +353,7 @@ class _ButtonEditorState extends State<_ButtonEditor> {
                         final delta = details.localFocalPoint - _focal;
                         final scale = (_start.scale * details.scale).clamp(
                           .5,
-                          2.5,
+                          widget.maxScale,
                         );
                         final halfW = (widget.origin.width * scale / 2).clamp(
                           0.0,
@@ -346,12 +367,22 @@ class _ButtonEditorState extends State<_ButtonEditor> {
                             (widget.origin.center.dx +
                                     _start.dx * size.width +
                                     delta.dx)
-                                .clamp(halfW, size.width - halfW);
+                                .clamp(
+                                  widget.freeMovement ? 0 : halfW,
+                                  widget.freeMovement
+                                      ? size.width
+                                      : size.width - halfW,
+                                );
                         final y =
                             (widget.origin.center.dy +
                                     _start.dy * size.height +
                                     delta.dy)
-                                .clamp(halfH, size.height - halfH);
+                                .clamp(
+                                  widget.freeMovement ? 0 : halfH,
+                                  widget.freeMovement
+                                      ? size.height
+                                      : size.height - halfH,
+                                );
                         _draft = LayoutApprovalRoyalClean(
                           dx: (x - widget.origin.center.dx) / size.width,
                           dy: (y - widget.origin.center.dy) / size.height,

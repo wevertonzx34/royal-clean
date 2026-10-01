@@ -175,7 +175,7 @@ class _InvoiceBarState extends State<InvoiceBarPageRoyalClean> {
                 ],
               ),
             ),
-            if (_cache.busy) const LinearProgressIndicator(),
+            if (_cache.busy && !_cache.hasData) const LinearProgressIndicator(),
             if (_cache.error != null)
               Padding(
                 padding: const EdgeInsets.all(16),

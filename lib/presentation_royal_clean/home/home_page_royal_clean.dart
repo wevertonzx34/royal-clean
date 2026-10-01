@@ -14,6 +14,8 @@ import 'overview_shortcut_royal_clean.dart';
 import 'neon_image_royal_clean.dart';
 import 'stock_functions_page_royal_clean.dart';
 import 'door_light_royal_clean.dart';
+import 'wall_light_royal_clean.dart';
+import 'royal_blu_page.dart';
 import 'door_invitation_royal_clean.dart';
 import 'shortcut_vapor_royal_clean.dart';
 import 'avatar_aura_royal_clean.dart';
@@ -27,9 +29,11 @@ class HomePageRoyalClean extends StatefulWidget {
 
 class _HomePageState extends State<HomePageRoyalClean> {
   final _overviewOpen = ValueNotifier<bool>(false);
+  final _lightFaultSignal = ValueNotifier<int>(0);
   Future<void>? _imagesReady;
   bool _openingStock = false;
   bool _openingProperty = false;
+  bool _openingBlu = false;
   int _dataReplay = 0;
   bool _wasOverviewOpen = false;
   @override
@@ -54,6 +58,7 @@ class _HomePageState extends State<HomePageRoyalClean> {
   @override
   void dispose() {
     _overviewOpen.dispose();
+    _lightFaultSignal.dispose();
     super.dispose();
   }
 
@@ -80,6 +85,27 @@ class _HomePageState extends State<HomePageRoyalClean> {
       await route.completed;
     } finally {
       _openingStock = false;
+    }
+  }
+
+  Future<void> _openBlu(BuildContext context) async {
+    if (_openingBlu) return;
+    _openingBlu = true;
+    try {
+      await prepareRoyalBlu(context);
+      if (!context.mounted) return;
+      await Navigator.of(context).push<void>(
+        PageRouteBuilder(
+          transitionDuration: const Duration(milliseconds: 180),
+          reverseTransitionDuration: const Duration(milliseconds: 180),
+          transitionsBuilder: (_, animation, secondaryAnimation, child) =>
+              FadeTransition(opacity: animation, child: child),
+          pageBuilder: (_, animation, secondaryAnimation) =>
+              const RoyalBluPage(),
+        ),
+      );
+    } finally {
+      _openingBlu = false;
     }
   }
 
@@ -134,6 +160,8 @@ class _HomePageState extends State<HomePageRoyalClean> {
               builder: (context, constraints) {
                 // 70% maior, preservando a proporção 282 x 603 e a posição.
                 const avatarScale = 1.7;
+                final bluWidth = math.min(100.0, constraints.maxWidth * .25);
+                final bluHeight = bluWidth * 609 / 594;
                 final avatarHeight =
                     avatarScale *
                     math.min(
@@ -151,6 +179,8 @@ class _HomePageState extends State<HomePageRoyalClean> {
                           width: constraints.maxWidth * .97,
                           height: constraints.maxHeight * .97,
                           child: OverviewShortcutRoyalClean(
+                            showWallLight: false,
+                            lightFaultSignal: _lightFaultSignal,
                             onHomeActivate: () => _openProperty(context),
                             height: constraints.maxHeight * .97,
                             openState: _overviewOpen,
@@ -257,22 +287,15 @@ class _HomePageState extends State<HomePageRoyalClean> {
                                       _overviewOpen.value = false;
                                       await _openActions(context);
                                     },
-                                    builder: (_, flash) => Stack(
-                                      clipBehavior: Clip.none,
-                                      children: [
-                                        Positioned.fill(
-                                          child: AvatarAuraRoyalClean(
-                                            activation: flash,
-                                          ),
-                                        ),
-                                        NeonImageRoyalClean(
-                                          activation: flash,
-                                          asset:
-                                              'assets/preview/royal-store/royal-avatar.webp',
-                                          aspectRatio: 282 / 603,
-                                          glow: const Color(0xFF5CE7EC),
-                                        ),
-                                      ],
+                                    builder: (_, flash) => AvatarAuraRoyalClean(
+                                      activation: flash,
+                                      child: NeonImageRoyalClean(
+                                        activation: flash,
+                                        asset:
+                                            'assets/preview/royal-store/royal-avatar.webp',
+                                        aspectRatio: 282 / 603,
+                                        glow: const Color(0xFF9955FF),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -281,6 +304,50 @@ class _HomePageState extends State<HomePageRoyalClean> {
                           ),
                         ),
                       ),
+                    Positioned(
+                      key: const ValueKey('profile-blu-position'),
+                      left:
+                          constraints.maxWidth * (.015 + .97 * .35 + .02) -
+                          bluWidth / 2,
+                      top: math.max(
+                        8.0,
+                        constraints.maxHeight * (.015 + .97 * .25) -
+                            bluHeight -
+                            12,
+                      ),
+                      width: bluWidth,
+                      height: bluHeight,
+                      child: Visibility(
+                        visible: !overviewOpen,
+                        maintainState: true,
+                        child: Tooltip(
+                          message: 'Abrir Royal Blu',
+                          child: Semantics(
+                            button: true,
+                            label: 'Abrir Royal Blu',
+                            child: LayoutButtonRoyalClean(
+                              id: 'home.royal-blu',
+                              child: ImageActionRoyalClean(
+                                key: const ValueKey('profile-blu-shortcut'),
+                                pulses: 2,
+                                duration: const Duration(milliseconds: 600),
+                                scaleDepth: .018,
+                                replayAfterActivation: true,
+                                onActivate: () => _openBlu(context),
+                                builder: (_, flash) => NeonImageRoyalClean(
+                                  asset:
+                                      'assets/preview/royal-store/royal-blu.webp',
+                                  aspectRatio: 594 / 609,
+                                  cacheWidth: 300,
+                                  glow: const Color(0xFF5CE7EC),
+                                  activation: flash,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                     Positioned(
                       // Light column plus 2% of the screen width to the right.
                       key: const ValueKey('profile-data-position'),
@@ -318,6 +385,26 @@ class _HomePageState extends State<HomePageRoyalClean> {
                                     0xFF1623A8,
                                   ),
                                 ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Paint the light above the image buttons without intercepting
+                    // taps or the layout guide. Keep the original home coordinates.
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: Visibility(
+                          visible: !overviewOpen,
+                          maintainState: true,
+                          child: Center(
+                            child: SizedBox(
+                              width: constraints.maxWidth * .97,
+                              height: constraints.maxHeight * .97,
+                              child: WallLightRoyalClean(
+                                openState: _overviewOpen,
+                                faultSignal: _lightFaultSignal,
                               ),
                             ),
                           ),
