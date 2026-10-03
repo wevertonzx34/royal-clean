@@ -7,6 +7,7 @@ import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../firebase_options.dart';
 import 'account_access_royal_clean.dart';
 
@@ -27,6 +28,18 @@ Future<void> _initializeLocal() async {
         adminNotificationOpenedRoyalClean.value++,
   );
   _localReady = true;
+}
+
+Future<void> clearReadAdminNotificationsRoyalClean(Iterable<String> ids) async {
+  if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+  try {
+    await _initializeLocal();
+    for (final id in ids) {
+      await _notifications.cancel(id: adminNotificationIdRoyalClean(id));
+    }
+  } catch (_) {
+    // Reading remains available if the system notification service is unavailable.
+  }
 }
 
 @pragma('vm:entry-point')
@@ -83,6 +96,12 @@ Future<void> receiveAdminPushRoyalClean(RemoteMessage message) async {
     }
     await _initializeLocal();
     // Stable id replaces a retried push instead of duplicating it in the tray.
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.reload();
+    if (preferences.getStringList('intercom.seen.$uid')?.contains(event) ==
+        true) {
+      return;
+    }
     final id = adminNotificationIdRoyalClean(event);
     await _notifications.show(
       id: id,
@@ -141,9 +160,10 @@ class AdminPushRoyalClean {
     final state = AccountAccessRoyalClean.instance.value;
     // Revalidation/connectivity is not logout. Keep the token while the same
     // identity is checked; each received event still requires fresh server access.
-    if (_uid != null && state.identity?.uid == _uid &&
+    if (_uid != null &&
+        state.identity?.uid == _uid &&
         (state.status == AccountAccessStatus.checking ||
-         state.status == AccountAccessStatus.unavailable)) {
+            state.status == AccountAccessStatus.unavailable)) {
       return;
     }
     final uid = state.status == AccountAccessStatus.admin

@@ -1,20 +1,12 @@
 import 'package:royal_clean/presentation_royal_clean/shared/layout_button_royal_clean.dart';
 import 'package:royal_clean/core_royal_clean/services/touch_feedback_royal_clean.dart';
 import '../../core_royal_clean/services/intercom_royal_clean.dart';
-import 'notifications_panel_royal_clean.dart';
 import 'package:flutter/material.dart';
 import '../../core_royal_clean/constants/app_routes_royal_clean.dart';
 import '../../core_royal_clean/services/account_access_royal_clean.dart';
 
 void showNotificationsRoyalClean(BuildContext context) {
-  showModalBottomSheet<void>(
-    context: context,
-    useSafeArea: true,
-    isScrollControlled: true,
-    showDragHandle: true,
-    backgroundColor: Colors.white,
-    builder: (_) => const NotificationsPanelRoyalClean(),
-  );
+  Navigator.of(context, rootNavigator: true).pushNamed('/notifications');
 }
 
 class NotificationButtonRoyalClean extends StatelessWidget {
@@ -34,6 +26,8 @@ class NotificationButtonRoyalClean extends StatelessWidget {
             () => showNotificationsRoyalClean(context),
           ),
           icon: Badge(
+            backgroundColor: const Color(0xFFFF80AB),
+            textColor: const Color(0xFF092F43),
             isLabelVisible: count > 0,
             label: Text(count > 99 ? '99+' : '$count'),
             child: Icon(Icons.public_rounded, color: color, size: iconSize),

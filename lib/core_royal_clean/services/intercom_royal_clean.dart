@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'admin_push_royal_clean.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -10,6 +11,16 @@ import 'bling_sync_events_royal_clean.dart';
 class IntercomMessageRoyalClean {
   final String id, title, body, kind;
   final DateTime publishedAt, expiresAt;
+  final DateTime? occurredAt;
+  DateTime get displayDate => occurredAt ?? publishedAt;
+  bool isToday(DateTime now) {
+    final date = displayDate.toLocal();
+    final today = now.toLocal();
+    return date.year == today.year &&
+        date.month == today.month &&
+        date.day == today.day;
+  }
+
   const IntercomMessageRoyalClean({
     required this.id,
     required this.title,
@@ -17,6 +28,7 @@ class IntercomMessageRoyalClean {
     required this.kind,
     required this.publishedAt,
     required this.expiresAt,
+    this.occurredAt,
   });
   bool activeAt(DateTime now) => expiresAt.isAfter(now);
   factory IntercomMessageRoyalClean.fromDoc(
@@ -25,6 +37,9 @@ class IntercomMessageRoyalClean {
     final data = doc.data()!;
     return IntercomMessageRoyalClean(
       id: doc.id,
+      occurredAt: data['occurredAt'] is Timestamp
+          ? (data['occurredAt'] as Timestamp).toDate()
+          : DateTime.tryParse('${data['occurredAt'] ?? ''}'),
       title: data['title'] as String,
       body: data['body'] as String,
       kind: data['kind'] as String,
@@ -112,7 +127,6 @@ class IntercomRoyalClean extends ChangeNotifier {
     _privateFeed = FirebaseFirestore.instance
         .collection('admin_bling_events')
         .orderBy('publishedAt', descending: true)
-        .limit(200)
         .snapshots(includeMetadataChanges: true)
         .listen(
           (snapshot) {
@@ -215,7 +229,9 @@ class IntercomRoyalClean extends ChangeNotifier {
   }
 
   Future<void> markRead(Iterable<String> ids) async {
-    _seen.addAll(ids);
+    final readIds = ids.toList();
+    _seen.addAll(readIds);
+    unawaited(clearReadAdminNotificationsRoyalClean(readIds));
     final reader = _reader;
     final saved = _seen.toList();
     notifyListeners();

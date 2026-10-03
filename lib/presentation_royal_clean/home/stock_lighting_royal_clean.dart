@@ -126,7 +126,7 @@ class _WarehouseLightPainter extends CustomPainter {
       final drift = math.sin(phase + i * .6) * .008;
       final finish = point(Offset(end.dx + drift, end.dy));
       final intensity =
-          .09 + .022 * math.sin(phase + i * .5) + .055 * touchWave;
+          (.09 + .022 * math.sin(phase + i * .5) + .055 * touchWave) * 1.6;
       final beam = Path()
         ..moveTo(start.dx - size.width * .014, start.dy)
         ..lineTo(start.dx + size.width * .014, start.dy)
@@ -164,7 +164,9 @@ class _WarehouseLightPainter extends CustomPainter {
         );
         paint.shader = RadialGradient(
           colors: [
-            const Color(0xFFD9F3FF).withValues(alpha: .05 + touchWave * .04),
+            const Color(
+              0xFFD9F3FF,
+            ).withValues(alpha: (.05 + touchWave * .04) * 1.6),
             Colors.transparent,
           ],
         ).createShader(rect);

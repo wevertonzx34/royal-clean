@@ -12,6 +12,7 @@ class ImageActionRoyalClean extends StatefulWidget {
   final Duration duration;
   final double scaleDepth;
   final bool replayAfterActivation;
+  final bool activateBeforeAnimation;
   final int replayVersion;
   final VoidCallback? feedback;
   const ImageActionRoyalClean({
@@ -23,6 +24,7 @@ class ImageActionRoyalClean extends StatefulWidget {
     this.duration = const Duration(milliseconds: 160),
     this.scaleDepth = .006,
     this.replayAfterActivation = false,
+    this.activateBeforeAnimation = false,
     this.replayVersion = 0,
     this.feedback,
   });
@@ -58,13 +60,18 @@ class _ImageActionState extends State<ImageActionRoyalClean>
     _busy = true;
     (widget.feedback ?? TouchFeedbackRoyalClean.pulse)();
     try {
+      final activatedEarly = widget.activateBeforeAnimation && !longPress;
+      if (activatedEarly) await widget.onActivate();
+      if (!mounted) return;
       if (!MediaQuery.disableAnimationsOf(context) &&
           TickerMode.valuesOf(context).enabled) {
         _animation.duration = widget.duration;
         await _animation.forward(from: 0).orCancel;
       }
       if (!mounted) return;
-      await (longPress ? widget.onLongActivate!() : widget.onActivate());
+      if (!activatedEarly) {
+        await (longPress ? widget.onLongActivate!() : widget.onActivate());
+      }
       if (mounted && widget.replayAfterActivation) {
         // The returning route re-enables TickerMode on the next frame.
         await WidgetsBinding.instance.endOfFrame;

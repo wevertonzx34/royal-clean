@@ -116,6 +116,10 @@ class _VaporPainter extends CustomPainter {
             Offset(size.width * .975, size.height * .975),
             Offset(size.width * .025, size.height * .70),
           ];
+    if (!isDoor) {
+      _paintSmoke(canvas, size, corners);
+      return;
+    }
     final paint = Paint();
     final scale = size.width / 191;
     // Fixed particle budget, soft radial gradients; no full-screen blur/filter.
@@ -148,6 +152,84 @@ class _VaporPainter extends CustomPainter {
         stops: const [0, .4, 1],
       ).createShader(Rect.fromCircle(center: center, radius: radius));
       canvas.drawCircle(center, radius, paint);
+    }
+  }
+
+  void _paintSmoke(Canvas canvas, Size size, List<Offset> corners) {
+    final scale = size.width / 191;
+    // Office: 34 emitters (~40% more), with the extra ten on the roof.
+    // staggered lifetimes and curved, fading wisps replace round puffs.
+    for (var i = 0; i < (isProduction ? 24 : 34); i++) {
+      final edge = !isProduction && i >= 24 ? 0 : i % 4;
+      final origin = Offset.lerp(
+        corners[edge],
+        corners[(edge + 1) % 4],
+        ((i * .381966) % .86) + .07,
+      )!;
+      final age = (flow.value + i * .618034) % 1;
+      final tangent = corners[(edge + 1) % 4] - corners[edge];
+      final normal = Offset(tangent.dy, -tangent.dx) / tangent.distance;
+      final sway = math.sin(age * math.pi * 2 + i * 1.7);
+      final base =
+          origin +
+          normal * (5 + 13 * age) * scale +
+          Offset(sway * 5, -34 * age) * scale;
+      final length = (23 + (i % 5) * 5 + age * 17) * scale;
+      final bend = (sway * 9 + normal.dx * 6) * scale;
+      final breadth =
+          (2.8 + age * 4.5 + (i % 3) * .8) * scale * (isProduction ? 1 : 1.25);
+      final tip = base + Offset(bend * .6, -length);
+      final smoke = Path()
+        ..moveTo(base.dx - breadth * .3, base.dy)
+        ..cubicTo(
+          base.dx - breadth + bend,
+          base.dy - length * .30,
+          tip.dx - breadth * .9,
+          tip.dy + length * .3,
+          tip.dx - breadth * .35,
+          tip.dy,
+        )
+        ..quadraticBezierTo(
+          tip.dx,
+          tip.dy - breadth * .35,
+          tip.dx + breadth * .35,
+          tip.dy,
+        )
+        ..cubicTo(
+          tip.dx + breadth * 1.3,
+          tip.dy + length * .24,
+          base.dx + breadth + bend,
+          base.dy - length * .48,
+          base.dx + breadth * .3,
+          base.dy,
+        )
+        ..close();
+      final alpha = math.sin(age * math.pi) * (.23 + .12 * activation) * 1.6;
+      final shader =
+          LinearGradient(
+            begin: Alignment.bottomCenter,
+            end: Alignment.topCenter,
+            colors: [
+              Colors.transparent,
+              const Color(0xFFE2EBEF).withValues(alpha: alpha),
+              const Color(0xFFBED7E3).withValues(alpha: alpha * .65),
+              Colors.transparent,
+            ],
+            stops: const [0, .25, .60, 1],
+          ).createShader(
+            Rect.fromLTRB(
+              base.dx - length,
+              tip.dy - breadth,
+              base.dx + length,
+              base.dy,
+            ),
+          );
+      canvas.drawPath(
+        smoke,
+        Paint()
+          ..shader = shader
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 2 * scale),
+      );
     }
   }
 

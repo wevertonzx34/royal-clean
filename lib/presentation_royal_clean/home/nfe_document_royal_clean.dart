@@ -30,11 +30,13 @@ String nfeQuantity(dynamic value) {
 class NfeDocumentRoyalClean extends StatelessWidget {
   final Map<String, dynamic>? invoice, details;
   final bool loading;
+  final bool isOrder;
   const NfeDocumentRoyalClean({
     super.key,
     this.invoice,
     this.details,
     this.loading = false,
+    this.isOrder = false,
   });
 
   @override
@@ -55,7 +57,7 @@ class NfeDocumentRoyalClean extends StatelessWidget {
       ('Soma das qtdes.', nfeQuantity(sum('quantity'))),
       ('Total dos itens', nfeMoney(sum('total'))),
       ('Outros valores', 'Não informado'),
-      ('Total da NF-e', nfeMoney(total)),
+      (isOrder ? 'Total do pedido' : 'Total da NF-e', nfeMoney(total)),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -108,11 +110,11 @@ class NfeDocumentRoyalClean extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 14),
-        const NfePanelRoyalClean(
+        NfePanelRoyalClean(
           child: Center(
             child: Text(
-              'NF-e',
-              style: TextStyle(
+              isOrder ? 'Pedido' : 'NF-e',
+              style: const TextStyle(
                 fontSize: 36,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 2,
@@ -133,7 +135,9 @@ class NfeDocumentRoyalClean extends StatelessWidget {
                   _Field('CPF / CNPJ', nfeText(note['recipientDocument'])),
                   _Field('Endereço', nfeText(note['recipientAddress'])),
                   _Field(
-                    'Situação fiscal',
+                    isOrder
+                        ? 'NF-e vinculada / situação fiscal'
+                        : 'Situação fiscal',
                     nfeText(note['statusLabel'] ?? _status(note['status'])),
                   ),
                 ],
@@ -143,7 +147,10 @@ class NfeDocumentRoyalClean extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 NfePanelRoyalClean(
-                  child: _Field('Número da NF-e', nfeText(note['code'])),
+                  child: _Field(
+                    isOrder ? 'Número do pedido' : 'Número da NF-e',
+                    nfeText(note['code']),
+                  ),
                 ),
                 const SizedBox(height: 10),
                 NfePanelRoyalClean(
@@ -217,15 +224,16 @@ class NfeDocumentRoyalClean extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 14),
-        NfePanelRoyalClean(
-          child: _SummaryGrid(
-            values: [
-              ('Data da aprovação', 'Não informada'),
-              ('Assinatura do cliente', 'Não disponível'),
-              ('Valor total da NF-e', nfeMoney(total)),
-            ],
+        if (!isOrder)
+          NfePanelRoyalClean(
+            child: _SummaryGrid(
+              values: [
+                ('Data da aprovação', 'Não informada'),
+                ('Assinatura do cliente', 'Não disponível'),
+                ('Valor total da NF-e', nfeMoney(total)),
+              ],
+            ),
           ),
-        ),
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 18, horizontal: 6),
           child: Text(

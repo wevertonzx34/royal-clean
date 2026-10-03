@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
@@ -27,14 +26,7 @@ Future<Map<String, dynamic>> _invoke(
 );
 String _error(Object e) => e is FirebaseFunctionsException
     ? e.message ?? 'Consulta indisponível.'
-    : 'Não foi possível concluir. Seus dados digitados foram preservados.';
-String _date(String? value) {
-  final d = DateTime.tryParse(value ?? '')?.toLocal();
-  return d == null
-      ? 'Não informado'
-      : '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year} ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
-}
-
+    : 'Não foi possível consultar o pedido. Tente novamente.';
 const _labels = {
   'new': 'Para confirmar',
   'separating': 'Em separação',
@@ -445,40 +437,29 @@ class OrderCareDetailRoyalClean extends StatefulWidget {
 
 class _CareDetailState extends State<OrderCareDetailRoyalClean> {
   Map<String, dynamic>? _order;
-  List<Map<String, dynamic>> _lines = [];
-  bool _busy = false, _dirty = false;
-  String? _failure, _requestId;
-  String? _lastCommand;
-  final _receipt = TextEditingController();
+  bool _busy = false;
+  String? _failure;
+
   @override
   void initState() {
     super.initState();
     unawaited(_load());
   }
 
-  @override
-  void dispose() {
-    _receipt.dispose();
-    super.dispose();
-  }
-
-  Future<Map<String, dynamic>> _call(Map<String, dynamic> data) =>
-      (widget.call ?? (input) => _invoke('orderCare', input))(data);
-  void _accept(Map<String, dynamic> result) {
-    _order = Map<String, dynamic>.from(result['order']);
-    _lines = (_order!['lines'] as List)
-        .map((e) => Map<String, dynamic>.from(e))
-        .toList();
-    _dirty = false;
-    _requestId = null;
-    _failure = null;
-  }
-
   Future<void> _load() async {
     setState(() => _busy = true);
     try {
-      final r = await _call({'orderId': widget.orderId, 'action': 'open'});
-      if (mounted) setState(() => _accept(r));
+      final result =
+          await (widget.call ?? (input) => _invoke('orderCare', input))({
+            'orderId': widget.orderId,
+            'action': 'open',
+          });
+      if (mounted) {
+        setState(() {
+          _order = Map<String, dynamic>.from(result['order']);
+          _failure = null;
+        });
+      }
     } catch (e) {
       if (mounted) setState(() => _failure = _error(e));
     } finally {
@@ -486,528 +467,70 @@ class _CareDetailState extends State<OrderCareDetailRoyalClean> {
     }
   }
 
-  Future<bool> _leave() async {
-    if (!_dirty) return true;
-    return await showDialog<bool>(
-          context: context,
-          builder: (c) => AlertDialog(
-            title: const Text('Alterações não salvas'),
-            content: const Text(
-              'Voltar descarta somente o que ainda não foi salvo. Deseja sair?',
-            ),
-            actions: [
-              _control(
-                'care.leave.cancel',
-                TextButton(
-                  onPressed: () => Navigator.pop(c, false),
-                  child: const Text('Continuar'),
-                ),
-              ),
-              _control(
-                'care.leave.confirm',
-                TextButton(
-                  onPressed: () => Navigator.pop(c, true),
-                  child: const Text('Sair'),
-                ),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-  }
-
-  Future<void> _save(String action) async {
-    if (_busy) return;
-    final message = switch (action) {
-      'confirm' => 'Registre abaixo como o cliente confirmou o pedido.',
-      'verify' =>
-        'Confirma a conferência física de cada item e os acordos das faltas?',
-      'dispatch' =>
-        'Registrar saída das quantidades separadas? Se houver falta, você está autorizando uma saída parcial com os acordos registrados.',
-      'deliver' =>
-        'Confirma as quantidades entregues e o recebimento descrito?',
-      'close' =>
-        'Concluir este atendimento? Todos os itens precisam estar entregues ou ter resolução registrada.',
-      'reconcile' =>
-        'Aceitar a nova origem do Bling? Os saldos compatíveis serão preservados e os itens precisarão de nova conferência. O histórico anterior será mantido.',
-      _ => 'Salvar as quantidades e observações internas?',
-    };
-    final accepted = await showDialog<bool>(
-      context: context,
-      builder: (c) => AlertDialog(
-        title: const Text('Confirmar operação'),
-        content: Text(message),
-        actions: [
-          _control(
-            'care.action.cancel',
-            TextButton(
-              onPressed: () => Navigator.pop(c, false),
-              child: const Text('Cancelar'),
-            ),
-          ),
-          _control(
-            'care.action.confirm',
-            FilledButton(
-              onPressed: () => Navigator.pop(c, true),
-              child: const Text('Confirmar'),
-            ),
-          ),
-        ],
-      ),
-    );
-    if (accepted != true || !mounted) return;
-    final command = '$action|$_lines|${_receipt.text}';
-    if (command != _lastCommand) {
-      _requestId =
-          '${DateTime.now().microsecondsSinceEpoch}-${Random.secure().nextInt(1 << 32)}';
-      _lastCommand = command;
-    }
-    setState(() => _busy = true);
-    try {
-      final r = await _call({
-        'orderId': widget.orderId,
-        'action': action,
-        'revision': _order!['revision'],
-        'requestId': _requestId,
-        'lines': _lines,
-        'confirmation': _receipt.text,
-        'receipt': _receipt.text,
-        'partialApproved': action == 'dispatch',
-      });
-      if (mounted) setState(() => _accept(r));
-    } catch (e) {
-      if (mounted) setState(() => _failure = _error(e));
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  Future<void> _deadline(int index) async {
-    final date = await showDatePicker(
-      context: context,
-      firstDate: DateTime.now().subtract(const Duration(days: 1)),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      initialDate: DateTime.now(),
-    );
-    if (date == null || !mounted) return;
-    final time = await showTimePicker(
-      context: context,
-      initialTime: const TimeOfDay(hour: 18, minute: 0),
-    );
-    if (time == null || !mounted) return;
-    setState(() {
-      _lines[index]['due'] = DateTime(
-        date.year,
-        date.month,
-        date.day,
-        time.hour,
-        time.minute,
-      ).toUtc().toIso8601String();
-      _dirty = true;
-    });
-  }
-
-  Future<void> _history() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (c) => SafeArea(
-        child: SizedBox(
-          height: MediaQuery.sizeOf(c).height * .75,
-          child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: FirebaseFirestore.instance
-                .collection('order_care')
-                .doc(widget.orderId)
-                .collection('audit')
-                .orderBy('at', descending: true)
-                .limit(100)
-                .snapshots(),
-            builder: (c, s) {
-              if (s.hasError) {
-                return const Center(child: Text('Histórico indisponível.'));
-              }
-              if (!s.hasData) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              return ListView(
-                children: [
-                  const ListTile(
-                    title: Text('Histórico • últimos 100 registros'),
-                  ),
-                  for (final d in s.data!.docs)
-                    _control(
-                      'care.audit.entry',
-                      ExpansionTile(
-                        title: Text(
-                          '${d.data()['action']} • ${d.data()['actorName']}',
-                        ),
-                        subtitle: Text(
-                          '${_date((d.data()['at'] as Timestamp).toDate().toIso8601String())}\nRevisão ${d.data()['revision']} • ${d.data()['status']}\n${d.data()['receipt'] ?? ''}',
-                        ),
-                        children: [
-                          for (final line in (d.data()['lines'] as List? ?? []))
-                            ListTile(
-                              title: Text(
-                                'Item ${int.tryParse('${line['line']}') != null ? int.parse('${line['line']}') + 1 : line['line']} • Separado ${line['separated']} • Enviado ${line['dispatched']} • Entregue ${line['delivered']}',
-                              ),
-                              subtitle: Text(
-                                'Resolvido sem entrega: ${line['resolved']}\n${line['reason']} • ${line['note']}\nResponsável: ${line['owner']}\nPrazo: ${_date(line['due'])}\nAcordo: ${line['agreement']}\nResolução: ${line['resolution']}',
-                              ),
-                            ),
-                        ],
-                      ),
-                      instance: d.id,
-                    ),
-                ],
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _field(int i, String key, String label, {bool number = false}) =>
-      Padding(
-        padding: const EdgeInsets.only(top: 8),
-        child: TextFormField(
-          key: ValueKey('${_order?['revision']}-$i-$key'),
-          initialValue: '${_lines[i][key] ?? ''}',
-          enabled:
-              !_busy &&
-              _order!['status'] != 'new' &&
-              _order!['status'] != 'closed' &&
-              !(_order!['sourceChanged'] == true),
-          keyboardType: number
-              ? const TextInputType.numberWithOptions(decimal: true)
-              : TextInputType.multiline,
-          maxLines: number ? 1 : null,
-          decoration: InputDecoration(
-            labelText: label,
-            border: const OutlineInputBorder(),
-          ),
-          onChanged: (v) {
-            _lines[i][key] = number
-                ? double.tryParse(v.replaceAll(',', '.')) ?? -1
-                : v;
-            setState(() => _dirty = true);
-          },
-        ),
-      );
   @override
   Widget build(BuildContext context) {
-    final source = _order?['source'] as Map?;
-    final closed = _order?['status'] == 'closed';
-    return PopScope(
-      canPop: !_dirty && !_busy,
-      onPopInvokedWithResult: (didPop, result) async {
-        if (!didPop && !_busy && await _leave() && context.mounted) {
-          setState(() => _dirty = false);
-          Navigator.pop(context);
-        }
-      },
-      child: Theme(
-        data: ThemeData.dark(useMaterial3: true),
-        child: Scaffold(
-          backgroundColor: _bg,
-          appBar: AppBar(
-            title: Text('Pedido ${source?['code'] ?? ''}'),
-            leading: _control(
-              'care.detail.back',
-              IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: _busy
-                    ? null
-                    : () async {
-                        if (await _leave() && context.mounted) {
-                          setState(() => _dirty = false);
-                          Navigator.pop(context);
-                        }
-                      },
-              ),
+    final source = (_order?['latestSource'] ?? _order?['source']) as Map?;
+    return Theme(
+      data: ThemeData.dark(useMaterial3: true),
+      child: Scaffold(
+        backgroundColor: _bg,
+        appBar: AppBar(
+          title: Text('Pedido ${source?['code'] ?? ''}'),
+          leading: _control(
+            'care.detail.back',
+            IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Navigator.pop(context),
             ),
-            actions: [if (widget.showHeader) const HeaderActionsRoyalClean()],
           ),
-          body: SafeArea(
-            child: _order == null
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(_failure ?? 'Consultando pedido…'),
-                        if (!_busy)
-                          _control(
-                            'care.detail.retry',
-                            TextButton(
-                              onPressed: _load,
-                              child: const Text('Tentar novamente'),
-                            ),
-                          ),
-                      ],
-                    ),
-                  )
-                : ListView(
-                    padding: const EdgeInsets.all(16),
+          actions: [if (widget.showHeader) const HeaderActionsRoyalClean()],
+        ),
+        body: SafeArea(
+          child: _order == null
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      NfePanelRoyalClean(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${source!['name']}',
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text('${source['document']} • ${source['date']}'),
-                            _status(_order!),
-                            Text(
-                              'NF-e ${(_order!['fiscal'] as Map)['number']} • ${(_order!['fiscal'] as Map)['status']}',
-                            ),
-                            const Text(
-                              'Controle interno. Não substitui XML/DANFE nem altera o Bling.',
-                            ),
-                            if ('${source['notes'] ?? ''}'.isNotEmpty)
-                              Text('Observação do pedido: ${source['notes']}'),
-                            if ('${source['internalNotes'] ?? ''}'.isNotEmpty)
-                              Text(
-                                'Interno do Bling: ${source['internalNotes']}',
-                              ),
-                            Text(
-                              'Atualizado: ${_date(_order!['updatedAt'])} • ${_order!['updatedByName']}',
-                            ),
-                            if (widget.call == null)
-                              _control(
-                                'care.detail.history',
-                                TextButton.icon(
-                                  onPressed: _history,
-                                  icon: const Icon(Icons.history),
-                                  label: const Text('Histórico'),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      if (_order!['sourceChanged'] == true) ...[
-                        const Text(
-                          'O pedido mudou no Bling. Os saldos anteriores foram preservados; revise a nova origem antes de continuar.',
-                          style: TextStyle(color: Colors.amber),
-                        ),
-                        for (final item
-                            in ((_order!['latestSource'] as Map?)?['items']
-                                    as List? ??
-                                []))
-                          Text(
-                            'Nova origem • ${item['code'] ?? ''} ${item['description'] ?? ''}: ${item['quantity']} ${item['unit'] ?? ''}',
-                          ),
+                      Text(_failure ?? 'Consultando pedido…'),
+                      if (!_busy)
                         _control(
-                          'care.detail.reconcile',
-                          FilledButton(
-                            onPressed: _busy ? null : () => _save('reconcile'),
-                            child: const Text('Aceitar nova origem'),
+                          'care.detail.retry',
+                          TextButton(
+                            onPressed: _load,
+                            child: const Text('Tentar novamente'),
                           ),
                         ),
-                      ],
-                      if (_failure != null)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          child: Text(
-                            _failure!,
-                            style: const TextStyle(color: Colors.amber),
-                          ),
-                        ),
-                      if (_order!['status'] == 'new') ...[
-                        const Text(
-                          'Confirme o atendimento para liberar a separação dos produtos.',
-                        ),
-                        TextField(
-                          controller: _receipt,
-                          enabled: !_busy,
-                          maxLines: 3,
-                          decoration: const InputDecoration(
-                            labelText:
-                                'Confirmação do cliente: quem, quando e canal',
-                            border: OutlineInputBorder(),
-                          ),
-                          onChanged: (_) => setState(() => _dirty = true),
-                        ),
-                        _control(
-                          'care.detail.confirm',
-                          FilledButton(
-                            onPressed: _busy || _order!['sourceChanged'] == true
-                                ? null
-                                : () => _save('confirm'),
-                            child: const Text('Confirmar pedido'),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                      ],
-                      for (var i = 0; i < _lines.length; i++)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 14),
-                          child: NfePanelRoyalClean(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '${(source['items'] as List)[i]['description']}',
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Text(
-                                  'Código ${(source['items'] as List)[i]['code']} • Solicitado: ${(source['items'] as List)[i]['quantity']} ${(source['items'] as List)[i]['unit']}',
-                                ),
-                                Text(
-                                  'Enviado acumulado: ${_lines[i]['dispatched']} • Pendente de entrega/resolução: ${((source['items'] as List)[i]['quantity'] as num? ?? 0) - (_lines[i]['delivered'] as num) - (_lines[i]['resolved'] as num)}',
-                                ),
-                                _field(
-                                  i,
-                                  'separated',
-                                  'Separado acumulado (inclui o que já saiu)',
-                                  number: true,
-                                ),
-                                _field(
-                                  i,
-                                  'delivered',
-                                  'Entregue acumulado',
-                                  number: true,
-                                ),
-                                _control(
-                                  'care.item.checked',
-                                  CheckboxListTile(
-                                    contentPadding: EdgeInsets.zero,
-                                    title: const Text(
-                                      'Conferi este item e registrei as faltas',
-                                    ),
-                                    value: _lines[i]['checked'] == true,
-                                    onChanged:
-                                        closed ||
-                                            _order!['status'] == 'new' ||
-                                            _busy ||
-                                            _order!['sourceChanged'] == true
-                                        ? null
-                                        : (v) => setState(() {
-                                            _lines[i]['checked'] = v;
-                                            _dirty = true;
-                                          }),
-                                  ),
-                                  instance: '${widget.orderId}-$i',
-                                ),
-                                _field(
-                                  i,
-                                  'reason',
-                                  'Motivo da pendência (ex.: falta / compra externa)',
-                                ),
-                                _field(i, 'note', 'Observação interna'),
-                                _field(
-                                  i,
-                                  'owner',
-                                  'Responsável pela resolução',
-                                ),
-                                _control(
-                                  'care.item.due',
-                                  TextButton.icon(
-                                    onPressed:
-                                        closed ||
-                                            _busy ||
-                                            _order!['status'] == 'new' ||
-                                            _order!['sourceChanged'] == true
-                                        ? null
-                                        : () => _deadline(i),
-                                    icon: const Icon(Icons.schedule),
-                                    label: Text(
-                                      'Prazo: ${_date(_lines[i]['due'])}',
-                                    ),
-                                  ),
-                                  instance: '${widget.orderId}-$i',
-                                ),
-                                _field(
-                                  i,
-                                  'agreement',
-                                  'Acordo com cliente: quem, quando e canal',
-                                ),
-                                _control(
-                                  'care.item.resolution',
-                                  ExpansionTile(
-                                    title: const Text('Resolver sem entrega'),
-                                    children: [
-                                      const Text(
-                                        'Uso excepcional. Registre o acordo e trate a regularização fiscal separadamente.',
-                                      ),
-                                      _field(
-                                        i,
-                                        'resolved',
-                                        'Quantidade resolvida sem entrega',
-                                        number: true,
-                                      ),
-                                      _field(
-                                        i,
-                                        'resolution',
-                                        'Motivo da resolução / referência do acordo',
-                                      ),
-                                    ],
-                                  ),
-                                  instance: '${widget.orderId}-$i',
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      if (!closed && _order!['status'] != 'new') ...[
-                        TextField(
-                          controller: _receipt,
-                          enabled: !_busy,
-                          maxLines: 3,
-                          decoration: InputDecoration(
-                            labelText: _order!['status'] == 'new'
-                                ? 'Confirmação do cliente: quem, quando e canal'
-                                : 'Recebimento: quem recebeu, quando e evidência',
-                            border: const OutlineInputBorder(),
-                          ),
-                          onChanged: (_) => setState(() => _dirty = true),
-                        ),
-                        const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            for (final action
-                                in (_order!['status'] == 'new'
-                                        ? const {'confirm': 'Confirmar pedido'}
-                                        : const {
-                                            'save': 'Salvar alterações',
-                                            'verify': 'Concluir conferência',
-                                            'dispatch': 'Registrar saída',
-                                            'deliver': 'Registrar entrega',
-                                            'close': 'Concluir atendimento',
-                                          })
-                                    .entries)
-                              _control(
-                                'care.detail.${action.key}',
-                                FilledButton(
-                                  onPressed:
-                                      _busy || _order!['sourceChanged'] == true
-                                      ? null
-                                      : () => _save(action.key),
-                                  child: Text(action.value),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ],
-                      if (_busy)
-                        const Padding(
-                          padding: EdgeInsets.all(12),
-                          child: LinearProgressIndicator(),
-                        ),
-                      const SizedBox(height: 24),
                     ],
                   ),
-          ),
+                )
+              : ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    NfeDocumentRoyalClean(
+                      isOrder: true,
+                      invoice: {
+                        'code': source!['code'],
+                        'date': source['date'],
+                        'recipientName': source['name'],
+                        'recipientDocument': source['document'],
+                        'recipientAddress': source['address'],
+                        'statusLabel':
+                            [
+                                  (_order!['fiscal'] as Map)['number'],
+                                  (_order!['fiscal'] as Map)['status'],
+                                ]
+                                .whereType<String>()
+                                .where((value) => value.isNotEmpty)
+                                .join(' • '),
+                        'total': source['total'],
+                      },
+                      details: {
+                        'items': source['items'],
+                        'total': source['total'],
+                      },
+                    ),
+                  ],
+                ),
         ),
       ),
     );

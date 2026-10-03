@@ -243,7 +243,12 @@ class _HomePageState extends State<HomePageRoyalClean> {
                                               DoorLightRoyalClean(
                                                 activation: flash,
                                               ),
-                                              const DoorInvitationRoyalClean(),
+                                              DoorInvitationRoyalClean(
+                                                onActivate: () async {
+                                                  _overviewOpen.value = false;
+                                                  await _openStock(context);
+                                                },
+                                              ),
                                             ],
                                           ),
                                         ),

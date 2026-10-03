@@ -15,6 +15,7 @@ Future<void> precacheProfileImagesRoyalClean(BuildContext context) async {
     'royal-dados',
     'royal-blu',
     'royal-stoque',
+    'royal-3d',
     'royal-pixels',
     'royal-perfil',
     'royal-office',

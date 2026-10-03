@@ -43,8 +43,47 @@ Map<String, dynamic> sample() => {
   ],
 };
 void main() {
+  testWidgets('Consultation ends at disclaimer without operational controls', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(360, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final requests = <Map<String, dynamic>>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: OrderCareDetailRoyalClean(
+          orderId: '123',
+          showHeader: false,
+          call: (input) async {
+            requests.add(input);
+            return {'order': sample()};
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Cliente de teste'), findsOneWidget);
+    final disclaimer = find.text(
+      'Visualização de consulta do aplicativo. Não substitui o XML nem o DANFE oficial.',
+    );
+    await tester.scrollUntilVisible(
+      disclaimer,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(disclaimer, findsOneWidget);
+    expect(find.byType(TextFormField), findsNothing);
+    expect(find.byType(CheckboxListTile), findsNothing);
+    expect(find.text('Salvar alterações'), findsNothing);
+    expect(find.text('Registrar entrega'), findsNothing);
+    expect(find.text('Separação, pendências e entrega'), findsNothing);
+    expect(requests.map((r) => r['action']), ['open']);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets(
     'Small screen shows original quantities and keeps drafts after failed save',
+    // Operational editor removed by request; retained for its future redesign.
+    skip: true,
     (tester) async {
       await tester.binding.setSurfaceSize(const Size(360, 800));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -68,7 +107,11 @@ void main() {
         TextFormField,
         'Separado acumulado (inclui o que já saiu)',
       );
-      await tester.ensureVisible(separated);
+      await tester.scrollUntilVisible(
+        separated,
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.enterText(separated, '6');
       await tester.pump();
       final save = find.widgetWithText(FilledButton, 'Salvar alterações');
@@ -93,6 +136,8 @@ void main() {
   );
   testWidgets(
     'Source conflict preserves balances and disables ordinary mutations',
+    // Operational editor removed; server transition tests remain unchanged.
+    skip: true,
     (tester) async {
       final data = sample()
         ..['sourceChanged'] = true
@@ -111,6 +156,11 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.textContaining('saldos anteriores foram preservados'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(
         find.textContaining('saldos anteriores foram preservados'),
         findsOneWidget,
