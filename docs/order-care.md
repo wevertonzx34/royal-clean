@@ -11,7 +11,11 @@ Acesso: royal-porta → royal-producao. Conferências antigas por NF-e continuam
 - NF-e vinculada usa exclusivamente `notaFiscal.id` informado pelo pedido. Não há associação por nome, número aproximado ou coincidência de produtos. Notas já vinculadas encaminham para o pedido; conferência legada fica bloqueada para novas gravações quando existe atendimento vinculado.
 - Se o pedido não traz vínculo de NF-e, a central informa isso. Saída exige nota vinculada autorizada; compras externas e regularização fiscal continuam sob responsabilidade da operação.
 
-## Operação
+## Estado atual da interface
+
+A tela de detalhes está em modo de consulta. O editor de separação, pendências e entrega foi retirado; não há botões para executar as operações abaixo no aplicativo atual. Os contratos e as validações do backend permanecem para a futura retomada do editor. Abrir uma consulta não confirma separação ou entrega.
+
+## Operações do backend preservadas para retomada do editor
 
 1. Abrir pedido, registrar como o cliente confirmou e confirmar atendimento.
 2. Informar quantidade separada acumulada por item, incluindo quantidades que já saíram.

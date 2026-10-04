@@ -24,6 +24,11 @@ class LayoutButtonRoyalClean extends StatefulWidget {
     this.maxScale = 2.5,
     this.freeMovement = false,
   });
+
+  /// Lets an interactive descendant delegate its long press to this guide.
+  /// Business-specific long presses keep priority in the descendant.
+  static VoidCallback? adminLongPressOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_LayoutEditScope>()?.onEdit;
   @override
   State<LayoutButtonRoyalClean> createState() => _LayoutButtonState();
 }
@@ -129,7 +134,9 @@ class _LayoutButtonState extends State<LayoutButtonRoyalClean> {
   Widget _interactiveChild() => RepaintBoundary(
     key: _boundary,
     child: GestureDetector(
-      behavior: HitTestBehavior.translucent,
+      // The whole visual bounds, including transparent pixels and text
+      // overlays, belong to the same admin long-press target.
+      behavior: HitTestBehavior.opaque,
       onLongPress: _store.authorized ? _edit : null,
       child: Semantics(
         label: widget.child is IconButton
@@ -140,7 +147,10 @@ class _LayoutButtonState extends State<LayoutButtonRoyalClean> {
             : null,
         child: TooltipVisibility(
           visible: !_store.authorized,
-          child: widget.child,
+          child: _LayoutEditScope(
+            onEdit: _store.authorized ? _edit : null,
+            child: widget.child,
+          ),
         ),
       ),
     ),
@@ -148,6 +158,8 @@ class _LayoutButtonState extends State<LayoutButtonRoyalClean> {
 
   @override
   Widget build(BuildContext context) {
+    // Rebuild the portal when this route becomes current again after a pop.
+    final route = ModalRoute.of(context);
     final record = _store.get(_id);
     if ((!_store.authorized && record.original) ||
         Overlay.maybeOf(context) == null) {
@@ -182,7 +194,6 @@ class _LayoutButtonState extends State<LayoutButtonRoyalClean> {
         final factor = box.size.width > 0
             ? globalRect.width / box.size.width
             : 1.0;
-        final route = ModalRoute.of(this.context);
         if (route != null && !route.isCurrent) return const SizedBox.shrink();
         final scrollable = Scrollable.maybeOf(this.context);
         final scrollBox = scrollable?.context.findRenderObject();
@@ -230,6 +241,14 @@ class _LayoutButtonState extends State<LayoutButtonRoyalClean> {
       ),
     );
   }
+}
+
+class _LayoutEditScope extends InheritedWidget {
+  final VoidCallback? onEdit;
+  const _LayoutEditScope({required this.onEdit, required super.child});
+  @override
+  bool updateShouldNotify(_LayoutEditScope oldWidget) =>
+      oldWidget.onEdit != onEdit;
 }
 
 class _ViewportClip extends CustomClipper<Path> {

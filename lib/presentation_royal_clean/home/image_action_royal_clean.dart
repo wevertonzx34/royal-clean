@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../core_royal_clean/services/touch_feedback_royal_clean.dart';
+import '../shared/layout_button_royal_clean.dart';
 
 /// One tactile response and a finite visual sequence before activating a shortcut.
 class ImageActionRoyalClean extends StatefulWidget {
@@ -15,6 +16,7 @@ class ImageActionRoyalClean extends StatefulWidget {
   final bool activateBeforeAnimation;
   final int replayVersion;
   final VoidCallback? feedback;
+  final VoidCallback? onAdminEdit;
   const ImageActionRoyalClean({
     super.key,
     required this.onActivate,
@@ -27,6 +29,7 @@ class ImageActionRoyalClean extends StatefulWidget {
     this.activateBeforeAnimation = false,
     this.replayVersion = 0,
     this.feedback,
+    this.onAdminEdit,
   });
 
   @override
@@ -97,20 +100,26 @@ class _ImageActionState extends State<ImageActionRoyalClean>
   }
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    behavior: HitTestBehavior.opaque,
-    onTap: _activate,
-    onLongPress: widget.onLongActivate == null ? null : () => _activate(true),
-    child: AnimatedBuilder(
-      animation: _animation,
-      builder: (context, _) {
-        final wave = math.sin(_animation.value * math.pi * widget.pulses);
-        final flash = wave * wave;
-        return Transform.scale(
-          scale: 1 - widget.scaleDepth * flash,
-          child: widget.builder(context, flash),
-        );
-      },
-    ),
-  );
+  Widget build(BuildContext context) {
+    final adminEdit =
+        widget.onAdminEdit ?? LayoutButtonRoyalClean.adminLongPressOf(context);
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _activate,
+      onLongPress: widget.onLongActivate != null
+          ? () => _activate(true)
+          : adminEdit,
+      child: AnimatedBuilder(
+        animation: _animation,
+        builder: (context, _) {
+          final wave = math.sin(_animation.value * math.pi * widget.pulses);
+          final flash = wave * wave;
+          return Transform.scale(
+            scale: 1 - widget.scaleDepth * flash,
+            child: widget.builder(context, flash),
+          );
+        },
+      ),
+    );
+  }
 }

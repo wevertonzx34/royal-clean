@@ -9,7 +9,7 @@ import 'stock_lighting_royal_clean.dart';
 import 'royal_3d_neon.dart';
 import 'stock_data_shortcut_royal_clean.dart';
 import 'nfe_page_royal_clean.dart';
-import 'order_care_page_royal_clean.dart';
+import 'production_drawer_royal_clean.dart';
 import '../shared/header_actions_royal_clean.dart';
 
 class StockFunctionsPageRoyalClean extends StatelessWidget {
@@ -52,7 +52,7 @@ class StockFunctionsPageRoyalClean extends StatelessWidget {
               ),
             );
           },
-          onOpenProduction: () => openOrderCareRoyalClean(context),
+          onOpenProduction: () => openProductionDrawerRoyalClean(context),
         ),
         const SafeArea(
           child: Align(

@@ -1,5 +1,6 @@
 import {liveCatalogRows, catalogRevision, catalogCheckedAt} from './bling-live-sync.js';
 import {HttpsError} from 'firebase-functions/v2/https';
+import {catalogPageRows, catalogPageSize} from './catalog-page-cache.js';
 export function invoiceListingFields(data) {
  const text=v=>typeof v==='string'?v.slice(0,250):'';
  return {recipientName:text(data.contato?.nome),recipientDocument:text(data.contato?.numeroDocumento),
@@ -15,7 +16,7 @@ export function invoiceMetricKeys(record) {
  return keys;
 }
 export function validateInvoiceCatalog(input) {
- if(!Number.isSafeInteger(input.page??1)||(input.page??1)<1||(input.page??1)>10000||
+ if(!catalogPageSize(input,100)||!Number.isSafeInteger(input.page??1)||(input.page??1)<1||(input.page??1)>10000||
    (input.catalogRun!==undefined&&(typeof input.catalogRun!=='string'||input.catalogRun.length>100)))
    throw new HttpsError('invalid-argument','Página de notas inválida.');
  return {kind:'invoiceCatalog',page:input.page??1,path:null};
@@ -25,13 +26,16 @@ export async function readInvoiceCatalog(db,input) {
  if(!complete)throw new HttpsError('failed-precondition','Aguarde a sincronização completa das notas.');
  const revision=await catalogRevision(db,'invoices',complete);
   if(input.catalogRun&&input.catalogRun!==revision)throw new HttpsError('aborted','A base de notas mudou. Atualize a lista.');
+ const rows=await catalogPageRows(db,`invoices:${revision}`,async()=>{
  const snapshot=await db.collection(`bling_catalog_snapshots/${complete.slot}/invoices`)
    .where('catalogRun','==',complete.runId).select('code','date','status','total','recipientName','recipientDocument','listingVersion','detailsCheckedAt').get();
  const rows=await liveCatalogRows(db,'invoices',complete,snapshot.docs.map(doc=>({id:doc.id,...doc.data()})));
  if(rows.some(r=>r.listingVersion!==1))throw new HttpsError('failed-precondition','Preparando os dados dos destinatários. Aguarde a sincronização das notas.');
  rows.sort((a,b)=>(b.date??'').localeCompare(a.date??'')||a.id.localeCompare(b.id));
- const page=input.page??1,offset=(page-1)*100;
+ return rows;
+ },{fresh:(input.page??1)===1});
+ const size=catalogPageSize(input,100),page=input.page??1,offset=(page-1)*size;
   if(revision!==await catalogRevision(db,'invoices',complete))throw new HttpsError('aborted','Base atualizada durante a consulta.');
- return {items:rows.slice(offset,offset+100).map(r=>({...r,metricKeys:invoiceMetricKeys(r)})),total:rows.length,
-   page,hasMore:offset+100<rows.length,catalogRun:revision,checkedAt:await catalogCheckedAt(db,'invoices',complete)};
+ return {items:rows.slice(offset,offset+size).map(r=>({...r,metricKeys:invoiceMetricKeys(r)})),total:rows.length,
+   page,hasMore:offset+size<rows.length,catalogRun:revision,checkedAt:await catalogCheckedAt(db,'invoices',complete)};
 }

@@ -117,6 +117,19 @@ void main() {
       expect(find.text('Original action'), findsOneWidget);
       final moved = tester.getCenter(find.text('Original action'));
       expect(moved.dy, greaterThan(original.dy));
+      final navigator = Navigator.of(
+        tester.element(find.text('Original action')),
+      );
+      navigator.push<void>(
+        MaterialPageRoute(
+          builder: (_) => const Scaffold(body: Text('Next page')),
+        ),
+      );
+      await tester.pumpAndSettle();
+      navigator.pop();
+      await tester.pumpAndSettle();
+      expect(find.text('Original action').hitTestable(), findsOneWidget);
+      expect(tester.getCenter(find.text('Original action')), moved);
       await tester.tapAt(moved);
       expect(taps, 1);
       await tester.longPress(find.text('Original action'));

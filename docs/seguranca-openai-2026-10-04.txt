@@ -1,0 +1,70 @@
+SEGURANÇA DE SEGREDOS — ROYAL CLEAN — 04/10/2026
+
+VALIDAÇÃO DESTA CORREÇÃO
+- 5 testes das ferramentas passaram.
+- 83 testes de segurança nos emuladores passaram usando o executor seguro.
+- 23 logs antigos UTF-16 continham despejos do ambiente com a chave anterior.
+  As linhas completas foram removidas, sem backups dos valores sensíveis.
+- APK profile descompactado: nenhum indicador de chave/endpoint OpenAI.
+- Run profile no Moto g32 realizado; processo 31930, tela de estoque exibida.
+  Nenhuma limpeza de dados, mudança de layout ou migração foi executada.
+- O log do dispositivo apresentou uma falha de atestação App Check (403).
+  A proteção não foi desativada; o run não comprova acesso a todas as chamadas
+  protegidas do backend. Esse ponto requer diagnóstico específico de atestação.
+
+O projeto não possui integração OpenAI atualmente. Não foi criada uma função
+sem finalidade nem foi cadastrada, consultada ou rotacionada nenhuma chave.
+
+EXECUÇÃO SEGURA
+Instale as dependências existentes em security-tests. Da raiz, execute:
+  node tool/firebase_safe.cjs <comando Firebase e argumentos>
+Para testar os emuladores:
+  cd security-tests
+  npm.cmd test
+Para testar as proteções e verificar arquivos locais:
+  node --test tool/security_tools.test.cjs
+  node tool/check_secrets.cjs
+
+O executor usa uma lista permitida de variáveis operacionais, eliminando chaves
+OpenAI, tokens e senhas herdados pelo processo. DEBUG é desativado. A saída
+stdout/stderr passa por ocultação de chaves, headers e atribuições sensíveis.
+O executor não aceita --debug, --token ou comandos de administração de secrets.
+Ele também bloqueia arquivos .env*, .secret* e .runtimeconfig.json em functions.
+Antes de um deploy, exige uma varredura sem ocorrências e verifica os arquivos
+sensíveis rastreados no Git. Se a varredura falhar, o deploy não é iniciado.
+Use esse executor em vez de chamar a CLI diretamente: as proteções não se
+aplicam a comandos executados por fora dele. Não edite node_modules.
+
+ARMAZENAMENTO
+O responsável revoga a chave anterior e cadastra manualmente OPENAI_API_KEY no
+Google Cloud Secret Manager do projeto Firebase royal-clean-fire. Não coloque
+o valor em comandos, argumentos, arquivos, exemplos, variáveis do cliente,
+Firestore ou no Git. Esta correção não realiza o cadastro ou a revogação.
+
+INTEGRAÇÃO FUTURA
+Flutter -> Firebase Authentication/App Check -> callable Firebase de segunda
+geração -> Secret Manager -> OpenAI -> resposta filtrada -> Flutter.
+No backend, declarar defineSecret('OPENAI_API_KEY') de firebase-functions/params;
+vincular secrets: [parametroDoSegredo] somente na função que efetivamente chama
+OpenAI; obter parametroDoSegredo.value() somente durante a execução do handler.
+Não vincular o segredo às opções globais nem às funções Bling existentes.
+Autenticar e autorizar antes da chamada, limitar frequência/tamanho/custo,
+aceitar entradas validadas e devolver erros controlados. Nunca registrar o
+segredo, headers, objetos de request/response completos ou exceções brutas do
+provedor. Nenhuma chave pode ser retornada ao Flutter ou embutida no APK.
+Referência: https://firebase.google.com/docs/functions/config-env?gen=2nd
+
+GIT E VERIFICAÇÃO
+Arquivos de ambiente/secrets/configuração privada e credenciais locais estão
+ignorados. O ignore não protege arquivos já rastreados: o verificador também
+consulta git ls-files e denuncia esses caminhos. Exemplos com segredos reais
+continuam proibidos. A varredura inclui arquivos locais, logs e artefatos fora
+de .git/node_modules/.gradle; só imprime arquivo, linha e categoria.
+Binários são examinados para padrões de chave OpenAI; o conteúdo comprimido
+do APK precisa de verificação adicional após descompactação.
+Detecção por padrões e mascaramento são defesas adicionais, não uma garantia
+absoluta contra qualquer formato futuro. A defesa principal é não disponibilizar
+credenciais ao processo local/cliente e armazená-las somente no Secret Manager.
+Não reescrever o histórico Git automaticamente; qualquer ocorrência histórica
+exige revogação e tratamento específico. A saída anterior da conversa não pode
+ser apagada por alterações neste repositório.

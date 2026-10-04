@@ -1,5 +1,6 @@
-import 'dart:ui' as ui;
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'cached_glow_royal_clean.dart';
 
 class NeonImageRoyalClean extends StatefulWidget {
   final String asset;
@@ -21,42 +22,94 @@ class NeonImageRoyalClean extends StatefulWidget {
     this.activationSecondaryGlow,
     this.cacheWidth = 900,
   });
+  static Future<void> prepare(String asset, Color glow) async {
+    await CachedGlowRoyalClean.load(asset, glow);
+  }
+
   @override
   State<NeonImageRoyalClean> createState() => _NeonImageState();
 }
 
 class _NeonImageState extends State<NeonImageRoyalClean>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final _pulse = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 2),
   );
+  CachedGlowRoyalClean? _glow, _activation;
+  bool _foreground = true, _enabled = false;
+  int _generation = 0;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _load();
+  }
+
+  void _load() {
+    final generation = ++_generation;
+    _glow = _activation = null;
+    unawaited(
+      Future.wait([
+        CachedGlowRoyalClean.load(widget.asset, widget.glow),
+        CachedGlowRoyalClean.load(
+          widget.asset,
+          widget.activationGlow,
+          widget.activationSecondaryGlow,
+        ),
+      ]).then((textures) {
+        if (mounted && generation == _generation) {
+          setState(() {
+            _glow = textures[0];
+            _activation = textures[1];
+          });
+        }
+      }),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant NeonImageRoyalClean oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.asset != widget.asset ||
+        oldWidget.glow != widget.glow ||
+        oldWidget.activationGlow != widget.activationGlow ||
+        oldWidget.activationSecondaryGlow != widget.activationSecondaryGlow) {
+      _load();
+    }
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (MediaQuery.disableAnimationsOf(context) ||
-        !TickerMode.valuesOf(context).enabled) {
+    _enabled =
+        !MediaQuery.disableAnimationsOf(context) &&
+        TickerMode.valuesOf(context).enabled;
+    _updateMotion();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _foreground = state == AppLifecycleState.resumed;
+    _updateMotion();
+  }
+
+  void _updateMotion() {
+    if (_enabled && _foreground) {
+      if (!_pulse.isAnimating) _pulse.repeat(reverse: true);
+    } else {
       _pulse.stop();
-      _pulse.value = .4;
-    } else if (!_pulse.isAnimating) {
-      _pulse.repeat(reverse: true);
+      if (!_enabled) _pulse.value = .4;
     }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pulse.dispose();
     super.dispose();
   }
 
-  Widget _image({Color? color}) => Image.asset(
-    widget.asset,
-    fit: widget.fit,
-    width: double.infinity,
-    cacheWidth: widget.cacheWidth,
-    color: color,
-    colorBlendMode: color == null ? null : BlendMode.srcIn,
-  );
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
     child: AspectRatio(
@@ -65,42 +118,56 @@ class _NeonImageState extends State<NeonImageRoyalClean>
         fit: StackFit.expand,
         clipBehavior: Clip.none,
         children: [
-          AnimatedBuilder(
-            animation: _pulse,
+          Positioned.fill(
             child: RepaintBoundary(
-              child: ImageFiltered(
-                imageFilter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                child: _image(color: widget.glow),
-              ),
-            ),
-            builder: (_, child) => Opacity(
-              opacity: .45 + Curves.easeInOut.transform(_pulse.value) * .4,
-              child: child,
-            ),
-          ),
-          Opacity(
-            opacity: widget.activation,
-            child: RepaintBoundary(
-              child: ImageFiltered(
-                imageFilter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                child: widget.activationSecondaryGlow == null
-                    ? _image(color: widget.activationGlow)
-                    : ShaderMask(
-                        blendMode: BlendMode.srcIn,
-                        shaderCallback: (bounds) => LinearGradient(
-                          colors: [
-                            widget.activationGlow,
-                            widget.activationSecondaryGlow!,
-                          ],
-                        ).createShader(bounds),
-                        child: _image(color: Colors.white),
-                      ),
+              child: CustomPaint(
+                painter: _GlowPainter(
+                  _pulse,
+                  _glow,
+                  _activation,
+                  widget.activation,
+                  widget.fit,
+                ),
               ),
             ),
           ),
-          RepaintBoundary(child: _image()),
+          RepaintBoundary(
+            child: Image.asset(
+              widget.asset,
+              fit: widget.fit,
+              width: double.infinity,
+              cacheWidth: widget.cacheWidth,
+              gaplessPlayback: true,
+            ),
+          ),
         ],
       ),
     ),
   );
+}
+
+class _GlowPainter extends CustomPainter {
+  final Animation<double> pulse;
+  final CachedGlowRoyalClean? glow, activated;
+  final double activation;
+  final BoxFit fit;
+  _GlowPainter(this.pulse, this.glow, this.activated, this.activation, this.fit)
+    : super(repaint: pulse);
+  @override
+  void paint(Canvas canvas, Size size) {
+    glow?.paint(
+      canvas,
+      size,
+      fit,
+      .45 + Curves.easeInOut.transform(pulse.value) * .4,
+    );
+    activated?.paint(canvas, size, fit, activation);
+  }
+
+  @override
+  bool shouldRepaint(covariant _GlowPainter old) =>
+      old.glow != glow ||
+      old.activated != activated ||
+      old.activation != activation ||
+      old.fit != fit;
 }

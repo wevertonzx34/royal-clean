@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
-import 'avatar_aura_royal_clean.dart';
-import 'royal_blu_page.dart';
 
 /// Decode at the same sizes used by the widgets, before navigation.
 Future<void> precacheProfileImagesRoyalClean(BuildContext context) async {
-  await AvatarAuraRoyalClean.prepare();
-  if (!context.mounted) return;
-  await prepareRoyalBlu(context);
   for (final asset in const [
     'royal-home',
     'royal-porta',
@@ -14,6 +9,23 @@ Future<void> precacheProfileImagesRoyalClean(BuildContext context) async {
     'royal-avatar',
     'royal-dados',
     'royal-blu',
+  ]) {
+    if (!context.mounted) return;
+    await precacheImage(
+      ResizeImage(
+        AssetImage('assets/preview/royal-store/$asset.webp'),
+        width: ['royal-dados', 'royal-blu', 'logo-porta'].contains(asset)
+            ? 300
+            : 900,
+      ),
+      context,
+    );
+  }
+}
+
+/// Decode destination artwork only when it is actually requested.
+Future<void> precacheStockImagesRoyalClean(BuildContext context) async {
+  for (final asset in const [
     'royal-stoque',
     'royal-3d',
     'royal-pixels',

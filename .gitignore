@@ -1,6 +1,20 @@
 # Miscellaneous
+.env*
+.secret*
+.runtimeconfig.json
+*service-account*.json
+*service_account*.json
+credentials.json
+application_default_credentials.json
+*firebase-adminsdk*.json
+*.p12
+*.pfx
+*.key
 *.class
 *.log
+android/key.properties
+*.jks
+*.keystore
 *.pyc
 *.swp
 .DS_Store

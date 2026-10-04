@@ -27,6 +27,7 @@ import 'presentation_royal_clean/auth/admin_route_guard_royal_clean.dart';
 import 'presentation_royal_clean/home/access_control_page_royal_clean.dart';
 import 'presentation_royal_clean/home/create_invite_page_royal_clean.dart';
 import 'presentation_royal_clean/home/home_page_royal_clean.dart';
+import 'presentation_royal_clean/home/home_background_royal_clean.dart';
 import 'presentation_royal_clean/home/status_invite/invite_status_details_page_royal_clean.dart';
 import 'presentation_royal_clean/home/status_invite/invite_status_page_royal_clean.dart';
 import 'presentation_royal_clean/splash/splash_page_royal_clean.dart';
@@ -35,6 +36,8 @@ import 'presentation_royal_clean/preview/partnership_content_royal_clean.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  const testAppCheck =
+      !kReleaseMode && (kDebugMode || bool.fromEnvironment('APP_CHECK_DEBUG'));
   adminNotificationOpenedRoyalClean.addListener(() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       royalNotificationNavigator.currentState?.pushNamed('/notifications');
@@ -62,24 +65,31 @@ void main() {
       );
     }
     await FirebaseAppCheck.instance.activate(
-      providerAndroid: kDebugMode
+      providerAndroid: testAppCheck
           ? const AndroidDebugProvider()
           : const AndroidPlayIntegrityProvider(),
-      providerApple: kDebugMode
+      providerApple: testAppCheck
           ? const AppleDebugProvider()
           : const AppleAppAttestWithDeviceCheckFallbackProvider(),
     );
     AccountAccessRoyalClean.instance.start();
     IntercomRoyalClean.instance.start();
     AdminPushRoyalClean.instance.start();
-    if (kDebugMode && const bool.fromEnvironment('VERIFY_APP_CHECK')) {
+    if (!kReleaseMode && const bool.fromEnvironment('VERIFY_APP_CHECK')) {
       debugPrint(
         'RoyalClean session: retained=${FirebaseAuth.instance.currentUser != null}; biometric=${BiometricAccessRoyalClean.instance.enabled}; locked=${BiometricAccessRoyalClean.instance.locked}',
       );
       unawaited(_verifyAppCheck());
     }
   });
-  firebaseInitialization.ignore();
+  unawaited(
+    firebaseInitialization.catchError((Object error, StackTrace stack) {
+      // Keep the public preview available, without logging tokens or personal data.
+      debugPrint(
+        'RoyalClean initialization unavailable: ${error is FirebaseException ? error.code : error.runtimeType}',
+      );
+    }),
+  );
   runApp(RoyalCleanApp(firebaseInitialization: firebaseInitialization));
 }
 
@@ -120,7 +130,13 @@ class RoyalCleanApp extends StatelessWidget {
     if (biometric.locked && !await biometric.unlock()) {
       throw const BiometricCancelledRoyalClean();
     }
-    await AccountAccessRoyalClean.instance.ready();
+    final access = AccountAccessRoyalClean.instance;
+    access.start();
+    // AccountGate renders pending access and never builds private content early.
+    // Only failed sessions need the explicit retry before navigation.
+    if (access.value.status == AccountAccessStatus.unavailable) {
+      await access.ready();
+    }
   }
 
   Stream<List<PublicPartnerRoyalClean>> _partnerships({
@@ -130,10 +146,12 @@ class RoyalCleanApp extends StatelessWidget {
     yield* PartnershipContentRoyalClean.watch(ads: ads);
   }
 
-  Widget _admin(WidgetBuilder builder) => AdminRouteGuardRoyalClean(
-    firebaseInitialization: firebaseInitialization,
-    builder: (context) => BiometricGateRoyalClean(builder: builder),
-  );
+  Widget _admin(WidgetBuilder builder, {Widget? pendingBackground}) =>
+      AdminRouteGuardRoyalClean(
+        pendingBackground: pendingBackground,
+        firebaseInitialization: firebaseInitialization,
+        builder: (context) => BiometricGateRoyalClean(builder: builder),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -150,7 +168,7 @@ class RoyalCleanApp extends StatelessWidget {
       initialRoute: AppRoutesRoyalClean.splash,
       routes: {
         '/notifications': (_) =>
-            _admin((_) => const Scaffold(body: NotificationsPanelRoyalClean())),
+            const Scaffold(body: NotificationsPanelRoyalClean()),
         AppRoutesRoyalClean.splash: (_) => SplashPageRoyalClean(
           firebaseInitialization: firebaseInitialization,
         ),
@@ -176,8 +194,10 @@ class RoyalCleanApp extends StatelessWidget {
         '/intercom': (_) => _admin((_) => const IntercomPageRoyalClean()),
         '/bling': (_) => _admin((_) => const BlingIntegrationPageRoyalClean()),
         '/bling-data': (_) => _admin((_) => const BlingDataPageRoyalClean()),
-        AppRoutesRoyalClean.home: (_) =>
-            _admin((_) => const HomePageRoyalClean()),
+        AppRoutesRoyalClean.home: (_) => _admin(
+          (_) => const HomePageRoyalClean(),
+          pendingBackground: const HomePendingBackgroundRoyalClean(),
+        ),
         AppRoutesRoyalClean.accessControl: (_) =>
             _admin((_) => const AccessControlPageRoyalClean()),
         AppRoutesRoyalClean.createInvite: (_) =>

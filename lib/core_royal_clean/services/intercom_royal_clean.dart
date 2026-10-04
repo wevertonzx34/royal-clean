@@ -66,10 +66,16 @@ class IntercomRoyalClean extends ChangeNotifier {
   StreamSubscription<dynamic>? _feed, _auth;
   Timer? _clock;
   bool _started = false;
+  int _privateQueryDay = 0;
   List<IntercomMessageRoyalClean> get active =>
       [
           ...messages,
-          ..._privateMessages,
+          if (AccountAccessRoyalClean.instance.value.status ==
+                  AccountAccessStatus.admin &&
+              AccountAccessRoyalClean.instance.value.identity?.uid ==
+                  _adminReader &&
+              !BiometricAccessRoyalClean.instance.locked)
+            ..._privateMessages,
         ].where((message) => message.activeAt(DateTime.now())).toList()
         ..sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
   bool isUnread(IntercomMessageRoyalClean message) =>
@@ -97,10 +103,14 @@ class IntercomRoyalClean extends ChangeNotifier {
         /* In-memory read state remains available. */
       }
     });
-    _clock = Timer.periodic(
-      const Duration(seconds: 30),
-      (_) => notifyListeners(),
-    );
+    _clock = Timer.periodic(const Duration(seconds: 30), (_) {
+      final day =
+          DateTime.now().millisecondsSinceEpoch ~/ Duration.millisecondsPerDay;
+      if (_adminReader != null && day != _privateQueryDay) {
+        _adminChanged(force: true);
+      }
+      notifyListeners();
+    });
     reload();
   }
 
@@ -124,9 +134,12 @@ class IntercomRoyalClean extends ChangeNotifier {
     }
     notifyListeners();
     if (uid == null) return;
+    _privateQueryDay =
+        DateTime.now().millisecondsSinceEpoch ~/ Duration.millisecondsPerDay;
     _privateFeed = FirebaseFirestore.instance
         .collection('admin_bling_events')
-        .orderBy('publishedAt', descending: true)
+        // Single-field query: expired history is not downloaded, no new index needed.
+        .where('expiresAt', isGreaterThan: Timestamp.fromDate(DateTime.now()))
         .snapshots(includeMetadataChanges: true)
         .listen(
           (snapshot) {

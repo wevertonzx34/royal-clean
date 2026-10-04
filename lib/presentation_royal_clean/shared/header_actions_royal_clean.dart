@@ -4,9 +4,15 @@ import '../../core_royal_clean/services/intercom_royal_clean.dart';
 import 'package:flutter/material.dart';
 import '../../core_royal_clean/constants/app_routes_royal_clean.dart';
 import '../../core_royal_clean/services/account_access_royal_clean.dart';
+import 'notifications_panel_royal_clean.dart';
 
 void showNotificationsRoyalClean(BuildContext context) {
-  Navigator.of(context, rootNavigator: true).pushNamed('/notifications');
+  Navigator.of(context, rootNavigator: true).push<void>(
+    MaterialPageRoute(
+      settings: const RouteSettings(name: '/notifications'),
+      builder: (_) => const Scaffold(body: NotificationsPanelRoyalClean()),
+    ),
+  );
 }
 
 class NotificationButtonRoyalClean extends StatelessWidget {
@@ -30,7 +36,15 @@ class NotificationButtonRoyalClean extends StatelessWidget {
             textColor: const Color(0xFF092F43),
             isLabelVisible: count > 0,
             label: Text(count > 99 ? '99+' : '$count'),
-            child: Icon(Icons.public_rounded, color: color, size: iconSize),
+            child: Image.asset(
+              'assets/preview/royal-store/royal-news.webp',
+              width: iconSize ?? 24,
+              height: iconSize ?? 24,
+              color: color ?? IconTheme.of(context).color,
+              cacheWidth: 120,
+              fit: BoxFit.contain,
+              excludeFromSemantics: true,
+            ),
           ),
         ),
       );

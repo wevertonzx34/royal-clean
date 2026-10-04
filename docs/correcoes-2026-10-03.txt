@@ -1,0 +1,51 @@
+ROYAL CLEAN — CORREÇÕES E VALIDAÇÃO — 03/10/2026
+
+Escopo: corrigir problemas identificados na auditoria, preservando os arquivos
+de imagem, medidas e identificadores de layout, ações e dados existentes.
+As alterações locais que já existiam foram mantidas. Backup do diff anterior:
+build/pre-fixes/user-working-diff.patch.
+
+IMPLEMENTADO
+- Brilho neon e contorno do avatar calculados uma vez e reutilizados em texturas
+  transparentes. Arte original mantida; animações pausam fora do primeiro plano.
+- Carregamento antecipado concentrado nas imagens da próxima tela; imagens do
+  estoque passam a ser preparadas somente ao abrir essa área.
+- Fundo visual da home durante a verificação de acesso, evitando a tela vazia
+  escura nessa espera. Nenhuma imagem de origem foi regravada.
+- Notificações públicas abrem corretamente; eventos administrativos continuam
+  condicionados ao acesso e desbloqueio. Consulta privada exclui itens expirados.
+- Paginação aceita até 250 itens e reutiliza a geração ordenada por até 60s,
+  com orçamento de 8 MB. Autorização e revisão verificadas a cada chamada.
+- Consultas periódicas limitadas ao primeiro plano e telas com observadores;
+  sincronizações invalidam o cache. Limite de chamadas tem uma tentativa após
+  60s, mantendo a última geração completa durante a espera.
+- Trava de renovação OAuth interrompida exige reconectar; não reutiliza um
+  refresh token que pode já ter sido rotacionado.
+- Build release exige chave de produção configurada. Profile/debug preservam
+  a assinatura usada no dispositivo. Credenciais de assinatura ignoradas no Git.
+- Documentação de convites e atendimento ajustada ao comportamento atual.
+
+VALIDAÇÃO
+- Flutter: 128 testes passaram; 2 previamente desativados permanecem desativados.
+- Flutter analyze: nenhuma ocorrência.
+- Segurança Firebase nos emuladores: 83 testes passaram.
+- Backend: 55 testes passaram.
+- blingReadData publicada com sucesso em royal-clean-fire/southamerica-east1.
+- APK profile atualizado instalado sem desinstalar no Moto g32, processo 27925.
+  A sessão autenticada anterior continuou disponível.
+- Avatar, mesma tela, amostra final de aproximadamente 10s:
+  18,9 -> 26,5 FPS; renderização média 53,07 -> 37,35 ms.
+  PSS medida 345,7 -> 325,3 MiB. Ainda abaixo de 60 FPS nessa composição.
+  Capturas: build/fixed-screen.png e build/fixed-avatar-end.png.
+- APK profile: 85.857.885 bytes (81,9 MiB). Inclui também as novas imagens que
+  já estavam adicionadas pelo usuário; não houve redução do pacote instalado.
+- Registros: build/fix-backend-tests.log, fix-function-deploy.log,
+  fix-profile-run.log e fixed-avatar-frames.json.
+
+LIMITES
+- Nenhuma limpeza de dados, desinstalação ou migração foi executada.
+- A assinatura de produção depende da chave do responsável pelo aplicativo.
+- Não é possível garantir ausência absoluta de falhas em todas as situações;
+  os resultados acima correspondem aos testes e verificações executados.
+- A credencial exposta na auditoria anterior ainda precisa ser revogada pelo
+  responsável. As correções do aplicativo não substituem essa revogação.

@@ -134,10 +134,20 @@ export function createBlingDataHandler({db, authenticated, requireAdmin, rateLim
       data = (await tx.get(ref)).data();
       if (!data || data.reauthorizationRequired) fail('failed-precondition', 'Renove a autorização do Bling.');
       if (data.expiresAt?.toMillis() > Date.now() + 60000) return false;
-      if (data.refreshLock) fail('unavailable', 'A conexão está sendo renovada. Tente novamente em alguns instantes.');
+      if (data.refreshLock) {
+        const started = data.refreshStartedAt?.toMillis?.();
+        if (!Number.isFinite(started) || Date.now() - started > 120000) {
+          // A killed worker may already have rotated the refresh token. Never replay it.
+          tx.update(ref, {reauthorizationRequired: true,
+            refreshLock: FieldValue.delete(), refreshStartedAt: FieldValue.delete()});
+          return 'reauthorize';
+        }
+        fail('unavailable', 'A conexão está sendo renovada. Tente novamente em alguns instantes.');
+      }
       tx.update(ref, {refreshLock: lock, refreshStartedAt: FieldValue.serverTimestamp()});
       return true;
     });
+    if (needsRefresh === 'reauthorize') fail('failed-precondition', 'Renove a autorização do Bling. A renovação anterior foi interrompida.');
     if (!needsRefresh) return data.accessToken;
     try {
       const response = await fetchImpl('https://api.bling.com.br/Api/v3/oauth/token', {

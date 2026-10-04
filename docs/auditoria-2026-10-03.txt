@@ -1,0 +1,227 @@
+ROYAL CLEAN — ANÁLISE DO ESTADO ATUAL
+Data: 03/10/2026, horário de Brasília. Diretório: C:\royal_clean.
+
+RESULTADO
+O aplicativo compila, instala e abre no Moto g32 conectado. Foram observadas
+a vitrine, a área administrativa, o estoque, as notificações, o painel Bling
+e uma consulta de NF-e com dados carregados. O maior problema medido é o custo
+da renderização na tela administrativa com avatar e efeitos.
+
+Esta análise reúne inventário, revisão dos caminhos principais do código,
+verificações automatizadas e observação no aparelho. Não é certificação de
+100% dos cenários nem revisão manual linha a linha de todos os arquivos.
+Os limites e o que permanece sem validação estão descritos abaixo.
+
+BASE EXAMINADA
+- Aplicativo Flutter 1.0.3+4; SDK local Flutter 3.47.1 / Dart 3.13.1.
+- 87 arquivos Dart em lib, 17 módulos JavaScript no backend e 36 arquivos
+  de testes Flutter. Inventário inclui módulos ainda não commitados.
+- Commit de referência: 9ba31d7, com alterações locais já presentes.
+- Firebase: royal-clean-fire; Functions usam southamerica-east1.
+- Android: pacote com.example.royal_clean. FirebaseOptions só suporta Android.
+- Moto g32, Android 13/API 33, arm64, captura em 1080 x 2400.
+- Autenticação, permissões, biometria, sessão, convites, dados pessoais,
+  notificações, cache de catálogos, dashboard, consultas de notas/pedidos,
+  sincronização Bling, regras Firestore/Storage e configurações nativas
+  foram examinados em seus pontos de entrada e contratos principais.
+
+VALIDAÇÃO EXECUTADA
+1. flutter analyze: nenhuma ocorrência; análise concluída normalmente.
+2. Flutter: 124 testes passaram, 3 falharam e 2 foram ignorados.
+   Falhas reproduzidas novamente nos dois arquivos envolvidos:
+   - header_actions_test.dart: Stock page opens notifications without leaving the page.
+   - header_actions_test.dart: Account pages keep notifications and do not stack My data on itself.
+   - preview_navigation_test.dart: Notifications open and partnerships shortcut scrolls to section.
+   As montagens desses testes não registram a rota /notifications, agora
+   exigida pelo componente. Isso causa erro de geração de rota nos testes.
+   No aplicativo real a rota existe e abriu para a sessão administrativa.
+   O problema de acesso dos demais perfis é distinto e está listado adiante.
+   Os dois testes ignorados são do editor operacional de pedidos removido
+   da interface; os comentários explicam que foram preservados para redesign.
+3. Backend Node: 52/52 testes passaram.
+4. Firestore, Storage, Auth e integração backend em emuladores: 83/83 passaram.
+   Usado exclusivamente demo-royal-clean. Nenhuma regra ou função publicada.
+   Java 17 inicialmente impediu a suíte; ela passou usando o Java 25 do JBR
+   já instalado no Android Studio. Foi ativado --use-system-ca no processo
+   Node para usar os certificados do sistema, sem desativar validação TLS.
+5. flutter run --profile -d 0079836103: compilação e instalação concluídas.
+   Build Gradle: 201,7 s. Instalação: 7,1 s. APK: 75.296.513 bytes / 71,8 MiB.
+   Esses tempos são de desenvolvimento/instalação, não tempos de abertura.
+
+MEDIÇÃO NO APARELHO
+Coleta por Dart VM Service, eventos Flutter.Frame em modo profile. As amostras
+anteriores à coleta foram descartadas por timestamp. Comparação em janela
+final de aproximadamente 10 segundos; tela do avatar confirmada por captura
+antes e depois. Nenhum arquivo de implementação foi instrumentado.
+
+Tela administrativa com avatar, sem painel aberto:
+- 188 quadros em 9,957 segundos: aproximadamente 18,9 FPS.
+- Construção média: 5,15 ms; percentil 90: 6,11 ms.
+- Rasterização média: 53,07 ms; percentil 90: 53,68 ms.
+- 188/188 quadros com rasterização acima de 16,67 ms.
+- PSS no momento da captura posterior: 353.948 KiB, cerca de 346 MiB.
+- Parcela gráfica: 119.212 KiB, cerca de 116 MiB.
+- Uma leitura instantânea de CPU: 58,6% de um núcleo, conforme top do Android.
+
+Visão geral aberta na tela administrativa:
+- 530 quadros em 9,980 segundos: aproximadamente 53,1 FPS.
+- Construção média: 0,86 ms.
+- Rasterização média: 18,74 ms; percentil 90: 19,26 ms.
+
+Inicialização:
+- Android registrou 'Skipped 194 frames' e demora na alocação de buffer gráfico.
+- A splash também inclui atraso fixo de 3 segundos no código.
+- Não foi medido um tempo completo de início frio até interação disponível.
+
+Interpretação: nesta execução, rasterização pesa mais que construção de widgets.
+Há efeitos animados, blur, partículas e composição contínua nos componentes
+AvatarAura, NeonImage, ShortcutVapor e DoorLight. São candidatos à investigação,
+mas nenhum efeito foi desligado isoladamente para atribuir a causa a um único
+componente. O aparelho tinha pressão de memória e swap; as medidas não devem
+ser generalizadas para outros aparelhos, modo release ou consumo de bateria.
+As coletas iniciais com navegação durante a amostra não são usadas como
+benchmark específico de uma tela.
+
+ACHADOS PRIORITÁRIOS
+
+ALTA — Renderização da tela administrativa
+Evidência: amostra fixa acima. A diferença entre aproximadamente 19 FPS no
+avatar e 53 FPS no painel indica que o cenário visual merece prioridade.
+Próximo trabalho: medir efeitos separadamente, reutilizar imagens de brilho,
+conter repaint e áreas de blur, reduzir custo gráfico preservando a arte e os
+controles aprovados. Não há mudança de layout feita nesta auditoria.
+
+ALTA — Notificações públicas ficam atrás de autorização administrativa
+lib/presentation_royal_clean/shared/header_actions_royal_clean.dart:8
+lib/main.dart:152
+O botão compartilhado chama /notifications. A rota envolve todo o painel em
+_admin. Entretanto, o botão aparece na vitrine e em páginas de outros perfis;
+o Intercom separa mensagens públicas do feed privado administrativo.
+Visitante recebe uma nova prévia; usuário sem permissão administrativa recebe
+bloqueio, em vez do painel público. Conclusão derivada do fluxo do código;
+no aparelho foi exercitada a sessão administrativa, para a qual funcionou.
+É necessário decidir e harmonizar acesso ao painel público, proteção do feed
+privado e testes de visitante, consumidor e administrador.
+
+MÉDIA — Paginação lê o catálogo inteiro para devolver cada página
+functions/bling-product-list.js:20
+functions/bling-contact-details.js:29
+functions/bling-invoice-list.js:29
+Cada consulta carrega o snapshot completo e a sobreposição live, ordena em
+memória e só então aplica slice. O cache Flutter baixa todas as páginas e
+renova periodicamente. Para N contatos ativos, retorna 25 por chamada: com
+1.000 contatos, 40 consultas podem reler aproximadamente 1.000 documentos
+cada, além da sobreposição e das leituras auxiliares. Isso é projeção do
+algoritmo, não custo real medido no Firebase.
+Há ainda limite compartilhado de 30 chamadas/minuto em bling_data; catálogos
+grandes e atualização simultânea de outros caches podem atingir esse limite.
+Considerar paginação por cursor em uma projeção ordenada, ou uma geração
+materializada servida sem reler toda a população para cada página.
+
+MÉDIA — Trava de renovação do Bling não tem recuperação por idade
+functions/bling-data.js:137
+refreshLock impede outra renovação; refreshStartedAt é gravado, mas não é
+consultado para expirar a trava. O catch remove a trava em erros tratados,
+mas morte do processo após gravá-la pode deixá-la permanente até intervenção
+ou nova autorização. Cenário identificado pelo código, não reproduzido.
+A recuperação deve tratar o risco de rotação do refresh token; simplesmente
+repetir um token antigo após timeout pode ser incorreto.
+
+MÉDIA — Feed privado cresce sem limite de consulta
+lib/core_royal_clean/services/intercom_royal_clean.dart:127
+admin_bling_events é observado com orderBy e snapshots, sem limit ou filtro
+de expiração no servidor. A interface filtra validade depois do download.
+production_orders também tem listagem com snapshots sem paginação.
+Não foi constatada falha por volume atual; é risco de crescimento de leitura,
+memória e processamento. Verificar retenção/TTL publicada e paginação.
+
+MÉDIA — Preparação da distribuição Android ainda usa assinatura de debug
+android/app/build.gradle.kts:40
+O build release usa signingConfigs.debug; applicationId mantém com.example.
+A execução local funciona, mas a configuração precisa ser definida para a
+distribuição pretendida. Não foi gerado ou publicado um release de produção.
+
+MÉDIA — Documentação descreve recursos já retirados da interface
+docs/order-care.md descreve edição, separação e registro de entrega.
+OrderCareDetailRoyalClean atualmente exibe NfeDocumentRoyalClean para consulta.
+Os testes ignorados confirmam retirada do editor. O backend mantém operações,
+mas isso não significa que o usuário consiga acioná-las na interface atual.
+README também descreve convites Cliente/Colaborador/Promotor, enquanto regras
+e registerAccount restringem o novo convite a Mestre. Revisar os documentos
+para evitar expectativa de funcionalidades indisponíveis.
+
+OUTRAS OBSERVAÇÕES
+- A vitrine continua demonstrativa/local, não é catálogo comercial atualizado
+  automaticamente pelo Bling. O painel administrativo tem integração real.
+- 'Entregues' no indicador fiscal representa estados de transmissão da NF-e,
+  inclusive estados sem entrega física. A interface tem ressalva explicativa;
+  o nome ainda pode confundir operação e deve ser revisto com o responsável.
+- Assets efetivamente incluídos no APK: 28 entradas, 35.154.799 bytes.
+  Maiores: logo-gif.webp (~7,5 MB), royal-stoque.webp (~5,9 MB),
+  royal-pixels.webp (~4,2 MB). Compressão/variantes merecem avaliação visual.
+  Os SVGs grandes arquivados não apareceram no APK inspecionado.
+- Firebase.initializeApp/AppCheck/sessão têm uma cadeia assíncrona única.
+  Erros são ignorados para deixar a prévia abrir; falta observabilidade
+  centralizada para distinguir causa de indisponibilidade no diagnóstico.
+- flutter doctor: Flutter/Dart fora do PATH, licenças Android não confirmadas
+  pelo diagnóstico e Visual Studio ausente. O Android compilou apesar disso.
+- O build emitiu avisos de futura incompatibilidade de AGP 8.11.1 e Kotlin
+  2.2.20. São avisos do SDK instalado, não falhas atuais comprovadas.
+- Web, Windows e Apple não têm FirebaseOptions habilitado; não representam
+  plataformas funcionais completas nesta configuração.
+- Textos de termos/privacidade continuam minutas conforme docs locais.
+  Sua adequação não foi avaliada juridicamente.
+
+SEGURANÇA OBSERVADA
+- Proteções administrativas exigem confirmação do servidor; cache local não
+  libera automaticamente conteúdo administrativo.
+- Regras fecham coleções privadas por padrão; dados pessoais do titular ficam
+  separados de listagens. Regras e integração passaram nos emuladores.
+- Callables principais usam App Check, validação e autorização de servidor.
+- Webhook verifica HMAC do corpo bruto e deduplica eventos.
+- Credenciais Bling ficam no backend/Secret Manager, não no aplicativo.
+- Senha não é armazenada pelo recurso de lembrar login; e-mail usa secure storage.
+- Isto não comprova que todas as regras/funções locais correspondem às versões
+  publicadas, nem substitui inspeção das permissões do projeto em produção.
+
+INCIDENTE DE LOG DURANTE A VALIDAÇÃO
+A CLI Firebase em modo de log detalhado registrou variáveis de ambiente,
+incluindo uma chave de API da OpenAI; um trecho bruto apareceu na saída da
+auditoria. Removi os dumps de ambiente dos logs locais gerados/consultados e
+verifiquei ausência do padrão da chave nesses arquivos. A chave exposta deve
+ser revogada/rotacionada pelo titular. Nenhuma chave é reproduzida aqui.
+Os logs são ignorados pelo Git. Para novas execuções, evitar DEBUG detalhado
+e sanear saída antes de exibição. Nenhuma credencial foi alterada.
+
+LIMITES E TRABALHO RESTANTE PARA AMPLIAR COBERTURA
+- Não foram exercitados cadastros reais, Google/Apple OAuth, envio de SMS,
+  compra, publicação de conteúdo, emissão fiscal ou alterações de estoque.
+- Não foram feitos testes físicos de entrega ou gravações operacionais
+  deliberadas em pedidos reais.
+- Dados do dashboard/NF-e foram observados, sem conciliação integral com ERP.
+  Horários mostrados na interface diferem entre consultas; não comprovam
+  atualização em tempo real de todos os registros.
+- Não foram inspecionadas todas as configurações, IAM, quotas, faturamento,
+  logs, índices, App Check e deploys do projeto Firebase em produção.
+- Não foram feitas campanhas de falha de rede, carga, bateria, acessibilidade
+  integral ou matriz de aparelhos/perfis. Alguns desses cenários têm testes
+  automatizados com dados sintéticos, não validação completa em campo.
+
+ESTADO DE ENTREGA
+Aplicativo instalado/executado em modo profile. Código-fonte de implementação
+e mudanças locais do usuário foram preservados. Nenhum deploy realizado.
+Adicionado apenas este relatório em docs; scripts e evidências de execução
+ficam em build, diretório ignorado pelo Git.
+
+EVIDÊNCIAS LOCAIS
+- build/avatar-confirmed.json: amostra do avatar sem histórico anterior.
+- build/avatar-performance-summary.json: estatísticas da janela de 10 s.
+- build/avatar-confirmed-start.png e avatar-confirmed-end.png: mesma tela.
+- build/home-fixed.json e home-fixed-start.png: painel Visão geral.
+  A captura inicial do painel está em build/home-fixed-start.png.
+- build/royal-notifications-settled.png: painel de notificações administrativo.
+- build/notification-test-audit.log: reprodução das três falhas.
+- build/security-audit.log: suite de segurança; dump de ambiente removido.
+- build/app/outputs/flutter-apk/app-profile.apk: build instalado.
+Capturas podem conter informações administrativas. Não publicar esses
+artefatos indiscriminadamente.

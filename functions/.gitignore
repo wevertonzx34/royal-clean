@@ -1,4 +1,8 @@
 node_modules/
 .env*
-!.env.example
+.secret*
+.runtimeconfig.json
+*service-account*.json
+*service_account*.json
+credentials.json
 *-debug.log

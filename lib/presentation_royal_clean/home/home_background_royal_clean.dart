@@ -1,5 +1,26 @@
 import 'package:flutter/material.dart';
 
+/// Public artwork while permission is checked; never builds administrative data.
+class HomePendingBackgroundRoyalClean extends StatelessWidget {
+  const HomePendingBackgroundRoyalClean({super.key});
+  @override
+  Widget build(BuildContext context) => HomeBackgroundRoyalClean(
+    child: Center(
+      child: FractionallySizedBox(
+        widthFactor: .97,
+        heightFactor: .97,
+        child: Image.asset(
+          'assets/preview/royal-store/royal-home.webp',
+          fit: BoxFit.cover,
+          cacheWidth: 900,
+          gaplessPlayback: true,
+          excludeFromSemantics: true,
+        ),
+      ),
+    ),
+  );
+}
+
 class HomeBackgroundRoyalClean extends StatelessWidget {
   final Widget child;
 

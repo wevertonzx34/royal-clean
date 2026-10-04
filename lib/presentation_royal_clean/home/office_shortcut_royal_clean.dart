@@ -34,6 +34,7 @@ class OfficeShortcutRoyalClean extends StatelessWidget {
           isProduction ? 'royal-producao-shortcut' : 'royal-office-shortcut',
         ),
         pulses: 2,
+        activateBeforeAnimation: isProduction,
         duration: const Duration(milliseconds: 600),
         scaleDepth: .018,
         feedback: () {

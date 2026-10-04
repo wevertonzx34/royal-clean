@@ -11,7 +11,7 @@ Versão atual: **1.0.3+4**, declarada em `pubspec.yaml`.
 - Áreas de consumidor, colaborador, promotor e administrador; gestão de perfis pelo admin.
 - Meus dados com CPF/CNPJ opcional, gravado por backend e privado ao titular.
 - Página inicial pública com vitrine, categorias e notícias demonstrativas.
-- Criação e consulta de convites para Cliente, Colaborador e Promotor.
+- Criação e consulta de convites Mestre; convites antigos permanecem para consulta.
 - Compartilhamento de convites pelo WhatsApp.
 - Rotas administrativas protegidas por autenticação e confirmação de permissão ativa no Firestore.
 

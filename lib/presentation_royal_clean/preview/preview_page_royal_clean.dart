@@ -65,7 +65,6 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
     setState(() => _openingAccount = true);
     try {
       await widget.prepareAccount?.call();
-      await _imagesReady;
       if (mounted && _signedIn) Navigator.pushNamed(context, '/account');
     } on BiometricCancelledRoyalClean {
       if (mounted) {

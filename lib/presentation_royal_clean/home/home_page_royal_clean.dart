@@ -66,7 +66,6 @@ class _HomePageState extends State<HomePageRoyalClean> {
     if (_openingStock) return;
     _openingStock = true;
     try {
-      await _imagesReady;
       if (!context.mounted) return;
       final route = PageRouteBuilder<void>(
         transitionDuration: const Duration(milliseconds: 150),
@@ -125,6 +124,14 @@ class _HomePageState extends State<HomePageRoyalClean> {
     _openingProperty = true;
     try {
       await _imagesReady;
+      if (!context.mounted) return;
+      await precacheImage(
+        const ResizeImage(
+          AssetImage('assets/preview/royal-store/royal-pixels.webp'),
+          width: 1080,
+        ),
+        context,
+      );
       if (!context.mounted) return;
       final route = PageRouteBuilder<void>(
         transitionDuration: const Duration(milliseconds: 180),
@@ -216,6 +223,7 @@ class _HomePageState extends State<HomePageRoyalClean> {
                                             'stock-door-shortcut',
                                           ),
                                           pulses: 3,
+                                          activateBeforeAnimation: true,
                                           replayAfterActivation: true,
                                           duration: const Duration(
                                             milliseconds: 900,

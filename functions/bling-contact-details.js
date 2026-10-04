@@ -1,5 +1,6 @@
 import {liveCatalogRows, catalogRevision, catalogCheckedAt} from './bling-live-sync.js';
 import {HttpsError} from 'firebase-functions/v2/https';
+import {catalogPageRows, catalogPageSize} from './catalog-page-cache.js';
 
 export function validateContactQuery(input) {
   if(input.kind==='contactDetails') {
@@ -7,7 +8,7 @@ export function validateContactQuery(input) {
       throw new HttpsError('invalid-argument','Contato inválido.');
     return {kind:input.kind,page:1,path:`contatos/${input.contactId}`};
   }
-  if(!['all','customer','supplier','unclassified'].includes(input.contactRole??'all')||
+  if(!catalogPageSize(input,25)||!['all','customer','supplier','unclassified'].includes(input.contactRole??'all')||
     !Number.isSafeInteger(input.page??1)||(input.page??1)<1||(input.page??1)>10000||
     (input.catalogRun!==undefined&&(typeof input.catalogRun!=='string'||input.catalogRun.length>100)))
     throw new HttpsError('invalid-argument','Filtro de contatos inválido.');
@@ -26,12 +27,15 @@ export async function readActiveContacts(db,input) {
   const revision=await catalogRevision(db,'contacts',catalog);
   if(input.catalogRun&&input.catalogRun!==revision)
     throw new HttpsError('aborted','A base foi atualizada. Atualize a lista para continuar.');
+  const rows=await catalogPageRows(db,`contacts:${revision}:${input.contactRole??'all'}`,async()=>{
   const snapshot=await db.collection(`bling_catalog_snapshots/${catalog.slot}/contacts`)
     .where('catalogRun','==',catalog.runId).select('id','name','code','document','status','roles','detailsCheckedAt').get();
   const rows=activeContacts(await liveCatalogRows(db,'contacts',catalog,snapshot.docs.map(doc=>({...doc.data(),id:doc.id}))),input.contactRole??'all');
-  const page=input.page??1,offset=(page-1)*25;
+  return rows;
+  },{fresh:(input.page??1)===1});
+  const size=catalogPageSize(input,25),page=input.page??1,offset=(page-1)*size;
   if(revision!==await catalogRevision(db,'contacts',catalog))throw new HttpsError('aborted','Base atualizada durante a consulta.');
-  return {items:rows.slice(offset,offset+25),total:rows.length,page,hasMore:offset+25<rows.length,
+  return {items:rows.slice(offset,offset+size),total:rows.length,page,hasMore:offset+size<rows.length,
     checkedAt:await catalogCheckedAt(db,'contacts',catalog),catalogRun:revision};
 }
 

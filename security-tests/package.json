@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "firebase emulators:exec --project demo-royal-clean --config ../firebase.emulator.json --only firestore,auth,storage \"node --test --test-concurrency=1 firestore.test.mjs storage.test.mjs ../functions/test/backend.integration.mjs\""
+    "test": "node ../tool/firebase_safe.cjs emulators:exec --project demo-royal-clean --config ../firebase.emulator.json --only firestore,auth,storage \"node --test --test-concurrency=1 firestore.test.mjs storage.test.mjs ../functions/test/backend.integration.mjs\"",
+    "test:tools": "node --test ../tool/security_tools.test.cjs",
+    "check:secrets": "node ../tool/check_secrets.cjs"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.2",

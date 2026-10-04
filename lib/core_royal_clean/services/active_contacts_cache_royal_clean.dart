@@ -13,11 +13,14 @@ class ActiveContactsCacheRoyalClean extends ChangeNotifier {
   final ActiveContactsLoader load;
   final DateTime Function() now;
   final String kind;
+  final Future<void> Function(Duration) wait;
   ActiveContactsCacheRoyalClean({
     required this.load,
     DateTime Function()? now,
     this.kind = 'activeContacts',
-  }) : now = now ?? DateTime.now;
+    Future<void> Function(Duration)? wait,
+  }) : now = now ?? DateTime.now,
+       wait = wait ?? Future<void>.delayed;
   String? _owner;
   int _generation = 0;
   Future<void>? _pending;
@@ -28,6 +31,11 @@ class ActiveContactsCacheRoyalClean extends ChangeNotifier {
   Object? error;
   bool get busy => _pending != null;
   bool get hasData => _items != null;
+  bool get observed => hasListeners;
+  void invalidate() {
+    _loadedAt = null;
+  }
+
   bool get stale =>
       _loadedAt == null ||
       now().difference(_loadedAt!) >= const Duration(minutes: 2);
@@ -75,14 +83,27 @@ class ActiveContactsCacheRoyalClean extends ChangeNotifier {
       String? run, checked;
       int? total;
       for (var page = 1; ; page++) {
-        final data = await Future.sync(
-          () => load({
-            'kind': kind,
-            if (kind == 'activeContacts') 'contactRole': 'all',
-            'page': page,
-            if (run != null) 'catalogRun': run,
-          }),
-        );
+        Map<String, dynamic>? response;
+        for (var attempt = 0; attempt < 2; attempt++) {
+          try {
+            response = await Future.sync(
+              () => load({
+                'kind': kind,
+                if (kind == 'activeContacts') 'contactRole': 'all',
+                'page': page,
+                // Older deployments ignore this field and keep their default size.
+                'pageSize': 250,
+                if (run != null) 'catalogRun': run,
+              }),
+            );
+            break;
+          } on FirebaseFunctionsException catch (failure) {
+            if (failure.code != 'resource-exhausted' || attempt > 0) rethrow;
+            await wait(const Duration(minutes: 1));
+            if (generation != _generation) return;
+          }
+        }
+        final data = response!;
         if (generation != _generation) return;
         if (page > 1 && data['catalogRun'] != run) {
           throw StateError('A base mudou durante a consulta.');
@@ -147,7 +168,7 @@ class ActiveContactsSessionRoyalClean with WidgetsBindingObserver {
     AccountAccessRoyalClean.instance.addListener(_access);
     blingSyncRevisionRoyalClean.addListener(_synced);
     Timer.periodic(const Duration(minutes: 2), (_) {
-      if (_foreground) unawaited(cache.refresh(force: true));
+      if (_foreground && cache.observed) unawaited(cache.refresh());
     });
     _access();
   }
@@ -162,8 +183,11 @@ class ActiveContactsSessionRoyalClean with WidgetsBindingObserver {
 
   void _synced() {
     if (blingChangedGroupsRoyalClean.isNotEmpty &&
-        !blingChangedGroupsRoyalClean.contains('contacts')) { return; }
-    if (_foreground) unawaited(cache.refresh(force: true));
+        !blingChangedGroupsRoyalClean.contains('contacts')) {
+      return;
+    }
+    cache.invalidate();
+    if (_foreground && cache.observed) unawaited(cache.refresh(force: true));
   }
 
   @override

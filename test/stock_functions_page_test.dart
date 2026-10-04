@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:royal_clean/presentation_royal_clean/home/office_shortcut_royal_clean.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:royal_clean/presentation_royal_clean/home/stock_data_shortcut_royal_clean.dart';
 import 'package:royal_clean/presentation_royal_clean/home/image_action_royal_clean.dart';
@@ -6,6 +7,27 @@ import 'package:royal_clean/presentation_royal_clean/home/stock_lighting_royal_c
 import 'package:royal_clean/presentation_royal_clean/home/stock_functions_page_royal_clean.dart';
 
 void main() {
+  testWidgets('Production opens on tap without waiting for its animation', (
+    tester,
+  ) async {
+    var opens = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Center(
+          child: SizedBox(
+            width: 200,
+            height: 160,
+            child: OfficeShortcutRoyalClean.production(
+              onOpen: () async => opens++,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const ValueKey('royal-producao-shortcut')));
+    expect(opens, 1);
+    await tester.pumpWidget(const SizedBox());
+  });
   testWidgets(
     'Stock data shortcut preserves home dimensions and opens overview',
     (tester) async {
