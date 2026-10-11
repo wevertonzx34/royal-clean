@@ -1,0 +1,47 @@
+{
+  "base": "https://royal-clean-fire.web.app",
+  "report": [
+    {
+      "viewport": "desktop",
+      "width": 1440,
+      "height": 1000,
+      "institutionLocalAssets": true,
+      "menu": "passed",
+      "appSameOrigin": true,
+      "flutterView": true
+    },
+    {
+      "viewport": "tablet",
+      "width": 768,
+      "height": 1024,
+      "institutionLocalAssets": true,
+      "menu": "passed",
+      "appSameOrigin": true,
+      "flutterView": true
+    },
+    {
+      "viewport": "mobile",
+      "width": 375,
+      "height": 812,
+      "institutionLocalAssets": true,
+      "menu": "passed",
+      "appSameOrigin": true,
+      "flutterView": true
+    },
+    {
+      "route": "/segmentos",
+      "status": 200,
+      "appLinks": 2
+    },
+    {
+      "route": "/sobre",
+      "status": 200,
+      "appLinks": 2
+    },
+    {
+      "route": "/contato",
+      "status": 200,
+      "appLinks": 2
+    }
+  ]
+}

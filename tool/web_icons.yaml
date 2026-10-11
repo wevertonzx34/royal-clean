@@ -1,0 +1,8 @@
+flutter_launcher_icons:
+  android: false
+  ios: false
+  image_path: assets/logo/logo-laucher.webp
+  web:
+    generate: true
+    background_color: '#031923'
+    theme_color: '#031923'

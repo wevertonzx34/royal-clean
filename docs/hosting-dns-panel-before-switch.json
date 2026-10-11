@@ -1,0 +1,12 @@
+{
+  "capturedDate": "2026-10-06",
+  "source": "Hostinger DNS panel rendered table; after ACME TXT addition, before traffic switch",
+  "data": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Script ran on page and returned:\n```json\n[\"\\t\\nTipo\\n\\t\\nNome\\n\\t\\nPrioridade\\n\\t\\nConteúdo\\n\\t\\nTTL\\n\\t\\nactions\",\"\\t\\nCNAME\\n\\t\\nhostingermail-c._domainkey\\n\\t\\n0\\n\\t\\nhostingermail-c.dkim.mail.hostinger.com\\n\\t\\n300\\n\\t\",\"\\t\\nCNAME\\n\\t\\nhostingermail-b._domainkey\\n\\t\\n0\\n\\t\\nhostingermail-b.dkim.mail.hostinger.com\\n\\t\\n300\\n\\t\",\"\\t\\nCNAME\\n\\t\\nhostingermail-a._domainkey\\n\\t\\n0\\n\\t\\nhostingermail-a.dkim.mail.hostinger.com\\n\\t\\n300\\n\\t\",\"\\t\\nCNAME\\n\\t\\nwww\\n\\t\\n0\\n\\t\\nconnect.hostinger.com\\n\\t\\n300\\n\\t\",\"\\t\\nCNAME\\n\\t\\nautodiscover\\n\\t\\n0\\n\\t\\nautodiscover.mail.hostinger.com\\n\\t\\n300\\n\\t\",\"\\t\\nCNAME\\n\\t\\nautoconfig\\n\\t\\n0\\n\\t\\nautoconfig.mail.hostinger.com\\n\\t\\n300\\n\\t\",\"\\t\\nTXT\\n\\t\\n_acme-challenge\\n\\t\\n0\\n\\t\\n\\\"sxI-mMsR_jC656iDBJIcCUGUpv1jEg4CijZadKSu4c4\\\"\\n\\t\\n300\\n\\t\",\"\\t\\nTXT\\n\\t\\n_dmarc\\n\\t\\n0\\n\\t\\n\\\"v=DMARC1; p=none\\\"\\n\\t\\n3600\\n\\t\",\"\\t\\nALIAS\\n\\t\\n@\\n\\t\\n0\\n\\t\\nconnect.hostinger.com\\n\\t\\n300\\n\\t\",\"\\t\\nTXT\\n\\t\\n@\\n\\t\\n0\\n\\t\\n\\\"hosting-site=royal-clean-fire\\\"\\n\\t\\n14400\\n\\t\",\"\\t\\nTXT\\n\\t\\n@\\n\\t\\n0\\n\\t\\n\\\"v=spf1 include:_spf.mail.hostinger.com ~all\\\"\\n\\t\\n14400\\n\\t\",\"\\t\\nMX\\n\\t\\n@\\n\\t\\n10\\n\\t\\nmx2.hostinger.com\\n\\t\\n14400\\n\\t\",\"\\t\\nMX\\n\\t\\n@\\n\\t\\n5\\n\\t\\nmx1.hostinger.com\\n\\t\\n14400\\n\\t\"]\n```"
+      }
+    ]
+  }
+}

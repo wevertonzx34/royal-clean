@@ -35,3 +35,13 @@ test('private media: only expected image paths, PNG metadata and bounded size',a
   await assertFails(uploadBytes(image('photo-owner'),new Uint8Array(4),{contentType:'text/html'}));
   await assertFails(uploadBytes(image('photo-owner'),new Uint8Array(2*1024*1024+1),{contentType:'image/png'}));
 });
+test('catalogue photos: administrator creates immutable bounded JPEG; public reads only',async()=>{
+  const path='catalog_media/photo-admin/n_test/test.jpg',admin=ref(context('photo-admin').storage(),path);
+  await assertSucceeds(uploadBytes(admin,new Uint8Array([255,216,255]),{contentType:'image/jpeg'}));
+  await assertSucceeds(getMetadata(ref(env.unauthenticatedContext().storage(),path)));
+  await assertFails(uploadBytes(admin,new Uint8Array(4),{contentType:'image/jpeg'}));
+  await assertFails(deleteObject(admin));
+  await assertFails(uploadBytes(ref(context('photo-owner').storage(),'catalog_media/photo-owner/n_test/new.jpg'),new Uint8Array(4),{contentType:'image/jpeg'}));
+  await assertFails(uploadBytes(ref(context('photo-admin').storage(),'catalog_media/photo-admin/n_test/large.jpg'),new Uint8Array(5*1024*1024+1),{contentType:'image/jpeg'}));
+  await assertFails(listAll(ref(env.unauthenticatedContext().storage(),'catalog_media')));
+});

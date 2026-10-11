@@ -13,7 +13,9 @@ const approved = fs.existsSync(config) ? JSON.parse(fs.readFileSync(config,'utf8
 for(const [id,v] of Object.entries(doc.elements)) {
  const localId = id.slice(id.indexOf('/')+1).split('#')[0];
  if (!/^[A-Za-z0-9_./#-]+$/.test(id) || !source.includes("'"+localId+"'")) throw Error('Identificador não encontrado: '+id);
- if (!v || !['dx','dy','scale'].every(k=>typeof v[k]==='number'&&Number.isFinite(v[k])) || Math.abs(v.dx)>1 || Math.abs(v.dy)>1 || v.scale<.5 || v.scale>2.5) throw Error('Medidas inválidas: '+id);
+ const minimum = localId.startsWith('office.balao') || localId.startsWith('office.title.') ? .1 : .5;
+ const maximum = localId === 'office.royal-receita' ? 7 : 2.5;
+ if (!v || !['dx','dy','scale'].every(k=>typeof v[k]==='number'&&Number.isFinite(v[k])) || Math.abs(v.dx)>1 || Math.abs(v.dy)>1 || v.scale<minimum || v.scale>maximum) throw Error('Medidas inválidas: '+id);
  approved[id] = {dx:v.dx,dy:v.dy,scale:v.scale};
 }
 const entries=Object.entries(approved).sort(([a],[b])=>a.localeCompare(b));

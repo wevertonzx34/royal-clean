@@ -18,6 +18,7 @@ import 'core_royal_clean/services/session_preferences_royal_clean.dart';
 import 'core_royal_clean/services/biometric_access_royal_clean.dart';
 import 'presentation_royal_clean/auth/biometric_gate_royal_clean.dart';
 import 'firebase_options.dart';
+import 'core_royal_clean/services/web_configuration_royal_clean.dart';
 import 'core_royal_clean/services/account_access_royal_clean.dart';
 import 'presentation_royal_clean/auth/login_page_royal_clean.dart';
 import 'presentation_royal_clean/auth/account_gate_royal_clean.dart';
@@ -44,9 +45,17 @@ void main() {
     });
   });
   final firebaseInitialization = Future<void>.sync(() async {
+    if (kIsWeb) WebConfigurationRoyalClean.requireAppCheck();
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    if (kIsWeb) {
+      await FirebaseAppCheck.instance.activate(
+        providerWeb: ReCaptchaEnterpriseProvider(
+          WebConfigurationRoyalClean.appCheckSiteKey,
+        ),
+      );
+    }
     var biometricSession = false;
     try {
       biometricSession = await BiometricAccessRoyalClean.instance.restore();
@@ -64,14 +73,16 @@ void main() {
             : null,
       );
     }
-    await FirebaseAppCheck.instance.activate(
-      providerAndroid: testAppCheck
-          ? const AndroidDebugProvider()
-          : const AndroidPlayIntegrityProvider(),
-      providerApple: testAppCheck
-          ? const AppleDebugProvider()
-          : const AppleAppAttestWithDeviceCheckFallbackProvider(),
-    );
+    if (!kIsWeb) {
+      await FirebaseAppCheck.instance.activate(
+        providerAndroid: testAppCheck
+            ? const AndroidDebugProvider()
+            : const AndroidPlayIntegrityProvider(),
+        providerApple: testAppCheck
+            ? const AppleDebugProvider()
+            : const AppleAppAttestWithDeviceCheckFallbackProvider(),
+      );
+    }
     AccountAccessRoyalClean.instance.start();
     IntercomRoyalClean.instance.start();
     AdminPushRoyalClean.instance.start();
@@ -163,7 +174,27 @@ class RoyalCleanApp extends StatelessWidget {
       theme: AppThemeRoyalClean.theme,
       builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
         value: AppThemeRoyalClean.systemUiStyle,
-        child: child!,
+        child: kIsWeb && WebConfigurationRoyalClean.visualPreview
+            ? Column(
+                children: [
+                  const Material(
+                    color: Color(0xFF092F43),
+                    child: SafeArea(
+                      bottom: false,
+                      child: Padding(
+                        padding: EdgeInsets.all(8),
+                        child: Text(
+                          'Prévia visual em validação. Serviços online indisponíveis.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(child: child!),
+                ],
+              )
+            : child!,
       ),
       initialRoute: AppRoutesRoyalClean.splash,
       routes: {

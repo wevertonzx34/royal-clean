@@ -14,6 +14,7 @@ class ImageActionRoyalClean extends StatefulWidget {
   final double scaleDepth;
   final bool replayAfterActivation;
   final bool activateBeforeAnimation;
+  final bool repeatActivationDuringAnimation;
   final int replayVersion;
   final VoidCallback? feedback;
   final VoidCallback? onAdminEdit;
@@ -27,6 +28,7 @@ class ImageActionRoyalClean extends StatefulWidget {
     this.scaleDepth = .006,
     this.replayAfterActivation = false,
     this.activateBeforeAnimation = false,
+    this.repeatActivationDuringAnimation = false,
     this.replayVersion = 0,
     this.feedback,
     this.onAdminEdit,
@@ -59,7 +61,20 @@ class _ImageActionState extends State<ImageActionRoyalClean>
   }
 
   Future<void> _activate([bool longPress = false]) async {
-    if (_busy) return;
+    if (_busy) {
+      if (!longPress &&
+          widget.activateBeforeAnimation &&
+          widget.repeatActivationDuringAnimation) {
+        (widget.feedback ?? TouchFeedbackRoyalClean.pulse)();
+        await widget.onActivate();
+        if (mounted &&
+            !MediaQuery.disableAnimationsOf(context) &&
+            TickerMode.valuesOf(context).enabled) {
+          _animation.forward(from: .125);
+        }
+      }
+      return;
+    }
     _busy = true;
     (widget.feedback ?? TouchFeedbackRoyalClean.pulse)();
     try {
@@ -69,7 +84,9 @@ class _ImageActionState extends State<ImageActionRoyalClean>
       if (!MediaQuery.disableAnimationsOf(context) &&
           TickerMode.valuesOf(context).enabled) {
         _animation.duration = widget.duration;
-        await _animation.forward(from: 0).orCancel;
+        await _animation
+            .forward(from: widget.repeatActivationDuringAnimation ? .125 : 0)
+            .orCancel;
       }
       if (!mounted) return;
       if (!activatedEarly) {

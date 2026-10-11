@@ -1,0 +1,110 @@
+﻿{
+    "DMARC":  [
+                  {
+                      "Name":  "_dmarc.royalcleandistribuidora.com.br",
+                      "Strings":  [
+                                      "v=DMARC1; p=none"
+                                  ]
+                  }
+              ],
+    "AAAA":  [
+                 {
+                     "Name":  "royalcleandistribuidora.com.br",
+                     "Type":  28,
+                     "IPAddress":  "2a02:4780:84:3288:fd62:12ab:14a1:adcf",
+                     "NameHost":  null,
+                     "NameExchange":  null,
+                     "Preference":  null,
+                     "Strings":  null
+                 },
+                 {
+                     "Name":  "royalcleandistribuidora.com.br",
+                     "Type":  28,
+                     "IPAddress":  "2a02:4780:84:a5af:baa4:5bb7:fcca:4f80",
+                     "NameHost":  null,
+                     "NameExchange":  null,
+                     "Preference":  null,
+                     "Strings":  null
+                 }
+             ],
+    "www":  [
+                {
+                    "Name":  "www.royalcleandistribuidora.com.br",
+                    "NameHost":  "connect.hostinger.com"
+                }
+            ],
+    "NS":  [
+               {
+                   "Name":  "royalcleandistribuidora.com.br",
+                   "Type":  2,
+                   "IPAddress":  null,
+                   "NameHost":  "athena.dns-parking.com",
+                   "NameExchange":  null,
+                   "Preference":  null,
+                   "Strings":  null
+               },
+               {
+                   "Name":  "royalcleandistribuidora.com.br",
+                   "Type":  2,
+                   "IPAddress":  null,
+                   "NameHost":  "apollo.dns-parking.com",
+                   "NameExchange":  null,
+                   "Preference":  null,
+                   "Strings":  null
+               }
+           ],
+    "MX":  [
+               {
+                   "Name":  "royalcleandistribuidora.com.br",
+                   "Type":  15,
+                   "IPAddress":  null,
+                   "NameHost":  null,
+                   "NameExchange":  "mx1.hostinger.com",
+                   "Preference":  5,
+                   "Strings":  null
+               },
+               {
+                   "Name":  "royalcleandistribuidora.com.br",
+                   "Type":  15,
+                   "IPAddress":  null,
+                   "NameHost":  null,
+                   "NameExchange":  "mx2.hostinger.com",
+                   "Preference":  10,
+                   "Strings":  null
+               }
+           ],
+    "TXT":  [
+                {
+                    "Name":  "royalcleandistribuidora.com.br",
+                    "Type":  16,
+                    "IPAddress":  null,
+                    "NameHost":  null,
+                    "NameExchange":  null,
+                    "Preference":  null,
+                    "Strings":  [
+                                    "v=spf1 include:_spf.mail.hostinger.com ~all"
+                                ]
+                }
+            ],
+    "A":  [
+              {
+                  "Name":  "royalcleandistribuidora.com.br",
+                  "Type":  1,
+                  "IPAddress":  "2.57.91.110",
+                  "NameHost":  null,
+                  "NameExchange":  null,
+                  "Preference":  null,
+                  "Strings":  null
+              },
+              {
+                  "Name":  "royalcleandistribuidora.com.br",
+                  "Type":  1,
+                  "IPAddress":  "88.222.222.183",
+                  "NameHost":  null,
+                  "NameExchange":  null,
+                  "Preference":  null,
+                  "Strings":  null
+              }
+          ],
+    "note":  "Snapshot público parcial em 2026-10-06; não é exportação completa da zona. CAA e seletores DKIM exigem conferência no painel. Endereços CDN podem variar entre consultas."
+}

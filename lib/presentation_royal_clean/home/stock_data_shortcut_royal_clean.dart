@@ -4,11 +4,17 @@ import '../shared/layout_button_royal_clean.dart';
 import 'dashboard_chart_royal_clean.dart';
 import 'image_action_royal_clean.dart';
 import 'neon_image_royal_clean.dart';
+import 'avatar_aura_royal_clean.dart';
 
 /// Stock shortcut reuses the home artwork, gesture animation and live dashboard.
 class StockDataShortcutRoyalClean extends StatelessWidget {
   final Future<void> Function()? onOpen;
-  const StockDataShortcutRoyalClean({super.key, this.onOpen});
+  final bool keepAboveSheets;
+  const StockDataShortcutRoyalClean({
+    super.key,
+    this.onOpen,
+    this.keepAboveSheets = false,
+  });
 
   Future<void> _open(BuildContext context) async {
     await showModalBottomSheet<void>(
@@ -44,21 +50,28 @@ class StockDataShortcutRoyalClean extends StatelessWidget {
         label: 'Abrir Visão geral do estoque',
         child: LayoutButtonRoyalClean(
           id: 'stock.royal-dados',
+          alwaysOverlay: keepAboveSheets,
           child: ImageActionRoyalClean(
             key: const ValueKey('stock-data-shortcut'),
             pulses: 2,
             replayAfterActivation: true,
+            activateBeforeAnimation: true,
             duration: const Duration(milliseconds: 600),
             scaleDepth: .018,
             onActivate: () => onOpen?.call() ?? _open(context),
-            builder: (_, flash) => NeonImageRoyalClean(
+            builder: (_, flash) => AvatarAuraRoyalClean(
               asset: 'assets/preview/royal-store/royal-dados.webp',
-              aspectRatio: 1,
-              cacheWidth: 300,
-              glow: const Color(0xFF5CE7EC),
+              particles: false,
               activation: flash,
-              activationGlow: const Color(0xFFC05AFF),
-              activationSecondaryGlow: const Color(0xFF1623A8),
+              child: NeonImageRoyalClean(
+                asset: 'assets/preview/royal-store/royal-dados.webp',
+                aspectRatio: 1,
+                cacheWidth: 300,
+                glow: const Color(0xFFC05AFF),
+                activation: flash,
+                activationGlow: const Color(0xFFC05AFF),
+                activationSecondaryGlow: const Color(0xFF1623A8),
+              ),
             ),
           ),
         ),

@@ -20,6 +20,16 @@ service firebase.storage {
         && request.resource.contentType == 'image/png';
       allow list: if false;
     }
+    match /catalog_media/{uid}/{product}/{file} {
+      allow get: if true;
+      allow create: if resource == null && owner(uid)
+        && firestore.exists(/databases/(default)/documents/admin/$(uid))
+        && product.matches('^[a-zA-Z0-9_-]{1,100}$')
+        && file.matches('^[a-zA-Z0-9_-]+[.]jpg$')
+        && request.resource.size > 0 && request.resource.size <= 5 * 1024 * 1024
+        && request.resource.contentType == 'image/jpeg';
+      allow list, update, delete: if false;
+    }
     match /{path=**} { allow read, write: if false; }
   }
 }

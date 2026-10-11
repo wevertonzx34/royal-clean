@@ -1,0 +1,161 @@
+{
+  "captured": "2026-10-06",
+  "pages": [
+    "/",
+    "/segmentos",
+    "/sobre",
+    "/contato"
+  ],
+  "assets": [
+    {
+      "source": "https://cdn.zyrosite.com/u1/google-fonts/font-file?family=IBM+Plex+Sans:wght@400&subset=cyrillic-ext&display=swap",
+      "local": "/institutional-assets/ad36131539780bc1b4da.woff2",
+      "bytes": 8184
+    },
+    {
+      "source": "https://cdn.zyrosite.com/u1/google-fonts/font-file?family=IBM+Plex+Sans:wght@400&subset=cyrillic&display=swap",
+      "local": "/institutional-assets/843ede67e09df4ebc473.woff2",
+      "bytes": 10688
+    },
+    {
+      "source": "https://cdn.zyrosite.com/u1/google-fonts/font-file?family=IBM+Plex+Sans:wght@400&subset=greek&display=swap",
+      "local": "/institutional-assets/b3cb24c686422c71d5fc.woff2",
+      "bytes": 6748
+    },
+    {
+      "source": "https://cdn.zyrosite.com/u1/google-fonts/font-file?family=IBM+Plex+Sans:wght@400&subset=vietnamese&display=swap",
+      "local": "/institutional-assets/bf00181f0408c84f4285.woff2",
+      "bytes": 4732
+    },
+    {
+      "source": "https://cdn.zyrosite.com/u1/google-fonts/font-file?family=IBM+Plex+Sans:wght@400&subset=latin-ext&display=swap",
+      "local": "/institutional-assets/ac896833dad576ad4a57.woff2",
+      "bytes": 11104
+    },
+    {
+      "source": "https://cdn.zyrosite.com/u1/google-fonts/font-file?family=IBM+Plex+Sans:wght@400&subset=latin&display=swap",
+      "local": "/institutional-assets/d5e5da33560d2a0f7384.woff2",
+      "bytes": 17604
+    },
+    {
+      "source": "https://cdn.zyrosite.com/u1/google-fonts/font-file?family=IBM+Plex+Sans:wght@500&subset=cyrillic-ext&display=swap",
+      "local": "/institutional-assets/bfb652ccea304fb751ad.woff2",
+      "bytes": 8472
+    },
+    {
+      "source": "https://cdn.zyrosite.com/u1/google-fonts/font-file?family=IBM+Plex+Sans:wght@500&subset=cyrillic&display=swap",
+      "local": "/institutional-assets/984679d8036f80bcd12e.woff2",
+      "bytes": 11200
+    },
+    {
+      "source": "https://cdn.zyrosite.com/u1/google-fonts/font-file?family=IBM+Plex+Sans:wght@500&subset=greek&display=swap",
+      "local": "/institutional-assets/b8413dcc2bcc2998c534.woff2",
+      "bytes": 7132
+    },
+    {
+      "source": "https://cdn.zyrosite.com/u1/google-fonts/font-file?family=IBM+Plex+Sans:wght@500&subset=vietnamese&display=swap",
+      "local": "/institutional-assets/f67658249e57592f9a4a.woff2",
+      "bytes": 4928
+    },
+    {
+      "source": "https://cdn.zyrosite.com/u1/google-fonts/font-file?family=IBM+Plex+Sans:wght@500&subset=latin-ext&display=swap",
+      "local": "/institutional-assets/4e578b11c04c5cc69ff7.woff2",
+      "bytes": 11556
+    },
+    {
+      "source": "https://cdn.zyrosite.com/u1/google-fonts/font-file?family=IBM+Plex+Sans:wght@500&subset=latin&display=swap",
+      "local": "/institutional-assets/7cf5a5b6df4a8290b625.woff2",
+      "bytes": 19224
+    },
+    {
+      "source": "https://cdn.zyrosite.com/u1/google-fonts/font-file?family=Sora:wght@400&subset=latin-ext&display=swap",
+      "local": "/institutional-assets/fa8c73fcce2412c28d42.woff2",
+      "bytes": 7352
+    },
+    {
+      "source": "https://cdn.zyrosite.com/u1/google-fonts/font-file?family=Sora:wght@400&subset=latin&display=swap",
+      "local": "/institutional-assets/bf519037af1c7812f214.woff2",
+      "bytes": 14752
+    },
+    {
+      "source": "https://cdn.zyrosite.com/u1/google-fonts/font-file?family=Sora:wght@500&subset=latin-ext&display=swap",
+      "local": "/institutional-assets/b221233ac6eb9154c187.woff2",
+      "bytes": 7472
+    },
+    {
+      "source": "https://cdn.zyrosite.com/u1/google-fonts/font-file?family=Sora:wght@500&subset=latin&display=swap",
+      "local": "/institutional-assets/160859d793beae70737d.woff2",
+      "bytes": 15024
+    },
+    {
+      "source": "https://cdn.zyrosite.com/u1/google-fonts/font-faces?family=Sora:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap",
+      "local": "/institutional-assets/2b9348dc4e3dd9b94741.css",
+      "bytes": 5976
+    },
+    {
+      "source": "http://royalcleandistribuidora.com.br/_astro-1791210330784/_..jMVJmPqh.css",
+      "local": "/institutional-assets/e032e25a8c0a896ce176.css",
+      "bytes": 398871
+    },
+    {
+      "source": "http://royalcleandistribuidora.com.br/_astro-1791210330784/cookieconsent.p7tfYeZO.css",
+      "local": "/institutional-assets/61ac56f18f60cda7e045.css",
+      "bytes": 32023
+    },
+    {
+      "source": "https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=768,fit=crop/4FnaHfe7U514pZi1/logo-royal-clean-em-fundo-transparente-ogIW75M0pCJzHjrR.png",
+      "local": "/institutional-assets/5193b3d4aad4c9d59842.png",
+      "bytes": 25645
+    },
+    {
+      "source": "https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=768,h=820,fit=crop/4FnaHfe7U514pZi1/6vhchs-Vzyp8vAqAup6cnS0.png",
+      "local": "/institutional-assets/6670f491d30c907d97c4.png",
+      "bytes": 79797
+    },
+    {
+      "source": "https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=375,h=500,fit=crop/4FnaHfe7U514pZi1/6vhchs-Vzyp8vAqAup6cnS0.png",
+      "local": "/institutional-assets/da24617155561fa1a620.png",
+      "bytes": 32164
+    },
+    {
+      "source": "https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=768,h=576,fit=crop/4FnaHfe7U514pZi1/5qk942-D9NN1IlgCTg0DBhA.png",
+      "local": "/institutional-assets/75b109dd782aab640e02.png",
+      "bytes": 83735
+    },
+    {
+      "source": "https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=375,h=282,fit=crop/4FnaHfe7U514pZi1/5qk942-D9NN1IlgCTg0DBhA.png",
+      "local": "/institutional-assets/dbfa4d8c065c3ffab953.png",
+      "bytes": 30037
+    },
+    {
+      "source": "https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=768,h=576,fit=crop/4FnaHfe7U514pZi1/nbjy0m-hq21qwKLEM9AskYO.png",
+      "local": "/institutional-assets/12567afc4a4079e7b39a.png",
+      "bytes": 55694
+    },
+    {
+      "source": "https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=375,h=282,fit=crop/4FnaHfe7U514pZi1/nbjy0m-hq21qwKLEM9AskYO.png",
+      "local": "/institutional-assets/5436859e04b8a2b481ce.png",
+      "bytes": 20427
+    },
+    {
+      "source": "https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=768,h=576,fit=crop/4FnaHfe7U514pZi1/lj7dnf-136RNxiTBUpseiXP.png",
+      "local": "/institutional-assets/723c33b692fba29daf9b.png",
+      "bytes": 66559
+    },
+    {
+      "source": "https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=375,h=282,fit=crop/4FnaHfe7U514pZi1/lj7dnf-136RNxiTBUpseiXP.png",
+      "local": "/institutional-assets/19a12fce6dd0a60ae852.png",
+      "bytes": 22416
+    },
+    {
+      "source": "https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=768,h=1024,fit=crop/4FnaHfe7U514pZi1/e9ucaz-qRWjD47VVNSyvWAl.png",
+      "local": "/institutional-assets/d4d192ede9729f1e5515.png",
+      "bytes": 121404
+    },
+    {
+      "source": "https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=375,h=500,fit=crop/4FnaHfe7U514pZi1/e9ucaz-qRWjD47VVNSyvWAl.png",
+      "local": "/institutional-assets/b39daa455c24419468ee.png",
+      "bytes": 41939
+    }
+  ]
+}

@@ -15,11 +15,15 @@ import {LEGAL_VERSION, ROLES, validName, inviteProblem, normalizePhone} from './
 import {personalData} from './personal-data.js';
 import {createProductionOrders} from './production-orders.js';
 import {createOrderCare,remindOrderCare} from './order-care.js';
+import {createRoyalCatalog} from './royal-catalog.js';
+import {createRoyalPriceBenefits} from './royal-price-benefits.js';
 
 initializeApp();
 const db = getFirestore();
 // App Check is required in production. Use registered debug tokens for local APKs.
 const options = {region: 'southamerica-east1', enforceAppCheck: true, maxInstances: 10};
+export const royalCatalog = onCall({...options, timeoutSeconds: 60}, createRoyalCatalog({db, authenticated, requireAdmin, rateLimit}));
+export const royalPriceBenefit = onCall(options, createRoyalPriceBenefits({db, authenticated, requireAdmin, rateLimit}));
 const bling = createBlingHandlers({db, auth: getAuth(), authenticated, requireAdmin, rateLimit});
 const blingOptions = {...options, maxInstances: 2, concurrency: 20, timeoutSeconds: 60};
 const liveRead = createBlingDataHandler({db, authenticated, requireAdmin, rateLimit:async()=>{},allowLiveSync:true});

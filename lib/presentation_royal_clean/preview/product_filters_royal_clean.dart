@@ -102,6 +102,17 @@ class _ProductFiltersRoyalCleanState extends State<ProductFiltersRoyalClean> {
     super.dispose();
   }
 
+  Widget _nicheButton() => LayoutButtonRoyalClean(
+    id: 'product_filters_royal_clean.control_06',
+    child: ActionChip(
+      label: const Text('Nichos', maxLines: 1, overflow: TextOverflow.ellipsis),
+      avatar: Icon(_expanded ? Icons.expand_less : Icons.expand_more, size: 18),
+      onPressed: tactileTapRoyalClean(
+        () => setState(() => _expanded = !_expanded),
+      ),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) => Row(
     children: [
@@ -241,19 +252,10 @@ class _ProductFiltersRoyalCleanState extends State<ProductFiltersRoyalClean> {
         ),
       if (!_search && !_expanded) ...[
         const SizedBox(width: 8),
-        LayoutButtonRoyalClean(
-          id: 'product_filters_royal_clean.control_06',
-          child: ActionChip(
-            label: const Text('Nichos'),
-            avatar: Icon(
-              _expanded ? Icons.expand_less : Icons.expand_more,
-              size: 18,
-            ),
-            onPressed: tactileTapRoyalClean(
-              () => setState(() => _expanded = !_expanded),
-            ),
-          ),
-        ),
+        if (MediaQuery.textScalerOf(context).scale(14) > 20)
+          Flexible(child: _nicheButton())
+        else
+          _nicheButton(),
       ],
     ],
   );

@@ -57,8 +57,15 @@ flutter:
     - assets/preview/royal-store/royal-pixels.webp
     - assets/preview/royal-store/royal-perfil.webp
     - assets/preview/royal-store/royal-office.webp
+    - assets/preview/royal-store/royal-sala.webp
+    - assets/preview/royal-store/balao-di.webp
+    - assets/preview/royal-store/balao-es.webp
+    - assets/preview/royal-store/balaozin-es.webp
+    - assets/preview/royal-store/balaozin-di.webp
+    - assets/preview/royal-store/royal-papper.webp
     - assets/preview/royal-store/royal-producao.webp
     - assets/preview/royal-store/royal-avatar.webp
+    - assets/preview/royal-store/royal-tag.webp
     - assets/preview/royal-store/royal-dados.webp
     - assets/preview/royal-store/royal-blu.webp
     - assets/preview/royal-store/royal-link-blu.webp
@@ -69,6 +76,7 @@ flutter:
     - assets/preview/royal-store/royal-news.webp
     - assets/preview/royal-store/royal-pedidos.webp
     - assets/preview/royal-store/royal-produtos.webp
+    - assets/preview/royal-store/produtos-royal.webp
     - assets/preview/royal-store/royal-receita.webp
     - assets/preview/royal-store/royal-gaveta.webp
     - assets/preview/

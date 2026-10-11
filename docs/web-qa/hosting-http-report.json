@@ -1,0 +1,101 @@
+{
+  "base": "https://royal-clean-fire--royal-site-review-ooreihya.web.app",
+  "rows": [
+    {
+      "path": "/",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "location": null,
+      "cache": "no-cache",
+      "bytes": 58625
+    },
+    {
+      "path": "/app",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "location": null,
+      "cache": "no-cache",
+      "bytes": 1429
+    },
+    {
+      "path": "/app/",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "location": null,
+      "cache": "no-cache",
+      "bytes": 1429
+    },
+    {
+      "path": "/app/main.dart.js",
+      "status": 200,
+      "type": "text/javascript; charset=utf-8",
+      "location": null,
+      "cache": "no-cache",
+      "bytes": 3796869
+    },
+    {
+      "path": "/app/flutter_bootstrap.js",
+      "status": 200,
+      "type": "text/javascript; charset=utf-8",
+      "location": null,
+      "cache": "no-cache",
+      "bytes": 13119
+    },
+    {
+      "path": "/app/unknown-route",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "location": null,
+      "cache": "no-cache",
+      "bytes": 1429
+    },
+    {
+      "path": "/segmentos",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "location": null,
+      "cache": "no-cache",
+      "bytes": 69601
+    },
+    {
+      "path": "/sobre",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "location": null,
+      "cache": "no-cache",
+      "bytes": 46306
+    },
+    {
+      "path": "/contato",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "location": null,
+      "cache": "no-cache",
+      "bytes": 42685
+    },
+    {
+      "path": "/lib/main.dart",
+      "status": 404,
+      "type": "text/html; charset=utf-8",
+      "location": null,
+      "cache": "no-cache",
+      "bytes": 21376
+    },
+    {
+      "path": "/functions/index.js",
+      "status": 404,
+      "type": "text/html; charset=utf-8",
+      "location": null,
+      "cache": "no-cache",
+      "bytes": 21376
+    },
+    {
+      "path": "/app/lib/main.dart",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "location": null,
+      "cache": "no-cache",
+      "bytes": 1429
+    }
+  ]
+}

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import '../../core_royal_clean/services/layout_approvals_royal_clean.dart';
+import 'alpha_hit_region_royal_clean.dart';
 
 /// Stable, opt-in wrapper: unchanged original layout until an admin confirms.
 /// Long press is reserved for the guide only on buttons without a business
@@ -14,7 +15,13 @@ class LayoutButtonRoyalClean extends StatefulWidget {
   final Widget child;
   final Future<Uint8List?> Function()? capturePreview;
   final double maxScale;
+  final double minScale;
   final bool freeMovement;
+  final bool alwaysOverlay;
+  final bool passThroughTap;
+  final String? layoutScope;
+  final String? hitTestAsset;
+  final bool circularHitTest;
   const LayoutButtonRoyalClean({
     super.key,
     required this.id,
@@ -22,7 +29,13 @@ class LayoutButtonRoyalClean extends StatefulWidget {
     required this.child,
     this.capturePreview,
     this.maxScale = 2.5,
+    this.minScale = .5,
     this.freeMovement = false,
+    this.alwaysOverlay = false,
+    this.passThroughTap = false,
+    this.layoutScope,
+    this.hitTestAsset,
+    this.circularHitTest = false,
   });
 
   /// Lets an interactive descendant delegate its long press to this guide.
@@ -52,6 +65,10 @@ class _LayoutButtonState extends State<LayoutButtonRoyalClean> {
     if (viewport != _viewport) {
       _originalSize = null;
       _viewport = viewport;
+    }
+    if (widget.layoutScope != null) {
+      _scope = widget.layoutScope!;
+      return;
     }
     context.visitAncestorElements((element) {
       final name = element.widget.runtimeType.toString();
@@ -123,6 +140,7 @@ class _LayoutButtonState extends State<LayoutButtonRoyalClean> {
           origin: rect,
           image: bytes,
           maxScale: widget.maxScale,
+          minScale: widget.minScale,
           freeMovement: widget.freeMovement,
         ),
       );
@@ -131,41 +149,51 @@ class _LayoutButtonState extends State<LayoutButtonRoyalClean> {
     }
   }
 
-  Widget _interactiveChild() => RepaintBoundary(
-    key: _boundary,
-    child: GestureDetector(
-      // The whole visual bounds, including transparent pixels and text
-      // overlays, belong to the same admin long-press target.
-      behavior: HitTestBehavior.opaque,
-      onLongPress: _store.authorized ? _edit : null,
-      child: Semantics(
-        label: widget.child is IconButton
-            ? (widget.child as IconButton).tooltip
-            : null,
-        hint: _store.authorized
-            ? 'Segure para ajustar posição e tamanho'
-            : null,
-        child: TooltipVisibility(
-          visible: !_store.authorized,
-          child: _LayoutEditScope(
-            onEdit: _store.authorized ? _edit : null,
-            child: widget.child,
+  Widget _interactiveChild() {
+    final child = RepaintBoundary(
+      key: _boundary,
+      child: GestureDetector(
+        // An optional alpha region restricts both actions and admin long presses.
+        behavior: widget.passThroughTap
+            ? HitTestBehavior.translucent
+            : HitTestBehavior.opaque,
+        onLongPress: _store.authorized ? _edit : null,
+        child: Semantics(
+          label: widget.child is IconButton
+              ? (widget.child as IconButton).tooltip
+              : null,
+          hint: _store.authorized
+              ? 'Segure para ajustar posição e tamanho'
+              : null,
+          child: TooltipVisibility(
+            visible: !_store.authorized,
+            child: _LayoutEditScope(
+              onEdit: _store.authorized ? _edit : null,
+              child: widget.child,
+            ),
           ),
         ),
       ),
-    ),
-  );
+    );
+    if (widget.circularHitTest) return CircleHitRegionRoyalClean(child: child);
+    return widget.hitTestAsset == null
+        ? child
+        : AlphaHitRegionRoyalClean(asset: widget.hitTestAsset!, child: child);
+  }
 
   @override
   Widget build(BuildContext context) {
     // Rebuild the portal when this route becomes current again after a pop.
     final route = ModalRoute.of(context);
     final record = _store.get(_id);
-    if ((!_store.authorized && record.original) ||
+    if ((!_store.authorized && record.original && !widget.alwaysOverlay) ||
         Overlay.maybeOf(context) == null) {
-      return widget.child;
+      return widget.hitTestAsset == null && !widget.circularHitTest
+          ? widget.child
+          : _interactiveChild();
     }
-    final adjusted = !record.original && _originalSize != null;
+    final adjusted =
+        (!record.original || widget.alwaysOverlay) && _originalSize != null;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final box = _target.currentContext?.findRenderObject() as RenderBox?;
@@ -219,7 +247,7 @@ class _LayoutButtonState extends State<LayoutButtonRoyalClean> {
                     record.dy * viewport.height / factor,
                   ),
                   child: Transform.scale(
-                    scale: record.scale.clamp(.5, widget.maxScale),
+                    scale: record.scale.clamp(widget.minScale, widget.maxScale),
                     alignment: Alignment.center,
                     child: SizedBox.fromSize(
                       size: box.size,
@@ -265,12 +293,14 @@ class _ButtonEditor extends StatefulWidget {
   final Rect origin;
   final Uint8List? image;
   final double maxScale;
+  final double minScale;
   final bool freeMovement;
   const _ButtonEditor({
     required this.id,
     required this.origin,
     this.image,
     required this.maxScale,
+    required this.minScale,
     required this.freeMovement,
   });
   @override
@@ -282,7 +312,7 @@ class _ButtonEditorState extends State<_ButtonEditor> {
   late LayoutApprovalRoyalClean _draft = LayoutApprovalRoyalClean(
     dx: _store.get(widget.id).dx,
     dy: _store.get(widget.id).dy,
-    scale: _store.get(widget.id).scale.clamp(.5, widget.maxScale),
+    scale: _store.get(widget.id).scale.clamp(widget.minScale, widget.maxScale),
   );
   late LayoutApprovalRoyalClean _start = _draft;
   Offset _focal = Offset.zero;
@@ -371,7 +401,7 @@ class _ButtonEditorState extends State<_ButtonEditor> {
                     : (details) => setState(() {
                         final delta = details.localFocalPoint - _focal;
                         final scale = (_start.scale * details.scale).clamp(
-                          .5,
+                          widget.minScale,
                           widget.maxScale,
                         );
                         final halfW = (widget.origin.width * scale / 2).clamp(

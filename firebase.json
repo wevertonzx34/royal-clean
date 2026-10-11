@@ -1,26 +1,110 @@
 {
-    "flutter":  {
-                    "platforms":  {
-                                      "dart":  {
-                                                   "lib/firebase_options.dart":  {
-                                                                                     "projectId":  "royal-clean-fire",
-                                                                                     "configurations":  {
-                                                                                                            "android":  "1:589116886810:android:1c02b03ec2e428515ba6a3"
-                                                                                                        }
-                                                                                 }
-                                               },
-                                      "android":  {
-                                                      "default":  {
-                                                                      "appId":  "1:589116886810:android:1c02b03ec2e428515ba6a3",
-                                                                      "fileOutput":  "android/app/google-services.json",
-                                                                      "projectId":  "royal-clean-fire"
-                                                                  }
-                                                  }
-                                  }
-                },
-    "functions": [{"source": "functions", "codebase": "royal-clean-accounts", "runtime": "nodejs22"}],
-    "storage": {"rules": "storage.rules"},
-    "firestore":  {
-                      "rules":  "firestore.rules"
-                  }
+    "flutter": {
+        "platforms": {
+            "dart": {
+                "lib/firebase_options.dart": {
+                    "projectId": "royal-clean-fire",
+                    "configurations": {
+                        "android": "1:589116886810:android:1c02b03ec2e428515ba6a3",
+                        "web": "1:589116886810:web:727e7e73d00f16d45ba6a3"
+                    }
+                }
+            },
+            "android": {
+                "default": {
+                    "appId": "1:589116886810:android:1c02b03ec2e428515ba6a3",
+                    "fileOutput": "android/app/google-services.json",
+                    "projectId": "royal-clean-fire"
+                }
+            }
+        }
+    },
+    "hosting": {
+        "site": "royal-clean-fire",
+        "public": "build/site",
+        "ignore": [
+            "firebase.json",
+            "**/.*",
+            "**/node_modules/**",
+            "**/*.map"
+        ],
+        "rewrites": [
+            {
+                "source": "/app",
+                "destination": "/app/index.html"
+            },
+            {
+                "source": "/app/**",
+                "destination": "/app/index.html"
+            }
+        ],
+        "headers": [
+            {
+                "source": "**",
+                "headers": [
+                    {
+                        "key": "X-Content-Type-Options",
+                        "value": "nosniff"
+                    },
+                    {
+                        "key": "Referrer-Policy",
+                        "value": "strict-origin-when-cross-origin"
+                    },
+                    {
+                        "key": "X-Frame-Options",
+                        "value": "DENY"
+                    },
+                    {
+                        "key": "Strict-Transport-Security",
+                        "value": "max-age=31536000"
+                    },
+                    {
+                        "key": "Cache-Control",
+                        "value": "no-cache"
+                    }
+                ]
+            },
+            {
+                "source": "/app/assets/**",
+                "headers": [
+                    {
+                        "key": "Cache-Control",
+                        "value": "public, max-age=3600, must-revalidate"
+                    }
+                ]
+            },
+            {
+                "source": "/app/canvaskit/**",
+                "headers": [
+                    {
+                        "key": "Cache-Control",
+                        "value": "public, max-age=86400, must-revalidate"
+                    }
+                ]
+            },
+            {
+                "source": "/institutional-assets/**",
+                "headers": [
+                    {
+                        "key": "Cache-Control",
+                        "value": "public, max-age=3600, must-revalidate"
+                    }
+                ]
+            }
+        ],
+        "cleanUrls": true
+    },
+    "functions": [
+        {
+            "source": "functions",
+            "codebase": "royal-clean-accounts",
+            "runtime": "nodejs22"
+        }
+    ],
+    "storage": {
+        "rules": "storage.rules"
+    },
+    "firestore": {
+        "rules": "firestore.rules"
+    }
 }

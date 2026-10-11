@@ -10,12 +10,16 @@ class AvatarAuraRoyalClean extends StatefulWidget {
   final Widget child;
   final String asset;
   final bool particles;
+  final Color? particleColor;
+  final Color? contourColor;
   const AvatarAuraRoyalClean({
     super.key,
     this.activation = 0,
     required this.child,
     this.asset = 'assets/preview/royal-store/royal-avatar.webp',
     this.particles = true,
+    this.particleColor,
+    this.contourColor,
   });
   static Future<void> prepare([
     String asset = 'assets/preview/royal-store/royal-avatar.webp',
@@ -39,9 +43,10 @@ class _AvatarAuraState extends State<AvatarAuraRoyalClean>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    final asset = widget.asset;
     unawaited(
-      _Silhouette.load(widget.asset).then((shape) {
-        if (mounted) setState(() => _shape = shape);
+      _Silhouette.load(asset).then((shape) {
+        if (mounted && widget.asset == asset) setState(() => _shape = shape);
       }),
     );
   }
@@ -105,6 +110,8 @@ class _AvatarAuraState extends State<AvatarAuraRoyalClean>
                     widget.activation,
                     _shape!,
                     widget.particles,
+                    widget.particleColor,
+                    widget.contourColor,
                   ),
                 ),
               ),
@@ -117,7 +124,9 @@ class _AvatarAuraState extends State<AvatarAuraRoyalClean>
           child: IgnorePointer(
             child: ExcludeSemantics(
               child: RepaintBoundary(
-                child: CustomPaint(painter: _RimPainter(_shape!)),
+                child: CustomPaint(
+                  painter: _RimPainter(_shape!, widget.contourColor),
+                ),
               ),
             ),
           ),
@@ -258,8 +267,16 @@ class _AuraPainter extends CustomPainter {
   final double activation;
   final _Silhouette shape;
   final bool particles;
-  _AuraPainter(this.flow, this.activation, this.shape, this.particles)
-    : super(repaint: flow);
+  final Color? particleColor;
+  final Color? contourColor;
+  _AuraPainter(
+    this.flow,
+    this.activation,
+    this.shape,
+    this.particles,
+    this.particleColor,
+    this.contourColor,
+  ) : super(repaint: flow);
   @override
   void paint(Canvas canvas, Size size) {
     if (shape.left.isEmpty) return;
@@ -279,6 +296,9 @@ class _AuraPainter extends CustomPainter {
       r.inflate(w * .25),
       Paint()
         ..color = Colors.white.withValues(alpha: pulse.clamp(0, 1))
+        ..colorFilter = contourColor == null
+            ? null
+            : ColorFilter.mode(contourColor!, BlendMode.srcIn)
         ..filterQuality = FilterQuality.low,
     );
     if (!particles) return;
@@ -287,11 +307,13 @@ class _AuraPainter extends CustomPainter {
     void ash(Offset center, int seed, double age, double opacity) {
       final radius = w * (.0028 + (seed % 4) * .0012) * 1.02;
       final fade = math.pow(math.sin(math.pi * age), 1.5).toDouble();
-      final color = Color.lerp(
-        const Color(0xFFC8BADC),
-        const Color(0xFF9EC8E5),
-        (seed % 5) / 4,
-      )!;
+      final color =
+          particleColor ??
+          Color.lerp(
+            const Color(0xFFC8BADC),
+            const Color(0xFF9EC8E5),
+            (seed % 5) / 4,
+          )!;
       canvas.save();
       canvas.translate(center.dx, center.dy);
       canvas.rotate(math.sin(t + seed * 1.7) * .65 + seed);
@@ -363,12 +385,15 @@ class _AuraPainter extends CustomPainter {
       old.activation != activation ||
       old.shape != shape ||
       old.flow != flow ||
-      old.particles != particles;
+      old.particles != particles ||
+      old.particleColor != particleColor ||
+      old.contourColor != contourColor;
 }
 
 class _RimPainter extends CustomPainter {
   final _Silhouette shape;
-  _RimPainter(this.shape);
+  final Color? color;
+  _RimPainter(this.shape, this.color);
   @override
   void paint(Canvas canvas, Size size) => canvas.drawImageRect(
     shape.rim,
@@ -379,8 +404,13 @@ class _RimPainter extends CustomPainter {
       shape.rim.height.toDouble(),
     ),
     shape.rect(size),
-    Paint()..filterQuality = FilterQuality.low,
+    Paint()
+      ..filterQuality = FilterQuality.low
+      ..colorFilter = color == null
+          ? null
+          : ColorFilter.mode(color!, BlendMode.srcIn),
   );
   @override
-  bool shouldRepaint(covariant _RimPainter old) => old.shape != shape;
+  bool shouldRepaint(covariant _RimPainter old) =>
+      old.shape != shape || old.color != color;
 }

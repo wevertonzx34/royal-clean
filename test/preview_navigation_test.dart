@@ -140,7 +140,7 @@ void main() {
   ) async {
     await tester.pumpWidget(testApp());
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Produtos'));
+    await tester.ensureVisible(find.byType(ProductFiltersRoyalClean));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Nichos'));
     await tester.pumpAndSettle();
@@ -174,7 +174,11 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     tester.view.devicePixelRatio = 1;
-    for (final size in [const Size(320, 640), const Size(1200, 900)]) {
+    for (final size in [
+      const Size(320, 640),
+      const Size(768, 1024),
+      const Size(1200, 900),
+    ]) {
       tester.view.physicalSize = size;
       await tester.pumpWidget(testApp());
       await tester.pumpAndSettle();
@@ -187,7 +191,7 @@ void main() {
     (tester) async {
       await tester.pumpWidget(testApp());
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Produtos'));
+      await tester.ensureVisible(find.byType(ProductFiltersRoyalClean));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Nichos'));
       await tester.pumpAndSettle();

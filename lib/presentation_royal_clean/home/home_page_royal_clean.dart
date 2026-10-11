@@ -20,6 +20,8 @@ import 'door_invitation_royal_clean.dart';
 import 'shortcut_vapor_royal_clean.dart';
 import 'avatar_aura_royal_clean.dart';
 import 'my_property_page_royal_clean.dart';
+import 'royal_tag_royal_clean.dart';
+import '../../core_royal_clean/services/touch_feedback_royal_clean.dart';
 
 class HomePageRoyalClean extends StatefulWidget {
   const HomePageRoyalClean({super.key});
@@ -30,6 +32,9 @@ class HomePageRoyalClean extends StatefulWidget {
 class _HomePageState extends State<HomePageRoyalClean> {
   final _overviewOpen = ValueNotifier<bool>(false);
   final _lightFaultSignal = ValueNotifier<int>(0);
+  final _avatarTap = ValueNotifier<int>(0);
+  final _avatarTagLink = LayerLink();
+  final _tagOverlay = OverlayPortalController()..show();
   Future<void>? _imagesReady;
   bool _openingStock = false;
   bool _openingProperty = false;
@@ -59,6 +64,7 @@ class _HomePageState extends State<HomePageRoyalClean> {
   void dispose() {
     _overviewOpen.dispose();
     _lightFaultSignal.dispose();
+    _avatarTap.dispose();
     super.dispose();
   }
 
@@ -293,6 +299,10 @@ class _HomePageState extends State<HomePageRoyalClean> {
                                     key: const ValueKey(
                                       'admin-avatar-shortcut',
                                     ),
+                                    feedback: () {
+                                      TouchFeedbackRoyalClean.pulse();
+                                      _avatarTap.value++;
+                                    },
                                     pulses: 2,
                                     duration: const Duration(milliseconds: 600),
                                     scaleDepth: .018,
@@ -300,22 +310,46 @@ class _HomePageState extends State<HomePageRoyalClean> {
                                       _overviewOpen.value = false;
                                       await _openActions(context);
                                     },
-                                    builder: (_, flash) => AvatarAuraRoyalClean(
-                                      activation: flash,
-                                      child: NeonImageRoyalClean(
-                                        activation: flash,
-                                        asset:
-                                            'assets/preview/royal-store/royal-avatar.webp',
-                                        aspectRatio: 282 / 603,
-                                        glow: const Color(0xFF9955FF),
-                                      ),
-                                    ),
+                                    builder: (_, flash) =>
+                                        CompositedTransformTarget(
+                                          link: _avatarTagLink,
+                                          child: AvatarAuraRoyalClean(
+                                            activation: flash,
+                                            child: NeonImageRoyalClean(
+                                              activation: flash,
+                                              asset:
+                                                  'assets/preview/royal-store/royal-avatar.webp',
+                                              aspectRatio: 282 / 603,
+                                              glow: const Color(0xFF9955FF),
+                                            ),
+                                          ),
+                                        ),
                                   ),
                                 ),
                               ),
                             ),
                           ),
                         ),
+                      ),
+                    if (!overviewOpen)
+                      OverlayPortal(
+                        controller: _tagOverlay,
+                        overlayChildBuilder: (_) => Positioned(
+                          left: 0,
+                          top: 0,
+                          child: CompositedTransformFollower(
+                            link: _avatarTagLink,
+                            showWhenUnlinked: false,
+                            targetAnchor: Alignment.topCenter,
+                            followerAnchor: Alignment.bottomCenter,
+                            offset: const Offset(0, -8),
+                            child: SizedBox(
+                              width: avatarHeight * 282 / 603 * .32,
+                              child: RoyalTagRoyalClean(avatarTap: _avatarTap),
+                            ),
+                          ),
+                        ),
+                        child: const SizedBox.shrink(),
                       ),
                     Positioned(
                       key: const ValueKey('profile-blu-position'),

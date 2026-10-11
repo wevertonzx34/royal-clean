@@ -6,9 +6,13 @@ class PreviewProductRoyalClean {
   final String image;
   final String description;
   final String code;
+  final String catalogId;
   final List<String> tags;
   final List<String> niches;
   final String generalCategory;
+  final List<String> generalCategories;
+  final int? pfCents, pjCents;
+  final bool official, quoteOnly;
 
   const PreviewProductRoyalClean(
     this.name,
@@ -16,9 +20,15 @@ class PreviewProductRoyalClean {
     this.image,
     this.description, {
     this.code = '',
+    this.catalogId = '',
     this.tags = const [],
     this.niches = const [],
     this.generalCategory = 'limpeza-profissional',
+    this.generalCategories = const [],
+    this.pfCents,
+    this.pjCents,
+    this.official = false,
+    this.quoteOnly = false,
   });
 }
 

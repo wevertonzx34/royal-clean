@@ -140,6 +140,56 @@ void main() {
       expect(tester.getCenter(find.text('Original action')), original);
     },
   );
+  testWidgets('Decoration allows button taps and keeps its own admin editor', (
+    tester,
+  ) async {
+    var taps = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 200,
+              height: 100,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  ElevatedButton(
+                    onPressed: () => taps++,
+                    child: const Text('Action'),
+                  ),
+                  LayoutButtonRoyalClean(
+                    id: 'test.foreground-title',
+                    passThroughTap: true,
+                    capturePreview: () async => null,
+                    child: const IgnorePointer(
+                      child: Center(child: Text('Balloon title')),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Balloon title'));
+    expect(taps, 1);
+    await tester.longPress(find.text('Balloon title'));
+    await tester.pumpAndSettle();
+    expect(find.text('OK'), findsOneWidget);
+    expect(taps, 1);
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+    expect(
+      LayoutApprovalsRoyalClean.instance.export(),
+      contains('test.foreground-title'),
+    );
+    await tester.pumpWidget(const SizedBox());
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Consumer cannot edit; permission loss closes guide', (
     tester,
   ) async {

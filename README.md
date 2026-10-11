@@ -2,6 +2,18 @@
 
 Painel administrativo Royal Clean desenvolvido em Flutter, com Firebase Authentication e Cloud Firestore.
 
+## Cadastro e publicação de produtos
+
+Em Funções de estoque, **Produção** abre a auditoria: Disponíveis, Integrados e Excluídos na origem Bling. O admin pode selecionar a referência ou criar um produto independente. Concluir a auditoria envia o cadastro para **Produtos → Receitas**. Publicar exige foto por apresentação, descrição, custo, preços PF/PJ/mínimo, categorias, nichos e estoque inicial conferido. Publicado alimenta a Nossa Vitrine; Observação filtra saldo baixo; Suspensos ficam ocultos. Arquivados continuam em Integrados e podem ser restaurados para Receitas.
+
+Caixa e unidade compartilham um único registro físico. Abertura de caixa, entrada, saída, ajuste e retorno exigem confirmação e motivo; retornos aguardam conferência antes de voltar ao saldo disponível. Conversões de NF-e são fatores auditados por produto e não arredondam bobinas fracionadas. O estoque do Bling não substitui o saldo Royal Clean.
+
+`royalCatalog` valida permissões administrativas, versões, identificação única e repetição de comandos no backend. Documentos privados em `royal_catalog_private`, `royal_catalog_drafts` e `royal_catalog_codes` não são acessíveis diretamente pelo cliente. A coleção pública `products` recebe somente a projeção de apresentação: nunca custo, mínimo de negociação ou quantidade interna. Fotos publicadas ficam em `catalog_media`, com arquivos novos a cada atualização. Rascunhos são guardados por usuário no dispositivo e sincronizados quando há conexão; confirmação de gravação exige conexão. Conflitos mostram a última atualização e seu responsável.
+
+O botão de convites permite ao admin criar benefícios PJ livres ou direcionados, ativáveis uma vez, com dois prazos independentes de 1 a 365 dias. `royalPriceBenefit` confirma o consumo atomicamente e permite revogação. Esses convites não concedem permissões administrativas. Pagamentos, carrinho comercial, negociação de pedidos e entregas permanecem para a etapa posterior: nenhum pagamento simulado é apresentado como aprovado.
+
+Validação: `flutter analyze`, `flutter test`, `node --test functions/test/*.test.js` e testes de transações em `functions/test/royal-catalog.integration.mjs` exclusivamente com Firestore Emulator em `127.0.0.1:8185`. Deploy pelo wrapper seguro `tool/firebase_safe.cjs`, com filtros de funções incluindo o codebase `royal-clean-accounts`.
+
 Versão atual: **1.0.3+4**, declarada em `pubspec.yaml`.
 
 ## Funcionalidades

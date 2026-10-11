@@ -24,7 +24,7 @@ class LayoutApprovalRoyalClean {
     return LayoutApprovalRoyalClean(
       dx: x.toDouble().clamp(-1, 1),
       dy: y.toDouble().clamp(-1, 1),
-      scale: s.toDouble().clamp(.5, 2.5),
+      scale: s.toDouble().clamp(.1, 7),
     );
   }
 }

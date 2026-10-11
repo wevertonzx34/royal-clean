@@ -67,8 +67,8 @@ class _StockLightingState extends State<StockLightingRoyalClean>
   }
 
   void _flash() {
-    if (_enabled && _foreground && !_touch.isAnimating) {
-      _touch.forward(from: 0);
+    if (_enabled && _foreground) {
+      _touch.forward(from: .25);
     }
   }
 

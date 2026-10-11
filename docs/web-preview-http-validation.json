@@ -1,0 +1,126 @@
+{
+  "base": "https://royal-clean-fire--royal-web-review-9eij7ads.web.app",
+  "rows": [
+    {
+      "path": "/",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "cache": "no-cache",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "bytes": 1425,
+      "sha256": "db737011050a3cd85fa364dd4ae33141a5f0421f3cf5a94dfed482a798996e56"
+    },
+    {
+      "path": "/#/preview",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "cache": "no-cache",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "bytes": 1425,
+      "sha256": "db737011050a3cd85fa364dd4ae33141a5f0421f3cf5a94dfed482a798996e56"
+    },
+    {
+      "path": "/account",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "cache": "no-cache",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "bytes": 1425,
+      "sha256": "db737011050a3cd85fa364dd4ae33141a5f0421f3cf5a94dfed482a798996e56"
+    },
+    {
+      "path": "/flutter_bootstrap.js",
+      "status": 200,
+      "type": "text/javascript; charset=utf-8",
+      "cache": "no-cache",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "bytes": 13094,
+      "sha256": "6c75930778efa1ecd0ac9bb4fd47eab22d508fdeceec97ed132a1d0f0c46078a"
+    },
+    {
+      "path": "/main.dart.js",
+      "status": 200,
+      "type": "text/javascript; charset=utf-8",
+      "cache": "no-cache",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "bytes": 3797152,
+      "sha256": "f405a301fb943599fefb41cf0bfb515d4b08ae64a305d7abc45050ceaca56e09",
+      "bundleMatches": true
+    },
+    {
+      "path": "/manifest.json",
+      "status": 200,
+      "type": "application/json",
+      "cache": "no-cache",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "bytes": 928,
+      "sha256": "d0f67fd0b5367116317389d1753e06e3ddf5cb541010411cecfd5895b257379d"
+    },
+    {
+      "path": "/icons/Icon-192.png",
+      "status": 200,
+      "type": "image/png",
+      "cache": "no-cache",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "bytes": 8156,
+      "sha256": "75dbf9502c98b83a7a51f274a11204433443f369c2a07a062fa95d499c9afc51"
+    },
+    {
+      "path": "/assets/assets/logo/logo-splash.webp",
+      "status": 200,
+      "type": "image/webp",
+      "cache": "public, max-age=3600, must-revalidate",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "bytes": 303788,
+      "sha256": "e34f0a5dd657fdfc1749dd5d62fb5f1f484d28374996f59d21722d4539a780dc"
+    },
+    {
+      "path": "/royal-web-release.json",
+      "status": 200,
+      "type": "application/json",
+      "cache": "no-cache",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "bytes": 257,
+      "sha256": "b02b4c06cc04b4463e2eb4143fd90a891d7f2d6fd0bde45aedc0fad681b7ee62"
+    },
+    {
+      "path": "/lib/main.dart",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "cache": "no-cache",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "bytes": 1425,
+      "sha256": "db737011050a3cd85fa364dd4ae33141a5f0421f3cf5a94dfed482a798996e56"
+    },
+    {
+      "path": "/.git/config",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "cache": "no-cache",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "bytes": 1425,
+      "sha256": "db737011050a3cd85fa364dd4ae33141a5f0421f3cf5a94dfed482a798996e56"
+    },
+    {
+      "path": "/functions/index.js",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "cache": "no-cache",
+      "nosniff": "nosniff",
+      "frame": "DENY",
+      "bytes": 1425,
+      "sha256": "db737011050a3cd85fa364dd4ae33141a5f0421f3cf5a94dfed482a798996e56"
+    }
+  ]
+}

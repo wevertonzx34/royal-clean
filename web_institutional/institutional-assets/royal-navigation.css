@@ -1,0 +1,36 @@
+/* Local navigation for the owner's static institutional pages. */
+.royal-app-menu-item { list-style: none; }
+.royal-app-access {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  border: 1px solid #76b8df;
+  border-radius: 6px;
+  background: #123e62;
+  color: #fff !important;
+  font: 500 14px/1.4 'Sora', sans-serif;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.royal-app-access:hover { background: #1b527e; }
+.royal-app-access:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
+.royal-contact-notice, #institutional-contact-status { font: 400 14px/1.6 'IBM Plex Sans', sans-serif; margin-top: 12px; }
+#institutional-mobile-navigation[hidden] { display: none !important; }
+#institutional-mobile-navigation:not([hidden]) {
+  z-index: 100;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: none !important;
+  height: calc(100dvh - var(--header-height-mobile)) !important;
+  max-height: calc(100dvh - var(--header-height-mobile)) !important;
+  overflow-y: auto !important;
+  padding: 24px 16px !important;
+}
+@media (min-width: 921px) {
+  .block-header__nav-links { flex-wrap: wrap; }
+}
+@media (max-width: 920px) {
+  #institutional-mobile-navigation .royal-app-menu-item { padding: 16px; }
+}

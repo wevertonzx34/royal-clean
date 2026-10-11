@@ -29,12 +29,14 @@ class OfficeShortcutRoyalClean extends StatelessWidget {
         : 'Abrir NF-e',
     child: LayoutButtonRoyalClean(
       id: isProduction ? 'stock.production' : 'stock.office',
+      alwaysOverlay: true,
       child: ImageActionRoyalClean(
         key: ValueKey(
           isProduction ? 'royal-producao-shortcut' : 'royal-office-shortcut',
         ),
         pulses: 2,
         activateBeforeAnimation: isProduction,
+        repeatActivationDuringAnimation: isProduction,
         duration: const Duration(milliseconds: 600),
         scaleDepth: .018,
         feedback: () {
