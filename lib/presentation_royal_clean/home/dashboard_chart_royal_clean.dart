@@ -22,6 +22,7 @@ class DashboardChartRoyalClean extends StatefulWidget {
   final ActiveContactsCacheRoyalClean? invoiceCache;
   final ActiveContactsCacheRoyalClean? productCache;
   final bool overlaySurface;
+  final bool performanceTheme;
   const DashboardChartRoyalClean({
     super.key,
     this.availableHeight = 720,
@@ -29,6 +30,7 @@ class DashboardChartRoyalClean extends StatefulWidget {
     this.invoiceCache,
     this.productCache,
     this.overlaySurface = false,
+    this.performanceTheme = false,
   });
   @override
   State<DashboardChartRoyalClean> createState() => _DashboardChartState();
@@ -56,7 +58,9 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
   bool _foreground = true;
   static const _text = Color(0xFFF5F7FA);
   static const _muted = Color(0xFFA9C3D3);
-  static const _accent = Color(0xFF4D8DFF);
+  Color get _accent => widget.performanceTheme
+      ? const Color(0xFFBAA2FF)
+      : const Color(0xFF4D8DFF);
   bool get _position => _group == 'Produtos' || _group == 'Contatos';
   @override
   void initState() {
@@ -86,7 +90,9 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
           ),
     );
     if (blingChangedGroupsRoyalClean.isNotEmpty &&
-        !blingChangedGroupsRoyalClean.contains(_groups[_group])) { return; }
+        !blingChangedGroupsRoyalClean.contains(_groups[_group])) {
+      return;
+    }
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
       _cache.clear();
@@ -343,12 +349,16 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: widget.overlaySurface
+        color: widget.performanceTheme
+            ? const Color(0xFF123F53)
+            : widget.overlaySurface
             ? const Color(0xE6102B3D)
             : const Color(0xFF102B3D),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: widget.overlaySurface
+          color: widget.performanceTheme
+              ? const Color(0xFF7568A1)
+              : widget.overlaySurface
               ? const Color(0xAA5CE7EC)
               : const Color(0xFF25485F),
         ),
@@ -373,7 +383,7 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
                 child: PopupMenuButton<DashboardPeriodRoyalClean>(
                   key: const ValueKey('dashboard-period'),
                   tooltip: 'Período do gráfico',
-                  icon: const Icon(Icons.schedule_outlined, color: _accent),
+                  icon: Icon(Icons.schedule_outlined, color: _accent),
                   onSelected: tactileValueRoyalClean((period) {
                     if (period == _period) return;
                     _period = period;
@@ -403,7 +413,7 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
                 child: PopupMenuButton<DashboardChartStyleRoyalClean>(
                   tooltip: 'Estilo do gráfico',
                   initialValue: _style,
-                  icon: const Icon(Icons.bar_chart, color: _accent),
+                  icon: Icon(Icons.bar_chart, color: _accent),
                   onSelected: tactileValueRoyalClean(
                     (style) => setState(() => _style = style),
                   ),
@@ -424,7 +434,7 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
                   onPressed: tactileTapRoyalClean(
                     _refreshingAll ? null : _refreshAll,
                   ),
-                  icon: const Icon(Icons.refresh, color: _accent),
+                  icon: Icon(Icons.refresh, color: _accent),
                 ),
               ),
             ],
@@ -444,7 +454,11 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
                         }),
                         style: TextButton.styleFrom(
                           foregroundColor: _text,
-                          backgroundColor: group == _group
+                          backgroundColor: widget.performanceTheme
+                              ? (group == _group
+                                    ? const Color(0xFF635091)
+                                    : const Color(0xFF19394D))
+                              : group == _group
                               ? const Color(0xFF17628B)
                               : const Color(0xFF19394D),
                           padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -717,6 +731,7 @@ class _DashboardChartState extends State<DashboardChartRoyalClean>
                                 _selected,
                                 _style,
                                 metric.money,
+                                widget.performanceTheme,
                               ),
                             ),
                           ),
@@ -816,14 +831,17 @@ class _DashboardPainter extends CustomPainter {
   final int selected;
   final DashboardChartStyleRoyalClean style;
   final bool money;
+  final bool performanceTheme;
   _DashboardPainter(
     this.values,
     this.labels,
     this.selected,
     this.style,
     this.money,
+    this.performanceTheme,
   );
-  static const _blue = Color(0xFF4D8DFF);
+  Color get _blue =>
+      performanceTheme ? const Color(0xFFBAA2FF) : const Color(0xFF4D8DFF);
   void _label(
     Canvas canvas,
     String value,
@@ -894,8 +912,14 @@ class _DashboardPainter extends CustomPainter {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                i == selected ? const Color(0xFF8AB7FF) : _blue,
-                const Color(0xFF2358B9),
+                i == selected
+                    ? (performanceTheme
+                          ? const Color(0xFFE5DAFF)
+                          : const Color(0xFF8AB7FF))
+                    : _blue,
+                performanceTheme
+                    ? const Color(0xFF635091)
+                    : const Color(0xFF2358B9),
               ],
             ).createShader(rect),
         );
@@ -925,10 +949,12 @@ class _DashboardPainter extends CustomPainter {
         canvas.drawPath(
           area,
           Paint()
-            ..shader = const LinearGradient(
+            ..shader = LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Color(0xAA3478EF), Color(0x053478EF)],
+              colors: performanceTheme
+                  ? [const Color(0xAABAA2FF), const Color(0x05BAA2FF)]
+                  : [const Color(0xAA3478EF), const Color(0x053478EF)],
             ).createShader(plot),
         );
       }
@@ -943,7 +969,10 @@ class _DashboardPainter extends CustomPainter {
       canvas.drawCircle(
         points[selected],
         5,
-        Paint()..color = const Color(0xFFB8D5FF),
+        Paint()
+          ..color = performanceTheme
+              ? const Color(0xFFE5DAFF)
+              : const Color(0xFFB8D5FF),
       );
     }
     for (var i = 0; i < points.length; i++) {
@@ -962,5 +991,6 @@ class _DashboardPainter extends CustomPainter {
       oldDelegate.labels != labels ||
       oldDelegate.selected != selected ||
       oldDelegate.style != style ||
-      oldDelegate.money != money;
+      oldDelegate.money != money ||
+      oldDelegate.performanceTheme != performanceTheme;
 }

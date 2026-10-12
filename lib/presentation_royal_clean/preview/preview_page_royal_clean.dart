@@ -20,6 +20,7 @@ import '../../core_royal_clean/services/royal_catalog_royal_clean.dart';
 import '../../core_royal_clean/services/catalog_feed_royal_clean.dart';
 import '../home/royal_price_benefit_page_royal_clean.dart';
 import '../home/catalog_audit_card_royal_clean.dart';
+import 'performance_overview_page_royal_clean.dart';
 
 const _navy = Color(0xFF092F43);
 const _teal = Color(0xFF007F9F);
@@ -328,6 +329,15 @@ class _PreviewPageRoyalCleanState extends State<PreviewPageRoyalClean> {
   }
 
   void _openPreviewSection(String section) {
+    if (section == 'performance') {
+      Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          settings: const RouteSettings(name: '/preview/performance'),
+          builder: (_) => const PerformanceOverviewPageRoyalClean(),
+        ),
+      );
+      return;
+    }
     if (!widget.productsOnly) {
       _goTo(section == 'about' ? _newsKey : _partnersKey);
       return;

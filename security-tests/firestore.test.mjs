@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { before, after, beforeEach, test } from 'node:test';
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
 import { doc, collection, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
-  writeBatch, runTransaction, query, where, orderBy, serverTimestamp, Timestamp } from 'firebase/firestore';
+  writeBatch, runTransaction, query, where, orderBy, limit, serverTimestamp, Timestamp } from 'firebase/firestore';
 
 // Hard stop: these tests must never contact a real Firebase project.
 if (process.env.FIRESTORE_EMULATOR_HOST !== '127.0.0.1:8185') {
@@ -17,8 +17,53 @@ let mismatch;
 let nonAdmin;
 let noEmail;
 
+test('Public candle pagination is bounded and read-only for every timeframe; private calculation metadata stays denied',async()=>{
+ const periods=['m1','m5','m15','m30','h1','h4','daily','weekly','monthly','quarterly','halfYear','yearly'];
+ await env.withSecurityRulesDisabled(async ctx=>{
+  for(const p of periods)await setDoc(doc(ctx.firestore(),`public_activity_candles/${p}/candles/123`),{start:123,activityClose:100});
+ });
+ for(const db of [visitor,member,admin]){
+  for(const p of periods){
+   await assertSucceeds(getDoc(doc(db,`public_activity_candles/${p}/candles/123`)));
+   await assertSucceeds(getDocs(query(collection(db,`public_activity_candles/${p}/candles`),orderBy('start','desc'),limit(256))));
+   await assertFails(setDoc(doc(db,`public_activity_candles/${p}/candles/123`),{activityClose:999}));
+  }
+  await assertFails(getDocs(collection(db,'public_activity_candles/m1/candles')));
+  await assertFails(getDocs(query(collection(db,'public_activity_candles/m1/candles'),limit(257))));
+  await assertFails(getDoc(doc(db,'public_activity_candles/unknown/candles/123')));
+  await assertFails(getDoc(doc(db,'app_activity_index_meta/candle_archive')));
+ }
+});
+
+test('Public activity aggregates are readable by guests but never writable; calculation state is private',async()=>{
+ await env.withSecurityRulesDisabled(async ctx=>{
+  await setDoc(doc(ctx.firestore(),'public_activity_index/daily'),{base:100,source:'royal-clean'});
+  await setDoc(doc(ctx.firestore(),'app_activity_index_state/current'),{totalStrength:1});
+  await setDoc(doc(ctx.firestore(),'app_activity_index_days/2026-10-12'),{online:1});
+ });
+ for(const db of [visitor,member,admin]){
+  await assertSucceeds(getDoc(doc(db,'public_activity_index/daily')));
+  await assertFails(setDoc(doc(db,'public_activity_index/daily'),{base:999}));
+  await assertFails(getDocs(collection(db,'public_activity_index')));
+  await assertFails(getDoc(doc(db,'public_activity_index/unknown')));
+  for(const path of ['app_activity_index_state/current','app_activity_index_days/2026-10-12']){
+   await assertFails(getDoc(doc(db,path)));await assertFails(setDoc(doc(db,path),{online:999}));
+  }
+ }
+});
+
 const intercomMessage = () => ({title: 'Aviso Royal Clean', body: 'Mensagem pública de teste.',
   kind: 'Mensagem', publishedAt: serverTimestamp(), expiresAt: Timestamp.fromMillis(Date.now() + 86400000)});
+
+test('Contact performance raw history and presence are server-only, including for admins', async()=>{
+ const verifiedAdmin=env.authenticatedContext('admin-ok',{email:'admin@example.test',email_verified:true}).firestore();
+ for(const path of ['app_contact_profiles/id','app_contact_invites/id','app_contact_presence/id','app_contact_activity/id','app_contact_meta/coverage']) {
+  await env.withSecurityRulesDisabled(ctx=>setDoc(doc(ctx.firestore(),path),{createdAt:1}));
+  for(const db of [visitor,member,verifiedAdmin]) {
+   await assertFails(getDoc(doc(db,path)));await assertFails(setDoc(doc(db,path),{online:999}));await assertFails(deleteDoc(doc(db,path)));
+  }
+ }
+});
 
 test('Production orders and audit are admin-only and never directly writable, including by admins',async()=>{
  const verifiedAdmin=env.authenticatedContext('admin-ok',{email:'admin@example.test',email_verified:true}).firestore();

@@ -322,6 +322,17 @@ service cloud.firestore {
         allow write: if false;
       }
     }
+    // Public methodology/aggregates only. All raw telemetry stays server-only.
+    match /public_activity_index/{period} {
+      allow get: if period in ['m1','m5','m15','m30','h1','h4','daily','weekly','monthly','quarterly','halfYear','yearly'];
+      allow list, write: if false;
+    }
+    match /public_activity_candles/{period}/candles/{candle} {
+      allow get: if period in ['m1','m5','m15','m30','h1','h4','daily','weekly','monthly','quarterly','halfYear','yearly'];
+      allow list: if period in ['m1','m5','m15','m30','h1','h4','daily','weekly','monthly','quarterly','halfYear','yearly']
+        && request.query.limit != null && request.query.limit > 0 && request.query.limit <= 256;
+      allow write: if false;
+    }
     // Novas coleções e subcoleções permanecem fechadas por padrão.
     match /{document=**} {
       allow read, write: if false;

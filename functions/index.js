@@ -17,11 +17,25 @@ import {createProductionOrders} from './production-orders.js';
 import {createOrderCare,remindOrderCare} from './order-care.js';
 import {createRoyalCatalog} from './royal-catalog.js';
 import {createRoyalPriceBenefits} from './royal-price-benefits.js';
+import * as functionsV1 from 'firebase-functions/v1';
+import {createContactsPerformance} from './contacts-performance.js';
+import {createActivityIndex} from './activity-index.js';
 
 initializeApp();
 const db = getFirestore();
 // App Check is required in production. Use registered debug tokens for local APKs.
 const options = {region: 'southamerica-east1', enforceAppCheck: true, maxInstances: 10};
+const contactsPerformance=createContactsPerformance({db,auth:getAuth(),authenticated,requireAdmin,rateLimit});
+// Firebase ID tokens are verified inside the callable; Cloud Run IAM must allow
+// delivery to the handler. This does not bypass Authentication, App Check or admin access.
+export const royalContactsOverview=onCall({...options,invoker:'public',timeoutSeconds:120},contactsPerformance.overview);
+export const royalContactPresence=onCall({...options,invoker:'public'},contactsPerformance.heartbeat);
+export const royalContactProfileHistory=onDocumentWritten({region:'southamerica-east1',document:'users/{uid}',retry:true,maxInstances:2},contactsPerformance.userWritten);
+export const royalContactAdminHistory=onDocumentWritten({region:'southamerica-east1',document:'admin/{uid}',retry:true,maxInstances:2},contactsPerformance.adminWritten);
+export const royalContactInviteHistory=onDocumentWritten({region:'southamerica-east1',document:'access_invites/{inviteId}',retry:true,maxInstances:2},contactsPerformance.inviteWritten);
+export const royalContactAuthDeletion=functionsV1.region('southamerica-east1').runWith({failurePolicy:true,maxInstances:2}).auth.user().onDelete(contactsPerformance.authDeleted);
+const activityIndex=createActivityIndex({db});
+export const royalContactActivitySnapshot=onSchedule({region:'southamerica-east1',schedule:'every 1 minutes',timeZone:'America/Sao_Paulo',timeoutSeconds:120,maxInstances:1,concurrency:1},async()=>{await contactsPerformance.snapshot();await activityIndex.tick();});
 export const royalCatalog = onCall({...options, timeoutSeconds: 60}, createRoyalCatalog({db, authenticated, requireAdmin, rateLimit}));
 export const royalPriceBenefit = onCall(options, createRoyalPriceBenefits({db, authenticated, requireAdmin, rateLimit}));
 const bling = createBlingHandlers({db, auth: getAuth(), authenticated, requireAdmin, rateLimit});

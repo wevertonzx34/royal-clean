@@ -1,4 +1,5 @@
 import 'core_royal_clean/services/touch_feedback_royal_clean.dart';
+import 'core_royal_clean/services/contact_presence_royal_clean.dart';
 import 'dart:async';
 import 'core_royal_clean/services/admin_push_royal_clean.dart';
 import 'presentation_royal_clean/shared/notifications_panel_royal_clean.dart';
@@ -84,6 +85,7 @@ void main() {
       );
     }
     AccountAccessRoyalClean.instance.start();
+    ContactPresenceRoyalClean.instance.start();
     IntercomRoyalClean.instance.start();
     AdminPushRoyalClean.instance.start();
     if (!kReleaseMode && const bool.fromEnvironment('VERIFY_APP_CHECK')) {
